@@ -185,11 +185,21 @@ class App:
         return bar
 
     def command_bar(self):
-        """Command Bar 容器：页面在返回的 frame 上自由放置左/右分组按钮。"""
-        bar = tk.Frame(self.content_frame, bg=theme.BG_RAISED, height=44)
+        """Command Bar 容器（自动高度，按钮不会被裁切）。"""
+        bar = tk.Frame(self.content_frame, bg=theme.BG_RAISED, padx=12, pady=6)
         bar.pack(fill=X, pady=(0, 14))
-        bar.pack_propagate(False)
         return bar
+
+    def search_entry(self, parent, var, placeholder):
+        tk.Label(parent, text='SEARCH', bg=theme.BG_RAISED, fg=theme.DIM,
+                 font=('Consolas', 8)).pack(side=LEFT, padx=(0, 6))
+        ttk.Entry(parent, textvariable=var, width=24).pack(side=LEFT, padx=(0, GROUP))
+        return var
+
+    def combo_box(self, parent, var, values, width=10):
+        ttk.Combobox(parent, textvariable=var, values=values, state='readonly',
+                     width=width).pack(side=LEFT, padx=(0, GROUP))
+        return var
 
     def btn(self, parent, text, command, kind='primary'):
         style = {'primary': 'primary', 'secondary': 'secondary', 'info': 'info',
@@ -457,7 +467,7 @@ class App:
 
         self.fetch(lambda: self.api.login(self.username, self.password), on_done)
 
-    # ---------- 课程（Courses Workspace） ----------
+        # ---------- 课程（Courses Workspace + 搜索/排序） ----------
 
     def show_courses(self):
         if not self.username or not self.password:
@@ -483,27 +493,61 @@ class App:
             subtitle = 'sync failed · 请检查网络后重试'
         mono(bar, '  ' + subtitle, fg=theme.DIM, size=9).pack(side=LEFT, pady=(10, 0))
 
-        cmd = self.command_bar()
-        actions = tk.Frame(cmd, bg=theme.BG_RAISED)
-        actions.pack(side=RIGHT)
-        self.btn(actions, 'REFRESH', self.show_courses, 'secondary').pack(side=LEFT, padx=(0, GAP))
-        self.btn(actions, 'EXPORT ALL', self.export_all_courses, 'info').pack(side=LEFT, padx=(0, GAP))
-        self.btn(actions, 'SUBMIT ALL 100', self.submit_all_courses_100, 'warning').pack(side=LEFT)
+        bar2 = self.command_bar()
+        left = tk.Frame(bar2, bg=theme.BG_RAISED)
+        left.pack(side=LEFT)
+        if ok:
+            self._c_search = tk.StringVar()
+            self._c_sort = tk.StringVar(value='默认')
+            self.search_entry(left, self._c_search, '课程名 / ID')
+            self.combo_box(left, self._c_sort, ['默认', '名称 A→Z', '名称 Z→A', 'ID ↑'])
+        right = tk.Frame(bar2, bg=theme.BG_RAISED)
+        right.pack(side=RIGHT)
+        self.btn(right, 'REFRESH', self.show_courses, 'secondary').pack(side=LEFT, padx=(0, GAP))
+        self.btn(right, 'EXPORT ALL', self.export_all_courses, 'info').pack(side=LEFT, padx=(0, GAP))
+        self.btn(right, 'SUBMIT ALL 100', self.submit_all_courses_100, 'warning').pack(side=LEFT)
 
         frame = ScrolledFrame(self.content_frame, autohide=True)
         frame.pack(fill=BOTH, expand=YES)
-        lst = tk.Frame(frame, bg=theme.BG)
-        lst.pack(fill=BOTH, expand=YES)
-        if not ok:
-            empty = tk.Frame(lst, bg=theme.SURFACE, highlightthickness=1,
+        self._c_lst = tk.Frame(frame, bg=theme.BG)
+        self._c_lst.pack(fill=BOTH, expand=YES)
+        if ok:
+            self._c_search.trace_add('write', lambda *_: self._draw_courses())
+            self._c_sort.trace_add('write', lambda *_: self._draw_courses())
+            self._draw_courses()
+        else:
+            empty = tk.Frame(self._c_lst, bg=theme.SURFACE, highlightthickness=1,
                              highlightbackground=theme.BORDER)
-            empty.pack(fill=X, pady=(0, GAP))
-            mono(empty, '> ERROR', fg=theme.ERROR, size=10).pack(anchor='w', padx=12, pady=(8, 0))
+            empty.pack(fill=X)
+            mono(empty, '> ERROR', fg=theme.ERROR, size=10, bg=theme.SURFACE
+                 ).pack(anchor='w', padx=12, pady=(8, 0))
             tk.Label(empty, text='获取课程列表失败 · 请检查网络后重试', bg=theme.SURFACE, fg=theme.MUTED,
                      font=theme.FONT_UI, anchor='w').pack(anchor='w', padx=12, pady=(0, 8))
+
+    def _filtered_courses(self):
+        rows = list(self.courses)
+        q = (self._c_search.get() if hasattr(self, '_c_search') else '').strip().lower()
+        if q:
+            rows = [c for c in rows
+                    if q in str(c.get('courseName', '')).lower() or q in str(c.get('courseId', ''))]
+        srt = self._c_sort.get() if hasattr(self, '_c_sort') else '默认'
+        if srt == '名称 A→Z':
+            rows.sort(key=lambda c: str(c.get('courseName', '')))
+        elif srt == '名称 Z→A':
+            rows.sort(key=lambda c: str(c.get('courseName', '')), reverse=True)
+        elif srt == 'ID ↑':
+            rows.sort(key=lambda c: c.get('courseId', 0))
+        return rows
+
+    def _draw_courses(self):
+        for w in self._c_lst.winfo_children():
+            w.destroy()
+        rows = self._filtered_courses()
+        if not rows:
+            mono(self._c_lst, '> NO MATCH', fg=theme.PRIMARY, size=10).pack(anchor='w', padx=12, pady=16)
             return
-        for course in self.courses:
-            self._course_row(lst, course)
+        for course in rows:
+            self._course_row(self._c_lst, course)
 
     def _course_row(self, parent, course):
         row = tk.Frame(parent, bg=theme.SURFACE, highlightthickness=1,
@@ -511,9 +555,9 @@ class App:
         row.pack(fill=X, pady=(0, GAP - 2))
         self.btn(row, 'OPEN', lambda c=course: self.select_course(c), 'primary'
                  ).pack(side=RIGHT, padx=12, pady=10)
-        mono(row, f'#{course["courseId"]}', fg=theme.DIM, size=9, bg=theme.SURFACE).pack(side=RIGHT, padx=(0, 4))
-        name = course['courseName']
-        tk.Label(row, text=name, bg=theme.SURFACE, fg=theme.FG, anchor='w',
+        mono(row, f'#{course["courseId"]}', fg=theme.DIM, size=9, bg=theme.SURFACE
+             ).pack(side=RIGHT, padx=(0, 4))
+        tk.Label(row, text=course['courseName'], bg=theme.SURFACE, fg=theme.FG, anchor='w',
                  font=('Microsoft YaHei', 11, 'bold')).pack(side=LEFT, fill=X, expand=YES,
                                                             padx=12, pady=11)
 
@@ -523,6 +567,8 @@ class App:
         self.log(f'LOADING works :: {course["courseName"]}')
         self.fetch(lambda: self.api.get_course_works(course['courseId']), self._render_works)
 
+    # ---------- 作业（List + Inspector + 搜索/筛选/排序） ----------
+
     def _render_works(self, result):
         ok, data = result
         if not ok:
@@ -531,15 +577,12 @@ class App:
         self.works = data
         self.show_works()
 
-    # ---------- 作业（List + Inspector） ----------
-
     def show_works(self):
         self.begin_nav()
         self._sel_work = self.works[0] if self.works else None
         self.set_page(f'{self.selected_course_name} :: WORKS')
-        bar = self.page_header('ASSIGNMENTS',
-                               f'{self.selected_course_name} · {len(self.works)} works',
-                               back='返回课程列表')
+        self.page_header('ASSIGNMENTS', f'{self.selected_course_name} · {len(self.works)} works',
+                         back='返回课程列表')
         self._build_works_page()
 
     def refresh_works(self):
@@ -547,46 +590,88 @@ class App:
         self.select_course(course)
 
     def _build_works_page(self):
-        # Command Bar（批量动作）
-        cmd = self.command_bar()
-        right = tk.Frame(cmd, bg=theme.BG_RAISED)
+        bar2 = self.command_bar()
+        left = tk.Frame(bar2, bg=theme.BG_RAISED)
+        left.pack(side=LEFT)
+        self._w_search = tk.StringVar()
+        self._w_status = tk.StringVar(value='全部')
+        self._w_sort = tk.StringVar(value='默认')
+        self.search_entry(left, self._w_search, '作业名 / 章节 / ID')
+        self.combo_box(left, self._w_status, ['全部', '可提交', '已用完'], width=8)
+        self.combo_box(left, self._w_sort, ['默认', '截止时间 ↑', '剩余 ↑', '名称 A→Z'], width=10)
+        right = tk.Frame(bar2, bg=theme.BG_RAISED)
         right.pack(side=RIGHT)
         self.btn(right, 'REFRESH', self.refresh_works, 'secondary').pack(side=LEFT, padx=(0, GAP))
         self.btn(right, 'EXPORT ALL', self.export_all_works, 'info').pack(side=LEFT, padx=(0, GAP))
         self.btn(right, 'SUBMIT ALL 100', self.submit_all_works_100, 'warning').pack(side=LEFT)
+        self._w_search.trace_add('write', lambda *_: self._draw_works())
+        self._w_status.trace_add('write', lambda *_: self._draw_works())
+        self._w_sort.trace_add('write', lambda *_: self._draw_works())
 
-        # 左：作业列表；右：Inspector
         body = tk.Frame(self.content_frame, bg=theme.BG)
         body.pack(fill=BOTH, expand=YES)
-        list_box = tk.Frame(body, bg=theme.BG, width=420)
+        list_box = tk.Frame(body, bg=theme.BG, width=440)
         list_box.pack(side=LEFT, fill=BOTH, expand=YES)
         list_box.pack_propagate(False)
-
         head = tk.Frame(list_box, bg=theme.BG)
         head.pack(fill=X, pady=(0, 8))
         mono(head, 'ASSIGNMENTS', fg=theme.DIM, size=9, bg=theme.BG).pack(side=LEFT)
-
+        self._w_count = mono(head, '', fg=theme.DIM, size=9, bg=theme.BG)
+        self._w_count.pack(side=RIGHT)
         frame = ScrolledFrame(list_box, autohide=True)
         frame.pack(fill=BOTH, expand=YES)
-        lst = tk.Frame(frame, bg=theme.BG)
-        lst.pack(fill=BOTH, expand=YES)
-
-        if not self.works:
-            empty = tk.Frame(lst, bg=theme.SURFACE, highlightthickness=1,
-                             highlightbackground=theme.BORDER)
-            empty.pack(fill=X)
-            mono(empty, '> NO WORKSPACE DATA', fg=theme.PRIMARY, size=9,
-                 bg=theme.SURFACE).pack(anchor='w', padx=12, pady=(8, 0))
-            tk.Label(empty, text='该课程目前没有可用的作业。', bg=theme.SURFACE, fg=theme.MUTED,
-                     font=theme.FONT_UI, anchor='w').pack(anchor='w', padx=12, pady=(0, 8))
-        else:
-            for work in self.works:
-                self._work_row(lst, work)
+        self._w_lst = tk.Frame(frame, bg=theme.BG)
+        self._w_lst.pack(fill=BOTH, expand=YES)
 
         self._inspector = tk.Frame(body, bg=theme.SURFACE, width=300,
                                    highlightthickness=1, highlightbackground=theme.BORDER)
         self._inspector.pack(side=RIGHT, fill=Y, padx=(16, 0))
         self._inspector.pack_propagate(False)
+        self._draw_works()
+
+    def _remaining(self, work):
+        return max(0, work.get('tryTimes', 0) - work.get('times', 0))
+
+    def _filtered_works(self):
+        rows = list(self.works)
+        q = (self._w_search.get() if hasattr(self, '_w_search') else '').strip().lower()
+        st = self._w_status.get() if hasattr(self, '_w_status') else '全部'
+        srt = self._w_sort.get() if hasattr(self, '_w_sort') else '默认'
+        if q:
+            rows = [w for w in rows if q in str(w.get('workName', '')).lower()
+                    or q in str(w.get('chapterName', '')).lower()
+                    or q in str(w.get('workId', ''))]
+        if st == '可提交':
+            rows = [w for w in rows if self._remaining(w) > 0]
+        elif st == '已用完':
+            rows = [w for w in rows if self._remaining(w) <= 0]
+        if srt == '截止时间 ↑':
+            rows.sort(key=lambda w: (w.get('expireTime') or '9999'))
+        elif srt == '剩余 ↑':
+            rows.sort(key=lambda w: (-self._remaining(w), str(w.get('workName', ''))))
+        elif srt == '名称 A→Z':
+            rows.sort(key=lambda w: str(w.get('workName', '')))
+        return rows
+
+    def _draw_works(self):
+        for w in self._w_lst.winfo_children():
+            w.destroy()
+        rows = self._filtered_works()
+        if self._w_count is not None and self._w_count.winfo_exists():
+            self._w_count.config(text=f'{len(rows)}/{len(self.works)}')
+        if self._sel_work not in rows:
+            self._sel_work = rows[0] if rows else None
+        if not rows:
+            empty = tk.Frame(self._w_lst, bg=theme.SURFACE, highlightthickness=1,
+                             highlightbackground=theme.BORDER)
+            empty.pack(fill=X)
+            mono(empty, '> NO MATCH', fg=theme.PRIMARY, size=9, bg=theme.SURFACE
+                 ).pack(anchor='w', padx=12, pady=(8, 0))
+            tk.Label(empty, text='该课程目前没有可用的作业。', bg=theme.SURFACE, fg=theme.MUTED,
+                     font=theme.FONT_UI, anchor='w').pack(anchor='w', padx=12, pady=(0, 8))
+        else:
+            for work in rows:
+                self._work_row(self._w_lst, work)
         self._render_work_inspector()
 
     def _work_row(self, parent, work):
@@ -595,43 +680,42 @@ class App:
         row = tk.Frame(parent, bg=bg, highlightthickness=1,
                        highlightbackground=theme.PRIMARY if selected else theme.BORDER)
         row.pack(fill=X, pady=(0, 6))
-        row.bind('<Button-1>', lambda e, w=work: self._select_work(w))
-        row.bind('<Double-Button-1>', lambda e, w=work: self._open_work(w))
-        name = work['workName']
-        name_lbl = tk.Label(row, text=name, bg=bg, fg=theme.FG, anchor='w',
+        name_lbl = tk.Label(row, text=work['workName'], bg=bg, fg=theme.FG, anchor='w',
                             font=('Microsoft YaHei', 10, 'bold'))
         name_lbl.pack(fill=X, padx=12, pady=(8, 0))
         line = tk.Frame(row, bg=bg)
         line.pack(fill=X, padx=12, pady=(2, 8))
-        times_used = work.get('times', 0)
-        try_times = work.get('tryTimes', 0)
-        remaining = max(0, try_times - times_used)
+        remaining = self._remaining(work)
         if remaining <= 0:
             chips = [mono(line, f'#{work["workId"]}', fg=theme.DIM, size=9, bg=bg),
                      mono(line, '已用完所有机会', fg=theme.ERROR, size=9, bg=bg)]
         elif remaining == 1:
             chips = [mono(line, f'#{work["workId"]}', fg=theme.DIM, size=9, bg=bg),
-                     mono(line, f'Last chance! {remaining}/{try_times}', fg=theme.WARNING, size=9, bg=bg)]
+                     mono(line, f'Last chance! {remaining}/{work.get("tryTimes", 0)}',
+                          fg=theme.WARNING, size=9, bg=bg)]
         else:
             chips = [mono(line, f'#{work["workId"]}', fg=theme.DIM, size=9, bg=bg),
-                     mono(line, f'TRY {remaining}/{try_times}', fg=theme.PRIMARY, size=9, bg=bg)]
+                     mono(line, f'TRY {remaining}/{work.get("tryTimes", 0)}', fg=theme.PRIMARY,
+                          size=9, bg=bg)]
         for c in chips:
             c.pack(side=LEFT, padx=(0, 12))
-        # 整行可点选/双击打开
-        for w in [row, name_lbl, line] + chips:
-            w.bind('<Button-1>', lambda e, wk=work: self._select_work(wk))
-            w.bind('<Double-Button-1>', lambda e, wk=work: self._open_work(wk))
+        for wd in [row, name_lbl, line] + chips:
+            wd.bind('<Button-1>', lambda e, wk=work: self._select_work(wk))
+            wd.bind('<Double-Button-1>', lambda e, wk=work: self._open_work(wk))
 
     def _select_work(self, work):
         self._sel_work = work
         self.clear_content()
+        self.page_header('ASSIGNMENTS', f'{self.selected_course_name} · {len(self.works)} works',
+                         back='返回课程列表')
         self._build_works_page()
 
     def _render_work_inspector(self):
+        for w in self._inspector.winfo_children():
+            w.destroy()
         work = self._sel_work
-        head = tk.Label(self._inspector, text='INSPECTOR', bg=theme.SURFACE, fg=theme.DIM,
-                        font=('Consolas', 8, 'bold'), anchor='w')
-        head.pack(fill=X, padx=12, pady=(10, 2))
+        tk.Label(self._inspector, text='INSPECTOR', bg=theme.SURFACE, fg=theme.DIM,
+                 font=('Consolas', 8, 'bold'), anchor='w').pack(fill=X, padx=12, pady=(10, 2))
         body = tk.Frame(self._inspector, bg=theme.SURFACE)
         body.pack(fill=X, padx=12)
         if work is None:
@@ -654,6 +738,19 @@ class App:
         field('expireTime', 'DUE')
         if work.get('grade') is not None:
             field('grade', 'SCORE')
+        field('tryTimes', 'ATTEMPTS')
+        if work.get('grade') is not None:
+            rowf = tk.Frame(body, bg=theme.SURFACE)
+            rowf.pack(fill=X, pady=3)
+            tk.Label(rowf, text='STATUS', bg=theme.SURFACE, fg=theme.DIM,
+                     font=('Consolas', 8), width=9, anchor='w').pack(side=LEFT)
+            mono(rowf, 'DONE', fg=theme.PRIMARY, size=9, bg=theme.SURFACE).pack(side=LEFT)
+        elif self._remaining(work) <= 0:
+            rowf = tk.Frame(body, bg=theme.SURFACE)
+            rowf.pack(fill=X, pady=3)
+            tk.Label(rowf, text='STATUS', bg=theme.SURFACE, fg=theme.DIM,
+                     font=('Consolas', 8), width=9, anchor='w').pack(side=LEFT)
+            mono(rowf, 'EXHAUSTED', fg=theme.ERROR, size=9, bg=theme.SURFACE).pack(side=LEFT)
 
         acts = tk.Frame(self._inspector, bg=theme.SURFACE)
         acts.pack(fill=X, padx=12, pady=(8, 12))
@@ -678,110 +775,143 @@ class App:
         self.questions = data
         self.show_questions()
 
-    # ---------- 题目（List + View + Inspector） ----------
+    # ---------- 题目（List + View + Inspector + 搜索/筛选/排序） ----------
 
     def show_questions(self):
         self.begin_nav()
-        self._sel_qidx = 0 if self.questions else None
+        self._q_search = tk.StringVar()
+        self._q_filter = tk.StringVar(value='全部')
+        self._q_sort = tk.StringVar(value='默认')
+        self._q_pos = 0
         self.set_page(f'{self.selected_work_name} :: QUESTIONS')
         self._layout_questions()
 
     def _layout_questions(self):
         self.clear_content()
+        self._qrows = self._filtered_questions()
+        if self._q_pos >= len(self._qrows):
+            self._q_pos = 0
+        self._sel_qidx = self._q_pos
+
         bar = self.page_header('QUESTIONS', f'{self.selected_work_name} · {len(self.questions)} 题')
         back = tk.Button(bar, text='‹ 返回作业列表', command=self.show_works, relief='flat', bd=0,
                          bg=theme.BG, fg=theme.SECONDARY, activebackground=theme.HOVER,
                          activeforeground=theme.SECONDARY, font=('Consolas', 9), cursor='hand2')
         back.pack(side=RIGHT, pady=8)
 
+        # 工具栏：搜索 / 筛选 / 排序（全部本地执行）
+        bar2 = self.command_bar()
+        left = tk.Frame(bar2, bg=theme.BG_RAISED)
+        left.pack(side=LEFT)
+        self.search_entry(left, self._q_search, '题名 / 答案 / ID')
+        self.combo_box(left, self._q_filter, ['全部', '有答案', '无图片'], width=8)
+        self.combo_box(left, self._q_sort, ['默认', '编号 ↑', '名称 A→Z'], width=10)
+        right = tk.Frame(bar2, bg=theme.BG_RAISED)
+        right.pack(side=RIGHT)
+        mono(right, f'{len(self._qrows)}/{len(self.questions)} SHOWN', fg=theme.DIM, size=9,
+             bg=theme.BG_RAISED).pack(side=RIGHT)
+        self._q_search.trace_add('write', lambda *_: self._layout_questions())
+        self._q_filter.trace_add('write', lambda *_: self._layout_questions())
+        self._q_sort.trace_add('write', lambda *_: self._layout_questions())
+
         body = tk.Frame(self.content_frame, bg=theme.BG)
         body.pack(fill=BOTH, expand=YES)
 
-        # 左：题目列表
-        lst_pane = tk.Frame(body, bg=theme.BG, width=230)
+        lst_pane = tk.Frame(body, bg=theme.BG, width=240)
         lst_pane.pack(side=LEFT, fill=Y)
         lst_pane.pack_propagate(False)
-        head = tk.Frame(lst_pane, bg=theme.BG)
-        head.pack(fill=X, pady=(0, 8))
-        mono(head, 'QUESTIONS', fg=theme.DIM, size=9, bg=theme.BG).pack(side=LEFT)
+        mono(lst_pane, 'QUESTIONS', fg=theme.DIM, size=9, bg=theme.BG).pack(anchor='w', pady=(0, 8))
         lst_frame = ScrolledFrame(lst_pane, autohide=True)
         lst_frame.pack(fill=BOTH, expand=YES)
         lst = tk.Frame(lst_frame, bg=theme.BG)
         lst.pack(fill=BOTH, expand=YES)
-        for idx, q in enumerate(self.questions):
-            self._qlist_row(lst, idx, q)
+        if not self._qrows:
+            mono(lst, '> NO MATCH', fg=theme.PRIMARY, size=9).pack(anchor='w', padx=4, pady=8)
+        else:
+            for pos, q in enumerate(self._qrows):
+                self._qlist_row(lst, pos, q)
 
-        # 中：题目视图
-        view = tk.Frame(body, bg=theme.SURFACE, highlightthickness=1,
-                        highlightbackground=theme.BORDER)
-        view.pack(side=LEFT, fill=BOTH, expand=YES, padx=16)
-        self._view = view
+        self._view = tk.Frame(body, bg=theme.SURFACE, highlightthickness=1,
+                              highlightbackground=theme.BORDER)
+        self._view.pack(side=LEFT, fill=BOTH, expand=YES, padx=16)
         self._view_image_holder = None
 
-        # 右：Inspector
-        inspector = tk.Frame(body, bg=theme.SURFACE, width=280,
-                             highlightthickness=1, highlightbackground=theme.BORDER)
-        inspector.pack(side=RIGHT, fill=Y)
-        inspector.pack_propagate(False)
-        self._inspector_q = inspector
+        self._inspector = tk.Frame(body, bg=theme.SURFACE, width=280,
+                                   highlightthickness=1, highlightbackground=theme.BORDER)
+        self._inspector.pack(side=RIGHT, fill=Y)
+        self._inspector.pack_propagate(False)
         self._render_question_views()
 
-    def _qlist_row(self, parent, idx, q):
-        selected = (idx == self._sel_qidx)
+    def _filtered_questions(self):
+        rows = list(self.questions)
+        q = (self._q_search.get() if hasattr(self, '_q_search') else '').strip().lower()
+        flt = self._q_filter.get() if hasattr(self, '_q_filter') else '全部'
+        srt = self._q_sort.get() if hasattr(self, '_q_sort') else '默认'
+        if q:
+            rows = [x for x in rows if q in str(x.get('name', '')).lower()
+                    or q in str(x.get('answer', '')).lower()
+                    or q in str(x.get('id', ''))]
+        if flt == '有答案':
+            rows = [x for x in rows if x.get('answer') not in (None, '')]
+        elif flt == '无图片':
+            rows = [x for x in rows if not x.get('imgurl') or x.get('imgurl') == 'N/A']
+        if srt == '编号 ↑':
+            rows.sort(key=lambda x: int(x.get('id') or 0))
+        elif srt == '名称 A→Z':
+            rows.sort(key=lambda x: str(x.get('name', '')))
+        return rows
+
+    def _qlist_row(self, parent, pos, q):
+        selected = (pos == self._q_pos)
         bg = theme.HOVER if selected else theme.SURFACE
         row = tk.Frame(parent, bg=bg, highlightthickness=1,
                        highlightbackground=theme.PRIMARY if selected else theme.BORDER)
         row.pack(fill=X, pady=(0, 5))
-        id_lbl = tk.Label(row, text=f'Q{idx + 1:02d}', bg=bg,
+        id_lbl = tk.Label(row, text=f'Q{pos + 1:02d}', bg=bg,
                           fg=theme.PRIMARY if selected else theme.MUTED,
                           font=('Consolas', 9, 'bold'))
         id_lbl.pack(side=LEFT, padx=(10, 8), pady=9)
         name_lbl = tk.Label(row, text=q.get('name', 'N/A'), bg=bg, fg=theme.FG, anchor='w',
                             font=theme.FONT_UI)
         name_lbl.pack(side=LEFT, fill=X, expand=YES, pady=9)
-        for w in (row, id_lbl, name_lbl):
-            w.bind('<Button-1>', lambda e, i=idx: self._select_question(i))
+        for wd in (row, id_lbl, name_lbl):
+            wd.bind('<Button-1>', lambda e, p=pos: self._select_qpos(p))
 
-    def _select_question(self, idx):
-        if idx == self._sel_qidx:
-            return
-        self._sel_qidx = idx
-        self._layout_questions()
+    def _select_qpos(self, pos):
+        if pos != self._q_pos:
+            self._q_pos = pos
+            self._layout_questions()
 
     def _current_q(self):
-        if self.questions and self._sel_qidx is not None:
-            return self.questions[self._sel_qidx]
+        if self._qrows and self._q_pos < len(self._qrows):
+            return self._qrows[self._q_pos]
         return None
 
     def _render_question_views(self):
         q = self._current_q()
-        # 中央视图
-        view = self._view
-        tk.Label(view, text='QUESTION', bg=theme.SURFACE, fg=theme.DIM,
+        tk.Label(self._view, text='QUESTION', bg=theme.SURFACE, fg=theme.DIM,
                  font=('Consolas', 8, 'bold'), anchor='w').pack(fill=X, padx=16, pady=(10, 0))
-        nav = tk.Frame(view, bg=theme.SURFACE)
+        nav = tk.Frame(self._view, bg=theme.SURFACE)
         nav.pack(fill=X, padx=16, pady=(6, 2))
         tk.Button(nav, text='‹', command=lambda: self._step_q(-1), relief='flat', bd=0,
                   bg=theme.SURFACE, fg=theme.SECONDARY, cursor='hand2',
                   font=('Consolas', 12, 'bold')).pack(side=LEFT)
-        tk.Label(nav, text=f'Q{self._sel_qidx + 1} / {len(self.questions)}'
-                 if q else '', bg=theme.SURFACE, fg=theme.DIM,
-                 font=('Consolas', 9)).pack(side=LEFT, padx=12)
+        tk.Label(nav, text=f'{self._q_pos + 1} / {len(self._qrows)}' if q else '',
+                 bg=theme.SURFACE, fg=theme.DIM, font=('Consolas', 9)).pack(side=LEFT, padx=12)
         tk.Button(nav, text='›', command=lambda: self._step_q(1), relief='flat', bd=0,
                   bg=theme.SURFACE, fg=theme.SECONDARY, cursor='hand2',
                   font=('Consolas', 12, 'bold')).pack(side=LEFT)
 
         if q is None:
-            mono(view, '> NO QUESTIONS', fg=theme.PRIMARY, size=10,
+            mono(self._view, '> NO QUESTIONS', fg=theme.PRIMARY, size=10,
                  bg=theme.SURFACE).pack(anchor='w', padx=16, pady=24)
             return
 
-        tk.Label(view, text=q.get('name', 'N/A'), bg=theme.SURFACE, fg=theme.FG, anchor='w',
+        tk.Label(self._view, text=q.get('name', 'N/A'), bg=theme.SURFACE, fg=theme.FG, anchor='w',
                  font=('Microsoft YaHei', 12, 'bold')).pack(anchor='w', padx=16, pady=(6, 0))
-        mono(view, f'ID {q.get("id", "N/A")}', fg=theme.DIM, size=9,
+        mono(self._view, f'ID {q.get("id", "N/A")}', fg=theme.DIM, size=9,
              bg=theme.SURFACE).pack(anchor='w', padx=16, pady=(2, 0))
-        # 题面图片区
-        img_area = tk.Frame(view, bg=theme.SURFACE)
+        img_area = tk.Frame(self._view, bg=theme.SURFACE)
         img_area.pack(anchor='w', padx=16, pady=(10, 0))
         imgurl = q.get('imgurl', 'N/A')
         if imgurl and imgurl != 'N/A':
@@ -791,39 +921,36 @@ class App:
             self._view_image_holder = holder
             self._load_image_async(holder, imgurl)
         else:
-            mono(img_area, '[ NO IMAGE ]', fg=theme.DIM, size=9,
-                 bg=theme.SURFACE).pack()
+            mono(img_area, '[ NO IMAGE ]', fg=theme.DIM, size=9, bg=theme.SURFACE).pack()
 
-        # 右侧 Inspector
-        ins = self._inspector_q
-        tk.Label(ins, text='INSPECTOR', bg=theme.SURFACE, fg=theme.DIM,
+        for w in self._inspector.winfo_children():
+            w.destroy()
+        tk.Label(self._inspector, text='INSPECTOR', bg=theme.SURFACE, fg=theme.DIM,
                  font=('Consolas', 8, 'bold'), anchor='w').pack(fill=X, padx=14, pady=(10, 0))
-        body = tk.Frame(ins, bg=theme.SURFACE)
+        body = tk.Frame(self._inspector, bg=theme.SURFACE)
         body.pack(fill=X, padx=14)
-        row = tk.Frame(body, bg=theme.SURFACE)
-        row.pack(fill=X, pady=3)
-        tk.Label(row, text='ANSWER', bg=theme.SURFACE, fg=theme.DIM,
+        rowf = tk.Frame(body, bg=theme.SURFACE)
+        rowf.pack(fill=X, pady=3)
+        tk.Label(rowf, text='ANSWER', bg=theme.SURFACE, fg=theme.DIM,
                  font=('Consolas', 8), width=9, anchor='w').pack(side=LEFT)
-        ans = q.get('answer', 'N/A')
-        tk.Label(body, text=str(ans), bg=theme.SURFACE, fg=theme.WARNING, anchor='w',
-                 font=('Consolas', 10), justify='left', wraplength=220).pack(fill=X, pady=(0, 8))
-
-        score = tk.Frame(ins, bg=theme.SURFACE)
+        tk.Label(body, text=str(q.get('answer', 'N/A')), bg=theme.SURFACE, fg=theme.WARNING,
+                 anchor='w', font=('Consolas', 10), justify='left',
+                 wraplength=220).pack(fill=X, pady=(0, 8))
+        score = tk.Frame(self._inspector, bg=theme.SURFACE)
         score.pack(fill=X, padx=14, pady=(4, 0))
         tk.Label(score, text='SCORE', bg=theme.SURFACE, fg=theme.DIM,
                  font=('Consolas', 8), width=9, anchor='w').pack(side=LEFT)
         self.grade_entry = ttk.Entry(score, width=8)
         self.grade_entry.pack(side=LEFT)
-        tk.Label(ins, text='提交成绩（0-100）', bg=theme.SURFACE, fg=theme.MUTED,
+        tk.Label(self._inspector, text='提交成绩（0-100）', bg=theme.SURFACE, fg=theme.MUTED,
                  font=theme.FONT_UI).pack(anchor='w', padx=14, pady=(6, 0))
-        self.submit_grade_button = self.btn(ins, 'SUBMIT', self.submit_grade, 'primary')
+        self.submit_grade_button = self.btn(self._inspector, 'SUBMIT', self.submit_grade, 'primary')
         self.submit_grade_button.pack(fill=X, padx=14, pady=(10, 14))
 
     def _step_q(self, delta):
-        n = len(self.questions)
-        if n == 0:
+        if not self._qrows:
             return
-        self._sel_qidx = (self._sel_qidx + delta) % n
+        self._q_pos = (self._q_pos + delta) % len(self._qrows)
         self._layout_questions()
 
     def _load_image_async(self, holder, imgurl):
@@ -882,7 +1009,7 @@ class App:
 
         self.fetch(lambda: self.api.submit_answer(self.selected_work_id, grade), on_done)
 
-    # ---------- 设置 ----------
+# ---------- 设置 ----------
 
     def show_settings(self):
         self.begin_nav()
