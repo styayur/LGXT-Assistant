@@ -1,0 +1,7 @@
+keyring
+requests
+ttkbootstrap
+Pillow
+python-docx
+reportlab
+
