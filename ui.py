@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
-"""UI：Developer-Tool 风格主窗口、页面渲染与任务适配。
+"""UI LAYOUT 2.0：Developer Workbench 主窗口。
 
-线程安全约定：
-- 页面数据加载与图片下载在后台线程执行，结果经 root.after() 回主线程渲染；
-- 批量/收集任务只通过本类的 status/progress/maximum/stop_and_close 等适配器
-  更新界面（内部全部 root.after 调度），worker 不直接操作控件。
+结构：Header(品牌/面包屑/连接态) · Sidebar(188) · PageHeader · CommandBar ·
+Content(可含 Inspector) · 内嵌 TaskPanel · StatusBar。
+
+线程安全：worker 只向 queue 投事件，主线程 after() 轮询更新 UI。
 """
 import io
 import os
 import queue
 import threading
+import time
 import tkinter as tk
 from tkinter import filedialog
 from tkinter.constants import *
@@ -31,18 +32,26 @@ except ImportError:  # ttkbootstrap >= 2 exports ScrolledFrame at top level
     from ttkbootstrap import ScrolledFrame
 
 SERVICE = '理工学堂助手'
+SIDEBAR_W = 188
+PAD = 24          # 内容左右边距
+GAP = 10          # 按钮组内间距
+GROUP = 20        # 按钮组间间距
+
+
+def mono(parent, text, fg=theme.MUTED, size=9, bg=theme.BG):
+    return tk.Label(parent, text=text, bg=bg, fg=fg,
+                    font=('Consolas', size), anchor='w')
 
 
 class App:
     def __init__(self, root):
         self.root = root
         self.root.title(SERVICE)
-        self.root.minsize(1100, 800)
+        self.root.minsize(1200, 800)
         self.root.configure(bg=theme.BG)
         self.style = ttk.Style('darkly')
         theme.apply_theme(self.style)
 
-        # 共享工作区状态（对应服务器会话数据）
         self.api = api.client
         self.username = ''
         self.password = ''
@@ -55,7 +64,6 @@ class App:
         self.selected_work_id = None
         self.selected_work_name = ''
 
-        # 导出设置（运行期变量 + config.ini 持久化）
         self.config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
         self.settings = config.Settings(self.config_file)
         self.export_path = self.settings.export_path
@@ -64,94 +72,134 @@ class App:
         self.export_pdf_var = tk.BooleanVar(value=self.settings.export_pdf)
         self.export_pdf_include_answers_var = tk.BooleanVar(value=self.settings.export_pdf_include_answers)
 
-        self._token = 0            # 导航令牌：只允许最新一次异步加载落地
-        self.queue = queue.Queue()  # worker -> 主线程轮询（禁止跨线程操作控件）
-        self.progress_window = None
+        self._token = 0
+        self._task_tag = 0
+        self.queue = queue.Queue()
+        self.progress_window = None      # 兼容旧适配器（现为内嵌面板）
+        self._task_panel = None
         self.status_label = None
         self.progress_bar = None
 
-        self.setup_ui()
-        self.root.after(60, self._poll_queue)
-        self.set_state('STANDBY')
-        self.set_page('未连接')
-        self.show_login()
+        self._sel_work = None            # Works 页当前选中作业
+        self._sel_qidx = None            # Questions 页当前选中题号
+        self._last_sync = None           # 页面最近一次同步时刻（真实值）
 
-    # ---------- 窗口框架 ----------
+        self.setup_ui()
+        self.set_state('STANDBY')
+        self.set_page('AUTH')
+        self.show_login()
+        self.root.after(60, self._poll_queue)
+
+    # ---------- 窗口框架（LAYOUT 2.0 Shell） ----------
 
     def setup_ui(self):
         self.main_frame = ttk.Frame(self.root)
         self.main_frame.pack(fill=BOTH, expand=YES)
 
-        header = tk.Frame(self.main_frame, bg=theme.BG_RAISED, height=42)
+        # Header：品牌 | breadcrumb | ● 连接态
+        header = tk.Frame(self.main_frame, bg=theme.BG_RAISED, height=46)
         header.pack(side=TOP, fill=X)
         header.pack_propagate(False)
         tk.Label(header, text='LGXT::ASSISTANT', bg=theme.BG_RAISED, fg=theme.PRIMARY,
-                 font=('Consolas', 11, 'bold')).pack(side=LEFT, padx=(16, 0))
-        tk.Frame(header, bg=theme.BORDER, width=1).pack(side=LEFT, fill=Y, padx=14, pady=9)
+                 font=('Consolas', 12, 'bold')).pack(side=LEFT, padx=(24, 0))
+        tk.Frame(header, bg=theme.BORDER, width=1).pack(side=LEFT, fill=Y, padx=20, pady=12)
         self.page_label = tk.Label(header, text='', bg=theme.BG_RAISED, fg=theme.MUTED,
-                                   font=('Consolas', 10))
+                                   font=('Consolas', 11))
         self.page_label.pack(side=LEFT)
         self.state_label = tk.Label(header, text='', bg=theme.BG_RAISED, fg=theme.DIM,
-                                    font=('Consolas', 10, 'bold'))
-        self.state_label.pack(side=RIGHT, padx=16)
+                                    font=('Consolas', 9, 'bold'))
+        self.state_label.pack(side=RIGHT, padx=24)
         tk.Frame(self.main_frame, bg=theme.BORDER, height=1).pack(side=TOP, fill=X)
 
+        # StatusBar：左日志 / 右版本（API/AUTH 细节移入设置页系统信息）
         tk.Frame(self.main_frame, bg=theme.BORDER, height=1).pack(side=BOTTOM, fill=X)
         statusbar = tk.Frame(self.main_frame, bg=theme.BG_RAISED, height=24)
         statusbar.pack(side=BOTTOM, fill=X)
         statusbar.pack_propagate(False)
         self.log_label = tk.Label(statusbar, text='> SYSTEM READY', bg=theme.BG_RAISED,
                                   fg=theme.DIM, font=('Consolas', 8), anchor='w')
-        self.log_label.pack(side=LEFT, fill=X, expand=YES, padx=10)
-        self.auth_label = tk.Label(statusbar, text='AUTH none', bg=theme.BG_RAISED, fg=theme.DIM,
-                                   font=('Consolas', 8))
-        self.auth_label.pack(side=RIGHT, padx=10)
-        tk.Label(statusbar, text='API ' + self.api.base_url, bg=theme.BG_RAISED, fg=theme.DIM,
-                 font=('Consolas', 8)).pack(side=RIGHT, padx=10)
+        self.log_label.pack(side=LEFT, fill=X, expand=YES, padx=12)
+        tk.Label(statusbar, text='v3.0 · GPL-3.0', bg=theme.BG_RAISED, fg=theme.DIM,
+                 font=('Consolas', 8)).pack(side=RIGHT, padx=12)
 
         body = tk.Frame(self.main_frame, bg=theme.BG)
         body.pack(side=TOP, fill=BOTH, expand=YES)
         self.create_sidebar(body)
         tk.Frame(body, bg=theme.BORDER, width=1).pack(side=LEFT, fill=Y)
-        self.content_frame = ttk.Frame(body, padding=(18, 14))
+        self.content_frame = ttk.Frame(body, padding=(PAD, 16, PAD, 16))
         self.content_frame.pack(side=LEFT, fill=BOTH, expand=YES)
 
     def create_sidebar(self, parent):
-        sidebar = tk.Frame(parent, bg=theme.SURFACE, width=216)
+        sidebar = tk.Frame(parent, bg=theme.SURFACE, width=SIDEBAR_W)
         sidebar.pack(side=LEFT, fill=Y)
         sidebar.pack_propagate(False)
 
+        tk.Label(sidebar, text='LGXT', bg=theme.SURFACE, fg=theme.PRIMARY,
+                 font=('Consolas', 13, 'bold'), anchor='w').pack(fill=X, padx=16, pady=(18, 0))
         tk.Label(sidebar, text='理工学堂助手', bg=theme.SURFACE, fg=theme.FG,
-                 font=('Microsoft YaHei', 13, 'bold'), anchor='w').pack(fill=X, padx=14, pady=(16, 2))
-        tk.Label(sidebar, text='developer workbench', bg=theme.SURFACE, fg=theme.DIM,
-                 font=('Consolas', 8)).pack(fill=X, padx=14)
+                 font=('Microsoft YaHei', 10, 'bold'), anchor='w').pack(fill=X, padx=16)
+        tk.Frame(sidebar, bg=theme.BORDER, height=1).pack(fill=X, padx=12, pady=12)
 
-        def nav_section(text):
+        def section(text):
             tk.Label(sidebar, text=text, bg=theme.SURFACE, fg=theme.DIM, anchor='w',
-                     font=('Consolas', 8, 'bold')).pack(fill=X, padx=14, pady=(14, 4))
+                     font=('Consolas', 8, 'bold')).pack(fill=X, padx=16, pady=(0, 4))
 
-        def nav_item(text, command):
-            item = tk.Label(sidebar, text=text, bg=theme.SURFACE, fg=theme.MUTED, anchor='w',
-                            font=theme.FONT_UI, cursor='hand2', padx=10, pady=6)
-            item.pack(fill=X, padx=8)
-            item.bind('<Enter>', lambda e: item.configure(bg=theme.HOVER, fg=theme.FG))
-            item.bind('<Leave>', lambda e: item.configure(bg=theme.SURFACE, fg=theme.MUTED))
-            item.bind('<Button-1>', lambda e: command())
-            return item
+        def item(text, command, indent=True):
+            lbl = tk.Label(sidebar, text=('  ' + text if indent else text), bg=theme.SURFACE,
+                           fg=theme.MUTED, anchor='w', font=theme.FONT_UI, cursor='hand2',
+                           padx=8, pady=6)
+            lbl.pack(fill=X, padx=(8, 4))
+            lbl.bind('<Enter>', lambda e: lbl.configure(bg=theme.HOVER, fg=theme.FG))
+            lbl.bind('<Leave>', lambda e: lbl.configure(bg=theme.SURFACE, fg=theme.MUTED))
+            lbl.bind('<Button-1>', lambda e: command())
+            return lbl
 
-        nav_section('WORKSPACE')
-        nav_item('  课程列表', self.show_courses)
-        nav_section('SYSTEM')
-        nav_item('  设置', self.show_settings)
-        nav_item('  帮助', self.show_help)
-        nav_item('  退出', self.root.quit)
+        section('WORKSPACE')
+        item('课程列表', self.show_courses)
+        section('SYSTEM')
+        item('设置', self.show_settings)
+        item('帮助', self.show_help)
+        item('退出', self.root.quit)
 
         tk.Frame(sidebar, bg=theme.BORDER, height=1).pack(side=BOTTOM, fill=X)
-        info = tk.Frame(sidebar, bg=theme.SURFACE)
-        info.pack(side=BOTTOM, fill=X, pady=8)
-        for line, color in [('v3.0.0', theme.FG), ('GPL-3.0', theme.DIM), ('by Styayur', theme.DIM)]:
-            tk.Label(info, text=line, bg=theme.SURFACE, fg=color,
-                     font=('Consolas', 8), anchor='w').pack(fill=X, padx=14)
+        tk.Label(sidebar, text='v3.0.0', bg=theme.SURFACE, fg=theme.FG,
+                 font=('Consolas', 8), anchor='w').pack(side=BOTTOM, fill=X, padx=16, pady=(0, 14))
+
+    # ---------- 页面骨架（PageHeader / CommandBar / 面板） ----------
+
+    def page_header(self, title, subtitle='', back=None):
+        """标准 Page Header：标题 + 可选 meta + 可选返回，返回容器供页面加右侧动作。"""
+        bar = tk.Frame(self.content_frame, bg=theme.BG)
+        bar.pack(fill=X, pady=(0, 8))
+        left = tk.Frame(bar, bg=theme.BG)
+        left.pack(side=LEFT)
+        if back:
+            tk.Button(left, text='‹ ' + back, command=self._go(back), relief='flat', bd=0,
+                      bg=theme.BG, fg=theme.SECONDARY, activebackground=theme.HOVER,
+                      activeforeground=theme.SECONDARY, font=('Consolas', 9), cursor='hand2'
+                      ).pack(side=LEFT, padx=(0, 16), pady=4)
+        tk.Label(left, text=title, bg=theme.BG, fg=theme.FG,
+                 font=('Microsoft YaHei', 17, 'bold')).pack(side=LEFT)
+        if subtitle:
+            mono(left, '  ' + subtitle, fg=theme.DIM, size=9).pack(side=LEFT, pady=(6, 0))
+        return bar
+
+    def command_bar(self):
+        """Command Bar 容器：页面在返回的 frame 上自由放置左/右分组按钮。"""
+        bar = tk.Frame(self.content_frame, bg=theme.BG_RAISED, height=44)
+        bar.pack(fill=X, pady=(0, 14))
+        bar.pack_propagate(False)
+        return bar
+
+    def btn(self, parent, text, command, kind='primary'):
+        style = {'primary': 'primary', 'secondary': 'secondary', 'info': 'info',
+                 'warning': 'warning', 'danger': 'danger', 'ghost': 'secondary'}[kind]
+        return ttk.Button(parent, text=text, command=command, bootstyle=style, cursor='hand2')
+
+    def _go(self, page):
+        return {'课程列表': self.show_courses,
+                '作业列表': self.show_works,
+                '返回课程列表': self.show_courses}[page]
 
     # ---------- 状态 / 导航辅助 ----------
 
@@ -159,13 +207,10 @@ class App:
         self.page_label.configure(text=f':: {text}')
 
     def set_state(self, text):
-        colors = {'STANDBY': theme.DIM, 'READY': theme.PRIMARY,
-                  'PROCESSING': theme.WARNING, 'ERROR': theme.ERROR}
-        self.state_label.configure(text=f'[ {text} ]', fg=colors.get(text, theme.DIM))
-
-    def set_auth(self, ok):
-        self.auth_label.configure(text='AUTH token' if ok else 'AUTH none',
-                                  fg=theme.PRIMARY if ok else theme.DIM)
+        colors = {'STANDBY': theme.DIM, 'READY': theme.PRIMARY, 'CONNECTED': theme.PRIMARY,
+                  'PROCESSING': theme.WARNING, 'ERROR': theme.ERROR, 'OFFLINE': theme.DIM}
+        label = '● ' + text if text in ('READY', 'CONNECTED', 'PROCESSING') else '○ ' + text
+        self.state_label.configure(text=label, fg=colors.get(text, theme.DIM))
 
     def log(self, text):
         self._write_log(text)
@@ -173,19 +218,20 @@ class App:
     def _write_log(self, text):
         text = str(text).replace('\n', ' | ').strip()
         if self.log_label is not None and self.log_label.winfo_exists():
-            self.log_label.configure(text=f'> {text[:120]}')
+            self.log_label.configure(text=f'> {text[:130]}')
 
     def clear_content(self):
         for widget in self.content_frame.winfo_children():
             widget.destroy()
+        self._task_panel = None
+        self.status_label = None
+        self.progress_bar = None
 
     def begin_nav(self):
-        """开启一次页面导航：作废旧的异步加载结果并清空内容区。"""
         self._token += 1
         self.clear_content()
 
     def fetch(self, job, on_done):
-        """后台执行 job()；完成后入队，由主线程轮询回调 on_done(result)。"""
         token = self._token
 
         def work():
@@ -197,12 +243,12 @@ class App:
 
         threading.Thread(target=work, daemon=True).start()
 
+    # ---------- queue 轮询（主线程唯一更新点） ----------
+
     def _poll_queue(self):
-        """主线程轮询：把 worker 事件翻译为 UI 更新（唯一触碰控件的地方之一）。"""
         try:
             while True:
-                event = self.queue.get_nowait()
-                self._handle_event(event)
+                self._handle_event(self.queue.get_nowait())
         except queue.Empty:
             pass
         try:
@@ -249,39 +295,40 @@ class App:
                 _, holder, data, error = event
                 self._render_image(holder, data, error)
         except tk.TclError:
-            pass  # 控件已随导航销毁
+            pass
+
+    # ---------- 任务面板（内嵌 Task Panel，替代独立弹窗） ----------
 
     def _destroy_progress(self):
+        if self._task_panel is not None and self._task_panel.winfo_exists():
+            self._task_panel.destroy()
         if self.progress_window is not None and self.progress_window.winfo_exists():
             self.progress_window.destroy()
-
-    def _on_progress_closed(self, event, win):
-        if event.widget is win:
-            self.set_state('READY' if self.username else 'STANDBY')
-
-    # ---------- 进度窗口适配器（worker 线程调用，仅入队，不触碰控件） ----------
+        self._task_panel = None
+        self.progress_window = None
+        self.status_label = None
+        self.progress_bar = None
+        self.set_state('CONNECTED' if self.username else 'OFFLINE')
 
     def open_progress(self, title, mode='determinate', status='', start=False):
-        win = ttk.Toplevel(self.root)
-        win.title(title)
-        win.resizable(False, False)
-        win.configure(bg=theme.BG_RAISED)
-        body = tk.Frame(win, bg=theme.BG_RAISED)
-        body.pack(expand=True, fill='both')
-        self.set_state('PROCESSING')
-        tk.Label(body, text=f'> {title}', bg=theme.BG_RAISED, fg=theme.PRIMARY,
-                 font=('Consolas', 11, 'bold'), anchor='w').pack(fill=X, padx=22, pady=(18, 0))
-        self.status_label = tk.Label(body, text=status, bg=theme.BG_RAISED, fg=theme.MUTED,
-                                     font=('Consolas', 10), anchor='w')
-        self.status_label.pack(fill=X, padx=22, pady=(10, 8))
-        self.progress_bar = ttk.Progressbar(body, mode=mode, length=340)
-        self.progress_bar.pack(fill=X, padx=22, pady=(0, 18))
+        """在当前页面底部创建内嵌 Task Panel（不再弹独立小窗）。"""
+        panel = tk.Frame(self.content_frame, bg=theme.SURFACE, highlightthickness=1,
+                         highlightbackground=theme.BORDER)
+        panel.pack(side=BOTTOM, fill=X, pady=(0, 0))
+        tk.Label(panel, text=f'> {title}', bg=theme.SURFACE, fg=theme.PRIMARY,
+                 font=('Consolas', 9, 'bold'), anchor='w').pack(fill=X, padx=12, pady=(8, 0))
+        self.status_label = tk.Label(panel, text=status, bg=theme.SURFACE, fg=theme.MUTED,
+                                     font=('Consolas', 9), anchor='w')
+        self.status_label.pack(fill=X, padx=12, pady=(4, 4))
+        self.progress_bar = ttk.Progressbar(panel, mode=mode, length=200)
+        self.progress_bar.pack(fill=X, padx=12, pady=(0, 10))
         if start:
             self.progress_bar.start()
-        self.progress_window = win
-        win.bind('<Destroy>', lambda e: self._on_progress_closed(e, win))
+        self._task_panel = panel
+        self.progress_window = None
+        self.set_state('PROCESSING')
         self.log(f'任务开始 :: {title}')
-        return win
+        return panel
 
     def status(self, text):
         self.queue.put(('status', text))
@@ -317,7 +364,6 @@ class App:
 
     def run_task(self, title, target, on_result, mode='determinate', status='', start=False,
                  error_after=None):
-        """在后台线程执行 target(self)；结果事件回主线程处理。"""
         self.open_progress(title, mode=mode, status=status, start=start)
 
         def worker():
@@ -334,15 +380,7 @@ class App:
         threading.Thread(target=worker, daemon=True).start()
 
     def export_options(self):
-        """主线程读取导出开关，生成 worker 只读快照（避免跨线程访问 Tk 变量）。"""
-        return ExportOptions(self.export_path,
-                             self.export_word_var.get(),
-                             self.export_word_include_answers_var.get(),
-                             self.export_pdf_var.get(),
-                             self.export_pdf_include_answers_var.get())
-
-    def export_options(self):
-        """主线程读取导出开关，生成 worker 只读快照（避免跨线程访问 Tk 变量）。"""
+        """主线程读取导出开关，生成 worker 只读快照。"""
         return ExportOptions(self.export_path,
                              self.export_word_var.get(),
                              self.export_word_include_answers_var.get(),
@@ -353,37 +391,35 @@ class App:
 
     def show_login(self):
         self.begin_nav()
-        self.set_page('AUTH · 登录')
-        self.set_state('STANDBY')
-        self.set_auth(False)
+        self.set_page('AUTH')
+        self.set_state('OFFLINE')
+        self.log('AUTH required')
 
-        panel = ttk.Frame(self.content_frame)
+        panel = tk.Frame(self.content_frame, bg=theme.SURFACE, highlightthickness=1,
+                         highlightbackground=theme.BORDER)
         panel.pack(expand=YES)
-        ttk.Label(panel, text='$ connect lgxt', font=('Consolas', 14, 'bold'),
-                  foreground=theme.PRIMARY).pack(anchor='w')
-        ttk.Label(panel, text='输入理工学堂账号以建立会话。', font=theme.FONT_UI,
-                  foreground=theme.MUTED).pack(anchor='w', pady=(2, 16))
+        tk.Label(panel, text='AUTHENTICATION', bg=theme.SURFACE, fg=theme.PRIMARY,
+                 font=('Consolas', 15, 'bold')).pack(anchor='w', padx=32, pady=(28, 2))
+        tk.Label(panel, text='输入理工学堂账号以建立会话。', bg=theme.SURFACE, fg=theme.MUTED,
+                 font=theme.FONT_UI).pack(anchor='w', padx=32, pady=(0, 20))
 
-        user_row = ttk.Frame(panel)
-        user_row.pack(fill=X, pady=3)
-        ttk.Label(user_row, text='USERNAME', font=('Consolas', 9), width=10,
-                  foreground=theme.DIM).pack(side=LEFT)
-        self.username_entry = ttk.Entry(user_row, width=34)
-        self.username_entry.pack(side=LEFT)
-
-        pass_row = ttk.Frame(panel)
-        pass_row.pack(fill=X, pady=3)
-        ttk.Label(pass_row, text='PASSWORD', font=('Consolas', 9), width=10,
-                  foreground=theme.DIM).pack(side=LEFT)
-        self.password_entry = ttk.Entry(pass_row, width=34, show='*')
-        self.password_entry.pack(side=LEFT)
+        form = tk.Frame(panel, bg=theme.SURFACE)
+        form.pack(anchor='w', padx=32, pady=(0, 8))
+        tk.Label(form, text='USERNAME', bg=theme.SURFACE, fg=theme.DIM,
+                 font=('Consolas', 9)).grid(row=0, column=0, sticky='w', pady=4)
+        self.username_entry = ttk.Entry(form, width=40)
+        self.username_entry.grid(row=0, column=1, padx=(16, 0), pady=4)
+        tk.Label(form, text='PASSWORD', bg=theme.SURFACE, fg=theme.DIM,
+                 font=('Consolas', 9)).grid(row=1, column=0, sticky='w', pady=4)
+        self.password_entry = ttk.Entry(form, width=40, show='*')
+        self.password_entry.grid(row=1, column=1, padx=(16, 0), pady=4)
 
         self.remember_var = tk.BooleanVar()
         ttk.Checkbutton(panel, text='记住密码（本地凭据库）', variable=self.remember_var,
-                        bootstyle='round-toggle').pack(anchor='w', pady=(8, 4))
+                        bootstyle='round-toggle').pack(anchor='w', padx=32, pady=(4, 14))
         self.login_button = ttk.Button(panel, text='LOGIN ▸ 登录', command=self.login,
-                                       bootstyle='primary', width=22)
-        self.login_button.pack(anchor='w', pady=(6, 0))
+                                       bootstyle='primary', width=24)
+        self.login_button.pack(anchor='w', padx=32, pady=(0, 28))
 
         saved_username = config.get_saved_username()
         saved_password = None
@@ -411,8 +447,7 @@ class App:
                     config.save_credentials(self.username, self.password)
                 else:
                     config.delete_saved_credentials()
-                self.set_state('READY')
-                self.set_auth(True)
+                self.set_state('CONNECTED')
                 self.log('AUTH ok')
                 self.show_courses()
             else:
@@ -422,7 +457,7 @@ class App:
 
         self.fetch(lambda: self.api.login(self.username, self.password), on_done)
 
-    # ---------- 课程 ----------
+    # ---------- 课程（Courses Workspace） ----------
 
     def show_courses(self):
         if not self.username or not self.password:
@@ -430,60 +465,57 @@ class App:
             self.show_login()
             return
         self.begin_nav()
-        self.set_page('课程列表')
-        ttk.Label(self.content_frame, text='WORKSPACE :: 课程列表', font=('Consolas', 12, 'bold'),
-                  foreground=theme.FG).pack(anchor='w', pady=(2, 10))
+        self.set_page('COURSES')
         self.log('LOADING courses...')
         self.fetch(self.api.get_my_courses, self._render_courses)
 
     def _render_courses(self, result):
         ok, data = result
-        self.clear_content()
-        self.set_page('课程列表')
-        ttk.Label(self.content_frame, text='WORKSPACE :: 课程列表', font=('Consolas', 12, 'bold'),
-                  foreground=theme.FG).pack(anchor='w', pady=(2, 10))
-        body_frame = ttk.Frame(self.content_frame)
-        body_frame.pack(fill=BOTH, expand=YES)
-
+        self.begin_nav()
+        self.set_page('COURSES')
+        bar = self.page_header('COURSES')
         if ok:
             self.courses = data
-            ttk.Label(body_frame, text=f'[ {len(data)} COURSES ]', font=('Consolas', 9),
-                      foreground=theme.DIM).pack(anchor='w', pady=(0, 6))
-            frame = ScrolledFrame(body_frame, autohide=True)
-            frame.pack(fill=BOTH, expand=YES)
-            lst = tk.Frame(frame, bg=theme.BG)
-            lst.pack(fill=BOTH, expand=YES)
-            for course in self.courses:
-                self._course_row(lst, course)
-            self.log(f'COURSES loaded ({len(data)})')
+            self._last_sync = time.strftime('%H:%M:%S')
+            subtitle = f'{len(data)} courses · synced {self._last_sync}'
         else:
             self.set_state('ERROR')
-            self.log('courses load failed')
-            panel = tk.Frame(body_frame, bg=theme.SURFACE)
-            panel.pack(fill=X, pady=6)
-            tk.Label(panel, text='> ERROR', bg=theme.SURFACE, fg=theme.ERROR,
-                     font=('Consolas', 10, 'bold'), anchor='w').pack(fill=X, padx=12, pady=(8, 0))
-            tk.Label(panel, text='获取课程列表失败 · 请检查网络后重试', bg=theme.SURFACE, fg=theme.MUTED,
-                     font=theme.FONT_UI, anchor='w').pack(fill=X, padx=12, pady=(0, 8))
+            subtitle = 'sync failed · 请检查网络后重试'
+        mono(bar, '  ' + subtitle, fg=theme.DIM, size=9).pack(side=LEFT, pady=(10, 0))
 
-        actions = ttk.Frame(self.content_frame)
-        actions.pack(fill=X, pady=(10, 0))
-        ttk.Button(actions, text='提交全部作业100分', command=self.submit_all_courses_100,
-                   bootstyle='warning').pack(side=LEFT, padx=(0, 8))
-        ttk.Button(actions, text='导出所有课程的作业', command=self.export_all_courses,
-                   bootstyle='info').pack(side=LEFT)
+        cmd = self.command_bar()
+        actions = tk.Frame(cmd, bg=theme.BG_RAISED)
+        actions.pack(side=RIGHT)
+        self.btn(actions, 'REFRESH', self.show_courses, 'secondary').pack(side=LEFT, padx=(0, GAP))
+        self.btn(actions, 'EXPORT ALL', self.export_all_courses, 'info').pack(side=LEFT, padx=(0, GAP))
+        self.btn(actions, 'SUBMIT ALL 100', self.submit_all_courses_100, 'warning').pack(side=LEFT)
+
+        frame = ScrolledFrame(self.content_frame, autohide=True)
+        frame.pack(fill=BOTH, expand=YES)
+        lst = tk.Frame(frame, bg=theme.BG)
+        lst.pack(fill=BOTH, expand=YES)
+        if not ok:
+            empty = tk.Frame(lst, bg=theme.SURFACE, highlightthickness=1,
+                             highlightbackground=theme.BORDER)
+            empty.pack(fill=X, pady=(0, GAP))
+            mono(empty, '> ERROR', fg=theme.ERROR, size=10).pack(anchor='w', padx=12, pady=(8, 0))
+            tk.Label(empty, text='获取课程列表失败 · 请检查网络后重试', bg=theme.SURFACE, fg=theme.MUTED,
+                     font=theme.FONT_UI, anchor='w').pack(anchor='w', padx=12, pady=(0, 8))
+            return
+        for course in self.courses:
+            self._course_row(lst, course)
 
     def _course_row(self, parent, course):
-        row = tk.Frame(parent, bg=theme.SURFACE)
-        row.pack(fill=X, pady=(0, 5))
-        ttk.Button(row, text='查看', bootstyle='primary', cursor='hand2',
-                   command=lambda: self.select_course(course)
-                   ).pack(side=RIGHT, padx=10, pady=7)
-        tk.Label(row, text=f'#{course["courseId"]}', bg=theme.SURFACE, fg=theme.DIM,
-                 font=('Consolas', 9)).pack(side=RIGHT)
-        tk.Label(row, text=course['courseName'], bg=theme.SURFACE, fg=theme.FG, anchor='w',
+        row = tk.Frame(parent, bg=theme.SURFACE, highlightthickness=1,
+                       highlightbackground=theme.BORDER)
+        row.pack(fill=X, pady=(0, GAP - 2))
+        self.btn(row, 'OPEN', lambda c=course: self.select_course(c), 'primary'
+                 ).pack(side=RIGHT, padx=12, pady=10)
+        mono(row, f'#{course["courseId"]}', fg=theme.DIM, size=9, bg=theme.SURFACE).pack(side=RIGHT, padx=(0, 4))
+        name = course['courseName']
+        tk.Label(row, text=name, bg=theme.SURFACE, fg=theme.FG, anchor='w',
                  font=('Microsoft YaHei', 11, 'bold')).pack(side=LEFT, fill=X, expand=YES,
-                                                            padx=12, pady=9)
+                                                            padx=12, pady=11)
 
     def select_course(self, course):
         self.selected_course_id = course['courseId']
@@ -499,83 +531,138 @@ class App:
         self.works = data
         self.show_works()
 
-    # ---------- 作业 ----------
+    # ---------- 作业（List + Inspector） ----------
 
     def show_works(self):
         self.begin_nav()
-        self.set_page(f'{self.selected_course_name} · 作业')
-        ttk.Label(self.content_frame, text=f'WORKSPACE :: {self.selected_course_name} :: 作业列表',
-                  font=('Consolas', 12, 'bold'), foreground=theme.FG).pack(anchor='w', pady=(2, 10))
+        self._sel_work = self.works[0] if self.works else None
+        self.set_page(f'{self.selected_course_name} :: WORKS')
+        bar = self.page_header('ASSIGNMENTS',
+                               f'{self.selected_course_name} · {len(self.works)} works',
+                               back='返回课程列表')
+        self._build_works_page()
 
-        body_frame = ttk.Frame(self.content_frame)
-        body_frame.pack(fill=BOTH, expand=YES)
-        frame = ScrolledFrame(body_frame, autohide=True)
+    def refresh_works(self):
+        course = {'courseId': self.selected_course_id, 'courseName': self.selected_course_name}
+        self.select_course(course)
+
+    def _build_works_page(self):
+        # Command Bar（批量动作）
+        cmd = self.command_bar()
+        right = tk.Frame(cmd, bg=theme.BG_RAISED)
+        right.pack(side=RIGHT)
+        self.btn(right, 'REFRESH', self.refresh_works, 'secondary').pack(side=LEFT, padx=(0, GAP))
+        self.btn(right, 'EXPORT ALL', self.export_all_works, 'info').pack(side=LEFT, padx=(0, GAP))
+        self.btn(right, 'SUBMIT ALL 100', self.submit_all_works_100, 'warning').pack(side=LEFT)
+
+        # 左：作业列表；右：Inspector
+        body = tk.Frame(self.content_frame, bg=theme.BG)
+        body.pack(fill=BOTH, expand=YES)
+        list_box = tk.Frame(body, bg=theme.BG, width=420)
+        list_box.pack(side=LEFT, fill=BOTH, expand=YES)
+        list_box.pack_propagate(False)
+
+        head = tk.Frame(list_box, bg=theme.BG)
+        head.pack(fill=X, pady=(0, 8))
+        mono(head, 'ASSIGNMENTS', fg=theme.DIM, size=9, bg=theme.BG).pack(side=LEFT)
+
+        frame = ScrolledFrame(list_box, autohide=True)
         frame.pack(fill=BOTH, expand=YES)
         lst = tk.Frame(frame, bg=theme.BG)
         lst.pack(fill=BOTH, expand=YES)
 
         if not self.works:
-            panel = tk.Frame(lst, bg=theme.SURFACE)
-            panel.pack(fill=X, pady=6)
-            tk.Label(panel, text='> NO WORKSPACE DATA', bg=theme.SURFACE, fg=theme.PRIMARY,
-                     font=('Consolas', 10, 'bold'), anchor='w').pack(fill=X, padx=12, pady=(8, 0))
-            tk.Label(panel, text='该课程目前没有可用的作业。', bg=theme.SURFACE, fg=theme.MUTED,
-                     font=theme.FONT_UI, anchor='w').pack(fill=X, padx=12, pady=(0, 8))
+            empty = tk.Frame(lst, bg=theme.SURFACE, highlightthickness=1,
+                             highlightbackground=theme.BORDER)
+            empty.pack(fill=X)
+            mono(empty, '> NO WORKSPACE DATA', fg=theme.PRIMARY, size=9,
+                 bg=theme.SURFACE).pack(anchor='w', padx=12, pady=(8, 0))
+            tk.Label(empty, text='该课程目前没有可用的作业。', bg=theme.SURFACE, fg=theme.MUTED,
+                     font=theme.FONT_UI, anchor='w').pack(anchor='w', padx=12, pady=(0, 8))
         else:
-            ttk.Label(lst, text=f'[ {len(self.works)} WORKS ]', font=('Consolas', 9),
-                      foreground=theme.DIM).pack(anchor='w', pady=(0, 6))
             for work in self.works:
                 self._work_row(lst, work)
 
-        actions = ttk.Frame(self.content_frame)
-        actions.pack(fill=X, pady=(10, 0))
-        ttk.Button(actions, text='提交当前课程作业100分', command=self.submit_all_works_100,
-                   bootstyle='warning').pack(side=LEFT, padx=(0, 8))
-        ttk.Button(actions, text='导出当前课程的所有作业', command=self.export_all_works,
-                   bootstyle='info').pack(side=LEFT, padx=(0, 8))
-        ttk.Button(actions, text='返回课程列表', command=self.show_courses,
-                   bootstyle='secondary').pack(side=LEFT)
+        self._inspector = tk.Frame(body, bg=theme.SURFACE, width=300,
+                                   highlightthickness=1, highlightbackground=theme.BORDER)
+        self._inspector.pack(side=RIGHT, fill=Y, padx=(16, 0))
+        self._inspector.pack_propagate(False)
+        self._render_work_inspector()
 
     def _work_row(self, parent, work):
+        selected = (work is self._sel_work)
+        bg = theme.HOVER if selected else theme.SURFACE
+        row = tk.Frame(parent, bg=bg, highlightthickness=1,
+                       highlightbackground=theme.PRIMARY if selected else theme.BORDER)
+        row.pack(fill=X, pady=(0, 6))
+        row.bind('<Button-1>', lambda e, w=work: self._select_work(w))
+        row.bind('<Double-Button-1>', lambda e, w=work: self._open_work(w))
+        name = work['workName']
+        name_lbl = tk.Label(row, text=name, bg=bg, fg=theme.FG, anchor='w',
+                            font=('Microsoft YaHei', 10, 'bold'))
+        name_lbl.pack(fill=X, padx=12, pady=(8, 0))
+        line = tk.Frame(row, bg=bg)
+        line.pack(fill=X, padx=12, pady=(2, 8))
         times_used = work.get('times', 0)
         try_times = work.get('tryTimes', 0)
         remaining = max(0, try_times - times_used)
         if remaining <= 0:
-            status_text, status_color = '已用完所有机会', theme.ERROR
+            chips = [mono(line, f'#{work["workId"]}', fg=theme.DIM, size=9, bg=bg),
+                     mono(line, '已用完所有机会', fg=theme.ERROR, size=9, bg=bg)]
         elif remaining == 1:
-            status_text, status_color = f'Last chance! 剩余 {remaining}/{try_times} 次', theme.WARNING
+            chips = [mono(line, f'#{work["workId"]}', fg=theme.DIM, size=9, bg=bg),
+                     mono(line, f'Last chance! {remaining}/{try_times}', fg=theme.WARNING, size=9, bg=bg)]
         else:
-            status_text, status_color = f'剩余 {remaining}/{try_times} 次', theme.PRIMARY
+            chips = [mono(line, f'#{work["workId"]}', fg=theme.DIM, size=9, bg=bg),
+                     mono(line, f'TRY {remaining}/{try_times}', fg=theme.PRIMARY, size=9, bg=bg)]
+        for c in chips:
+            c.pack(side=LEFT, padx=(0, 12))
+        # 整行可点选/双击打开
+        for w in [row, name_lbl, line] + chips:
+            w.bind('<Button-1>', lambda e, wk=work: self._select_work(wk))
+            w.bind('<Double-Button-1>', lambda e, wk=work: self._open_work(wk))
 
-        row = tk.Frame(parent, bg=theme.SURFACE)
-        row.pack(fill=X, pady=(0, 5))
-        head = tk.Frame(row, bg=theme.SURFACE)
-        head.pack(fill=X)
-        ttk.Button(head, text='导出所有题目', bootstyle='info', cursor='hand2',
-                   command=lambda: self.collect_work(work)
-                   ).pack(side=RIGHT, padx=(4, 10), pady=7)
-        ttk.Button(head, text='查看题目', bootstyle='primary', cursor='hand2',
-                   command=lambda: self.select_work(work)
-                   ).pack(side=RIGHT, padx=4, pady=7)
-        tk.Label(head, text=work['workName'], bg=theme.SURFACE, fg=theme.FG, anchor='w',
-                 font=('Microsoft YaHei', 11, 'bold')).pack(side=LEFT, fill=X, expand=YES,
-                                                            padx=12, pady=9)
+    def _select_work(self, work):
+        self._sel_work = work
+        self.clear_content()
+        self._build_works_page()
 
-        detail = tk.Frame(row, bg=theme.SURFACE)
-        detail.pack(fill=X, padx=12, pady=(0, 8))
-        tk.Label(detail, text=f'#{work["workId"]}', bg=theme.SURFACE, fg=theme.DIM,
-                 font=('Consolas', 9)).pack(side=LEFT, padx=(0, 12))
-        tk.Label(detail, text=status_text, bg=theme.SURFACE, fg=status_color,
-                 font=('Consolas', 9)).pack(side=LEFT, padx=(0, 12))
-        if work.get('expireTime', 'N/A') != 'N/A':
-            tk.Label(detail, text=f'DUE {work["expireTime"]}', bg=theme.SURFACE, fg=theme.MUTED,
-                     font=('Consolas', 9)).pack(side=LEFT, padx=(0, 12))
-        if work.get('chapterName'):
-            tk.Label(detail, text=f'CH {work["chapterName"]}', bg=theme.SURFACE, fg=theme.MUTED,
-                     font=('Consolas', 9)).pack(side=LEFT, padx=(0, 12))
+    def _render_work_inspector(self):
+        work = self._sel_work
+        head = tk.Label(self._inspector, text='INSPECTOR', bg=theme.SURFACE, fg=theme.DIM,
+                        font=('Consolas', 8, 'bold'), anchor='w')
+        head.pack(fill=X, padx=12, pady=(10, 2))
+        body = tk.Frame(self._inspector, bg=theme.SURFACE)
+        body.pack(fill=X, padx=12)
+        if work is None:
+            tk.Label(body, text='未选择作业', bg=theme.SURFACE, fg=theme.MUTED,
+                     font=theme.FONT_UI, anchor='w').pack(anchor='w', pady=12)
+            return
+        mono(body, work['workName'], fg=theme.FG, size=10, bg=theme.SURFACE).pack(anchor='w', pady=(2, 0))
+
+        def field(k, label):
+            rowf = tk.Frame(body, bg=theme.SURFACE)
+            rowf.pack(fill=X, pady=3)
+            tk.Label(rowf, text=label, bg=theme.SURFACE, fg=theme.DIM,
+                     font=('Consolas', 8), width=9, anchor='w').pack(side=LEFT)
+            val = work.get(k)
+            shown = str(val) if val not in (None, '') else '—'
+            mono(rowf, shown, fg=theme.MUTED, size=9, bg=theme.SURFACE).pack(side=LEFT)
+
+        field('workId', 'ID')
+        field('chapterName', 'CHAPTER')
+        field('expireTime', 'DUE')
         if work.get('grade') is not None:
-            tk.Label(detail, text=f'SCORE {work["grade"]}', bg=theme.SURFACE, fg=theme.SECONDARY,
-                     font=('Consolas', 9)).pack(side=LEFT, padx=(0, 12))
+            field('grade', 'SCORE')
+
+        acts = tk.Frame(self._inspector, bg=theme.SURFACE)
+        acts.pack(fill=X, padx=12, pady=(8, 12))
+        self.btn(acts, 'OPEN ▸ 题目', lambda: self._open_work(work), 'primary'
+                 ).pack(fill=X, pady=(0, 8))
+        self.btn(acts, 'EXPORT 题目', lambda: self.collect_work(work), 'info').pack(fill=X)
+
+    def _open_work(self, work):
+        self.select_work(work)
 
     def select_work(self, work):
         self.selected_work_id = work['workId']
@@ -591,71 +678,167 @@ class App:
         self.questions = data
         self.show_questions()
 
-    # ---------- 题目 ----------
+    # ---------- 题目（List + View + Inspector） ----------
 
     def show_questions(self):
         self.begin_nav()
-        self.set_page(f'{self.selected_work_name} · 题目')
-        ttk.Label(self.content_frame, text=f'QUESTIONS :: {self.selected_work_name}',
-                  font=('Consolas', 12, 'bold'), foreground=theme.FG).pack(anchor='w', pady=(2, 10))
+        self._sel_qidx = 0 if self.questions else None
+        self.set_page(f'{self.selected_work_name} :: QUESTIONS')
+        self._layout_questions()
 
-        body_frame = ttk.Frame(self.content_frame)
-        body_frame.pack(fill=BOTH, expand=YES)
-        frame = ScrolledFrame(body_frame, autohide=True)
-        frame.pack(fill=BOTH, expand=YES)
-        lst = tk.Frame(frame, bg=theme.BG)
+    def _layout_questions(self):
+        self.clear_content()
+        bar = self.page_header('QUESTIONS', f'{self.selected_work_name} · {len(self.questions)} 题')
+        back = tk.Button(bar, text='‹ 返回作业列表', command=self.show_works, relief='flat', bd=0,
+                         bg=theme.BG, fg=theme.SECONDARY, activebackground=theme.HOVER,
+                         activeforeground=theme.SECONDARY, font=('Consolas', 9), cursor='hand2')
+        back.pack(side=RIGHT, pady=8)
+
+        body = tk.Frame(self.content_frame, bg=theme.BG)
+        body.pack(fill=BOTH, expand=YES)
+
+        # 左：题目列表
+        lst_pane = tk.Frame(body, bg=theme.BG, width=230)
+        lst_pane.pack(side=LEFT, fill=Y)
+        lst_pane.pack_propagate(False)
+        head = tk.Frame(lst_pane, bg=theme.BG)
+        head.pack(fill=X, pady=(0, 8))
+        mono(head, 'QUESTIONS', fg=theme.DIM, size=9, bg=theme.BG).pack(side=LEFT)
+        lst_frame = ScrolledFrame(lst_pane, autohide=True)
+        lst_frame.pack(fill=BOTH, expand=YES)
+        lst = tk.Frame(lst_frame, bg=theme.BG)
         lst.pack(fill=BOTH, expand=YES)
-        ttk.Label(lst, text=f'[ {len(self.questions)} QUESTIONS ]', font=('Consolas', 9),
-                  foreground=theme.DIM).pack(anchor='w', pady=(0, 6))
+        for idx, q in enumerate(self.questions):
+            self._qlist_row(lst, idx, q)
 
-        self.images = []
-        for idx, question in enumerate(self.questions):
-            self._question_card(lst, idx, question)
+        # 中：题目视图
+        view = tk.Frame(body, bg=theme.SURFACE, highlightthickness=1,
+                        highlightbackground=theme.BORDER)
+        view.pack(side=LEFT, fill=BOTH, expand=YES, padx=16)
+        self._view = view
+        self._view_image_holder = None
 
-        bottom = ttk.Frame(self.content_frame)
-        bottom.pack(fill=X, pady=(10, 0))
-        ttk.Label(bottom, text='提交成绩（0-100）：', font=theme.FONT_UI,
-                  foreground=theme.MUTED).pack(side=LEFT)
-        self.grade_entry = ttk.Entry(bottom, width=8)
-        self.grade_entry.pack(side=LEFT, padx=6)
-        self.submit_grade_button = ttk.Button(bottom, text='提交', command=self.submit_grade,
-                                              bootstyle='primary')
-        self.submit_grade_button.pack(side=LEFT, padx=(0, 12))
-        ttk.Button(bottom, text='返回作业列表', command=self.show_works,
-                   bootstyle='secondary').pack(side=LEFT)
+        # 右：Inspector
+        inspector = tk.Frame(body, bg=theme.SURFACE, width=280,
+                             highlightthickness=1, highlightbackground=theme.BORDER)
+        inspector.pack(side=RIGHT, fill=Y)
+        inspector.pack_propagate(False)
+        self._inspector_q = inspector
+        self._render_question_views()
 
-    def _question_card(self, parent, idx, question):
-        row = tk.Frame(parent, bg=theme.SURFACE)
-        row.pack(fill=X, pady=(0, 6))
-        head = tk.Frame(row, bg=theme.SURFACE)
-        head.pack(fill=X)
-        tk.Label(head, text=f'Q{idx + 1}', bg=theme.SURFACE, fg=theme.PRIMARY,
-                 font=('Consolas', 11, 'bold')).pack(side=LEFT, padx=(12, 10), pady=8)
-        tk.Label(head, text=question.get('name', 'N/A'), bg=theme.SURFACE, fg=theme.FG,
-                 anchor='w', font=('Microsoft YaHei', 11)).pack(side=LEFT, fill=X, expand=YES,
-                                                                pady=8)
-        tk.Label(head, text=f'ID {question.get("id", "N/A")}', bg=theme.SURFACE, fg=theme.DIM,
-                 font=('Consolas', 9)).pack(side=RIGHT, padx=12)
+    def _qlist_row(self, parent, idx, q):
+        selected = (idx == self._sel_qidx)
+        bg = theme.HOVER if selected else theme.SURFACE
+        row = tk.Frame(parent, bg=bg, highlightthickness=1,
+                       highlightbackground=theme.PRIMARY if selected else theme.BORDER)
+        row.pack(fill=X, pady=(0, 5))
+        id_lbl = tk.Label(row, text=f'Q{idx + 1:02d}', bg=bg,
+                          fg=theme.PRIMARY if selected else theme.MUTED,
+                          font=('Consolas', 9, 'bold'))
+        id_lbl.pack(side=LEFT, padx=(10, 8), pady=9)
+        name_lbl = tk.Label(row, text=q.get('name', 'N/A'), bg=bg, fg=theme.FG, anchor='w',
+                            font=theme.FONT_UI)
+        name_lbl.pack(side=LEFT, fill=X, expand=YES, pady=9)
+        for w in (row, id_lbl, name_lbl):
+            w.bind('<Button-1>', lambda e, i=idx: self._select_question(i))
 
-        content = tk.Frame(row, bg=theme.SURFACE)
-        content.pack(fill=X, padx=12, pady=(0, 8))
-        imgurl = question.get('imgurl', 'N/A')
-        img_holder = None
+    def _select_question(self, idx):
+        if idx == self._sel_qidx:
+            return
+        self._sel_qidx = idx
+        self._layout_questions()
+
+    def _current_q(self):
+        if self.questions and self._sel_qidx is not None:
+            return self.questions[self._sel_qidx]
+        return None
+
+    def _render_question_views(self):
+        q = self._current_q()
+        # 中央视图
+        view = self._view
+        tk.Label(view, text='QUESTION', bg=theme.SURFACE, fg=theme.DIM,
+                 font=('Consolas', 8, 'bold'), anchor='w').pack(fill=X, padx=16, pady=(10, 0))
+        nav = tk.Frame(view, bg=theme.SURFACE)
+        nav.pack(fill=X, padx=16, pady=(6, 2))
+        tk.Button(nav, text='‹', command=lambda: self._step_q(-1), relief='flat', bd=0,
+                  bg=theme.SURFACE, fg=theme.SECONDARY, cursor='hand2',
+                  font=('Consolas', 12, 'bold')).pack(side=LEFT)
+        tk.Label(nav, text=f'Q{self._sel_qidx + 1} / {len(self.questions)}'
+                 if q else '', bg=theme.SURFACE, fg=theme.DIM,
+                 font=('Consolas', 9)).pack(side=LEFT, padx=12)
+        tk.Button(nav, text='›', command=lambda: self._step_q(1), relief='flat', bd=0,
+                  bg=theme.SURFACE, fg=theme.SECONDARY, cursor='hand2',
+                  font=('Consolas', 12, 'bold')).pack(side=LEFT)
+
+        if q is None:
+            mono(view, '> NO QUESTIONS', fg=theme.PRIMARY, size=10,
+                 bg=theme.SURFACE).pack(anchor='w', padx=16, pady=24)
+            return
+
+        tk.Label(view, text=q.get('name', 'N/A'), bg=theme.SURFACE, fg=theme.FG, anchor='w',
+                 font=('Microsoft YaHei', 12, 'bold')).pack(anchor='w', padx=16, pady=(6, 0))
+        mono(view, f'ID {q.get("id", "N/A")}', fg=theme.DIM, size=9,
+             bg=theme.SURFACE).pack(anchor='w', padx=16, pady=(2, 0))
+        # 题面图片区
+        img_area = tk.Frame(view, bg=theme.SURFACE)
+        img_area.pack(anchor='w', padx=16, pady=(10, 0))
+        imgurl = q.get('imgurl', 'N/A')
         if imgurl and imgurl != 'N/A':
-            img_holder = tk.Label(content, text='> FETCHING IMAGE...', bg=theme.SURFACE,
-                                  fg=theme.DIM, font=('Consolas', 9), anchor='w')
-            img_holder.pack(fill=X, pady=(2, 0))
-            self._load_image_async(content, imgurl, img_holder)
+            holder = tk.Label(img_area, text='> FETCHING IMAGE...', bg=theme.SURFACE,
+                              fg=theme.DIM, font=('Consolas', 9), anchor='w')
+            holder.pack()
+            self._view_image_holder = holder
+            self._load_image_async(holder, imgurl)
         else:
-            tk.Label(content, text='[ NO IMAGE ]', bg=theme.SURFACE, fg=theme.DIM,
-                     font=('Consolas', 9), anchor='w').pack(fill=X)
-        tk.Label(content, text=f'答案: {question.get("answer", "N/A")}', bg=theme.SURFACE,
-                 fg=theme.WARNING, font=('Consolas', 10), anchor='w').pack(fill=X, pady=(4, 6))
+            mono(img_area, '[ NO IMAGE ]', fg=theme.DIM, size=9,
+                 bg=theme.SURFACE).pack()
 
-    def _load_image_async(self, parent, imgurl, holder):
+        # 右侧 Inspector
+        ins = self._inspector_q
+        tk.Label(ins, text='INSPECTOR', bg=theme.SURFACE, fg=theme.DIM,
+                 font=('Consolas', 8, 'bold'), anchor='w').pack(fill=X, padx=14, pady=(10, 0))
+        body = tk.Frame(ins, bg=theme.SURFACE)
+        body.pack(fill=X, padx=14)
+        row = tk.Frame(body, bg=theme.SURFACE)
+        row.pack(fill=X, pady=3)
+        tk.Label(row, text='ANSWER', bg=theme.SURFACE, fg=theme.DIM,
+                 font=('Consolas', 8), width=9, anchor='w').pack(side=LEFT)
+        ans = q.get('answer', 'N/A')
+        tk.Label(body, text=str(ans), bg=theme.SURFACE, fg=theme.WARNING, anchor='w',
+                 font=('Consolas', 10), justify='left', wraplength=220).pack(fill=X, pady=(0, 8))
+
+        score = tk.Frame(ins, bg=theme.SURFACE)
+        score.pack(fill=X, padx=14, pady=(4, 0))
+        tk.Label(score, text='SCORE', bg=theme.SURFACE, fg=theme.DIM,
+                 font=('Consolas', 8), width=9, anchor='w').pack(side=LEFT)
+        self.grade_entry = ttk.Entry(score, width=8)
+        self.grade_entry.pack(side=LEFT)
+        tk.Label(ins, text='提交成绩（0-100）', bg=theme.SURFACE, fg=theme.MUTED,
+                 font=theme.FONT_UI).pack(anchor='w', padx=14, pady=(6, 0))
+        self.submit_grade_button = self.btn(ins, 'SUBMIT', self.submit_grade, 'primary')
+        self.submit_grade_button.pack(fill=X, padx=14, pady=(10, 14))
+
+    def _step_q(self, delta):
+        n = len(self.questions)
+        if n == 0:
+            return
+        self._sel_qidx = (self._sel_qidx + delta) % n
+        self._layout_questions()
+
+    def _load_image_async(self, holder, imgurl):
+        cache = getattr(self, '_img_bytes', None)
+        if cache is None:
+            cache = {}
+            self._img_bytes = cache
+        if imgurl in cache:
+            self.queue.put(('image_bytes', holder, cache[imgurl], None))
+            return
+
         def work():
             try:
                 data = self.api.fetch_image(imgurl)
+                cache[imgurl] = data
                 self.queue.put(('image_bytes', holder, data, None))
             except Exception as exc:
                 self.queue.put(('image_bytes', holder, None, str(exc)))
@@ -663,25 +846,24 @@ class App:
         threading.Thread(target=work, daemon=True).start()
 
     def _render_image(self, holder, data, error):
-        if not holder.winfo_exists():
+        if holder is None or not holder.winfo_exists():
             return
+        parent = holder.master
         if error is not None:
             holder.config(text=f'[ IMAGE ERROR ] {error}', fg=theme.ERROR)
             return
         try:
             image = Image.open(io.BytesIO(data))
-            image.thumbnail((400, 300))
+            image.thumbnail((460, 340))
             photo = ImageTk.PhotoImage(image)
         except Exception as exc:
             holder.config(text=f'[ IMAGE ERROR ] {exc}', fg=theme.ERROR)
             return
         holder.destroy()
-        label = tk.Label(holder.master, image=photo, bg=theme.SURFACE)
+        label = tk.Label(parent, image=photo, bg=theme.SURFACE)
         label.image = photo
         self.images.append(photo)
-        label.pack(anchor='w', pady=(4, 0))
-
-# ---------- 成绩提交 ----------
+        label.pack()
 
     def submit_grade(self):
         grade = self.grade_entry.get()
@@ -704,51 +886,68 @@ class App:
 
     def show_settings(self):
         self.begin_nav()
-        self.set_page('设置 · CONFIG')
-        ttk.Label(self.content_frame, text='CONFIG :: 设置', font=('Consolas', 12, 'bold'),
-                  foreground=theme.FG).pack(anchor='w', pady=(2, 10))
+        self.set_page('SETTINGS')
+        self.page_header('SETTINGS')
 
-        col = ttk.Frame(self.content_frame)
-        col.pack(fill=X)
+        body = tk.Frame(self.content_frame, bg=theme.BG)
+        body.pack(fill=BOTH, expand=YES)
 
-        export_frame = ttk.Labelframe(col, text='EXPORT :: 导出设置', padding=12)
+        left = tk.Frame(body, bg=theme.BG)
+        left.pack(side=LEFT, fill=BOTH, expand=YES, padx=(0, 24))
+
+        export_frame = ttk.Labelframe(left, text='EXPORT', padding=16)
         export_frame.pack(fill=X)
         opts = ttk.Frame(export_frame)
         opts.pack(fill=X)
-        self.export_word_check = ttk.Checkbutton(opts, text='导出为 Word (.docx)',
-                                                 variable=self.export_word_var,
+        self.export_word_check = ttk.Checkbutton(opts, text='Word (.docx)', variable=self.export_word_var,
                                                  command=self.toggle_word_options)
-        self.export_word_check.grid(row=0, column=0, sticky='w', padx=(0, 30), pady=3)
-        self.export_word_answers_check = ttk.Checkbutton(opts, text='含答案',
-                                                         variable=self.export_word_include_answers_var)
-        self.export_word_answers_check.grid(row=1, column=0, sticky='w', padx=(22, 30), pady=3)
-        self.export_pdf_check = ttk.Checkbutton(opts, text='导出为 PDF (.pdf)',
-                                                variable=self.export_pdf_var,
+        self.export_word_check.grid(row=0, column=0, sticky='w', padx=(0, 48), pady=5)
+        self.export_word_answers_check = ttk.Checkbutton(opts, text='含答案', variable=self.export_word_include_answers_var)
+        self.export_word_answers_check.grid(row=1, column=0, sticky='w', padx=(24, 48), pady=5)
+        self.export_pdf_check = ttk.Checkbutton(opts, text='PDF (.pdf)', variable=self.export_pdf_var,
                                                 command=self.toggle_pdf_options)
-        self.export_pdf_check.grid(row=0, column=1, sticky='w', pady=3)
-        self.export_pdf_answers_check = ttk.Checkbutton(opts, text='含答案',
-                                                        variable=self.export_pdf_include_answers_var)
-        self.export_pdf_answers_check.grid(row=1, column=1, sticky='w', padx=(22, 0), pady=3)
+        self.export_pdf_check.grid(row=0, column=1, sticky='w', pady=5)
+        self.export_pdf_answers_check = ttk.Checkbutton(opts, text='含答案', variable=self.export_pdf_include_answers_var)
+        self.export_pdf_answers_check.grid(row=1, column=1, sticky='w', padx=(24, 0), pady=5)
         self.toggle_word_options()
         self.toggle_pdf_options()
 
-        path_frame = ttk.Labelframe(col, text='PATH :: 导出路径', padding=12)
-        path_frame.pack(fill=X, pady=(10, 0))
+        path_frame = ttk.Labelframe(left, text='PATH', padding=16)
+        path_frame.pack(fill=X, pady=(16, 0))
         path_row = ttk.Frame(path_frame)
         path_row.pack(fill=X)
-        ttk.Label(path_row, text='路径：').pack(side=LEFT)
+        ttk.Label(path_row, text='导出路径').pack(side=LEFT)
         self.path_entry = ttk.Entry(path_row)
-        self.path_entry.pack(side=LEFT, fill=X, expand=YES, padx=8)
+        self.path_entry.pack(side=LEFT, fill=X, expand=YES, padx=12)
         self.path_entry.insert(0, self.export_path)
-        ttk.Button(path_row, text='浏览', command=self.choose_export_path,
-                   bootstyle='secondary').pack(side=LEFT)
+        self.btn(path_row, 'BROWSE', self.choose_export_path, 'secondary').pack(side=LEFT)
 
-        btns = ttk.Frame(col)
-        btns.pack(fill=X, pady=(14, 0))
-        ttk.Button(btns, text='保存设置', command=self.save_settings,
-                   bootstyle='primary').pack(side=LEFT, padx=(0, 8))
-        ttk.Button(btns, text='查看用户信息', command=self.view_user_info,
-                   bootstyle='info').pack(side=LEFT)
+        btns = tk.Frame(left, bg=theme.BG)
+        btns.pack(fill=X, pady=(20, 0))
+        self.btn(btns, 'SAVE', self.save_settings, 'primary').pack(side=LEFT, padx=(0, GAP))
+        self.btn(btns, 'USER INFO', self.view_user_info, 'info').pack(side=LEFT)
+
+        # 右侧系统信息面板（真实静态信息，非伪造指标）
+        sys_panel = tk.Frame(body, bg=theme.SURFACE, width=300, highlightthickness=1,
+                             highlightbackground=theme.BORDER)
+        sys_panel.pack(side=RIGHT, fill=Y)
+        sys_panel.pack_propagate(False)
+        tk.Label(sys_panel, text='SYSTEM', bg=theme.SURFACE, fg=theme.DIM,
+                 font=('Consolas', 8, 'bold'), anchor='w').pack(fill=X, padx=16, pady=(12, 2))
+        info = tk.Frame(sys_panel, bg=theme.SURFACE)
+        info.pack(fill=X, padx=16)
+
+        def sysrow(label, value):
+            r = tk.Frame(info, bg=theme.SURFACE)
+            r.pack(fill=X, pady=3)
+            tk.Label(r, text=label, bg=theme.SURFACE, fg=theme.DIM,
+                     font=('Consolas', 8), width=10, anchor='w').pack(side=LEFT)
+            mono(r, value, fg=theme.MUTED, size=9, bg=theme.SURFACE).pack(side=LEFT)
+
+        sysrow('API', self.api.base_url)
+        sysrow('VERSION', '3.0')
+        sysrow('LICENSE', 'GPL-3.0')
+        sysrow('AUTH', 'token' if self.username else 'none')
 
     def toggle_word_options(self):
         self.export_word_answers_check.state(
@@ -807,17 +1006,17 @@ class App:
         content.pack(fill=BOTH, expand=YES)
 
         ttk.Label(content, text='MANUAL :: 使用说明', font=('Consolas', 13, 'bold'),
-                  foreground=theme.PRIMARY).pack(anchor='w', padx=18, pady=(14, 4))
+                  foreground=theme.PRIMARY).pack(anchor='w', padx=24, pady=(16, 4))
         ttk.Label(content, text='LGXT Assistant · 理工学堂助手',
-                  font=('Microsoft YaHei', 15, 'bold'), foreground=theme.FG).pack(anchor='w', padx=18)
+                  font=('Microsoft YaHei', 15, 'bold'), foreground=theme.FG).pack(anchor='w', padx=24)
 
         def head(text):
             ttk.Label(content, text=f'> {text}', font=('Consolas', 11, 'bold'),
-                      foreground=theme.SECONDARY).pack(anchor='w', padx=18, pady=(12, 4))
+                      foreground=theme.SECONDARY).pack(anchor='w', padx=24, pady=(12, 4))
 
         def line(text):
             ttk.Label(content, text=text, font=theme.FONT_UI, foreground=theme.MUTED,
-                      justify='left').pack(anchor='w', padx=30, pady=1)
+                      justify='left').pack(anchor='w', padx=40, pady=1)
 
         head('功能介绍')
         for t in ['1. 登录：输入用户名和密码进行登录。',
@@ -842,7 +1041,7 @@ class App:
             line(t)
 
         ttk.Button(content, text='关闭', command=help_window.destroy,
-                   bootstyle='danger').pack(anchor='w', padx=30, pady=(18, 24))
+                   bootstyle='danger').pack(anchor='w', padx=40, pady=(20, 28))
 
     # ---------- 批量 / 收集任务入口 ----------
 
