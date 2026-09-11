@@ -93,14 +93,23 @@ AUTH 面板输入理工学堂用户名 / 密码；勾选「记住密码」写入
 ## 项目结构
 
 ```
-default.pyw   入口（python default.pyw）
-theme.py      Design Token、无边框主题、字体缩放接口
-ui.py         主窗口 / 树状主页 / 页面 / 搜索筛选排序 / 自适应字体 / 代码雨
-api.py        API 客户端（session / 鉴权 / 统一 (ok, data) 错误结构）
-tasks.py      题目收集、批量提交、批量导出（后台线程）
-exporter.py   图片缓存 + Word / PDF 导出
-config.py     config.ini 设置 + 本地凭据（keyring）
-docs/         截图与文档资源
+default.pyw        入口（python default.pyw）
+theme.py           Design Token、无边框主题、字体缩放接口
+api.py             API 客户端（session / 鉴权 / 统一 (ok, data) 错误结构）
+tasks.py           题目收集、批量提交、批量导出（后台线程）
+exporter.py        图片缓存 + Word / PDF 导出
+config.py          %APPDATA% 配置 + 本地凭据（keyring，全部容错）
+ui/                UI 包（按职责拆分，App 由 mixin 组合）
+  ├── base.py      窗口框架 / 状态 / 队列轮询 / 任务适配 / 字体缩放 / 代码雨
+  ├── widgets.py   PageHeader / CommandBar / 搜索框 / 下拉框 / 文本助手
+  ├── login.py     登录页
+  ├── courses.py   课程树（科目 → 作业 懒加载）
+  ├── works.py     作业工作区（List + Inspector）
+  ├── questions.py 题目工作区（List + View + Inspector）
+  ├── settings.py  设置与帮助
+  └── actions.py   批量 / 收集任务入口
+tests/             pytest 测试（22 项：api/config/exporter/tasks/ui）
+docs/              截图与文档资源
 ```
 
 ### 线程模型（开发者须知）
@@ -120,6 +129,32 @@ docs/         截图与文档资源
 - **请求更克制**：页面加载最多 4 个在途请求，超出会忽略并提示；收集提前结束时取消未执行的 future。
 - **字体遮挡修复**：缩放时同步调整 Header/StatusBar/Sidebar 高度与宽度、Treeview 行高/列宽、三栏与 Inspector 宽度；过长文本自动省略号，长标题/答案自动换行；ttk 控件字体统一走 Style，避免按控件改字体造成文字被裁切。
 - **API 错误更准确**：区分"网络错误 / 非 JSON 响应 / 缺少字段"；图片下载校验 Content-Type、大小与空内容。
+
+## 测试
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest
+```
+
+覆盖：API 错误分类与鉴权、配置迁移与 keyring 容错、导出与图片缓存、
+收集器停止条件与 future 取消、UI 组合/排序/文本截断/无头启动。
+
+## 切换到 HTTPS（可选）
+
+客户端默认使用服务端现有地址；若服务端启用 HTTPS，可通过环境变量覆盖：
+
+```powershell
+# PowerShell
+$env:LGXT_API_BASE = "https://lgxt.wutp.com.cn/api"
+python default.pyw
+```
+
+```cmd
+:: CMD
+set LGXT_API_BASE=https://lgxt.wutp.com.cn/api
+python default.pyw
+```
 
 ## 许可
 
