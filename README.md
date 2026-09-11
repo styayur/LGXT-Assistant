@@ -1,28 +1,32 @@
 # LGXT Assistant · 理工学堂助手
 
-> 一个面向理工学堂平台的 Windows 桌面工具：登录后查看课程与作业、浏览题目、
-> 将作业题目（含图片与答案）导出为 **Word / PDF**，并支持批量提交成绩。
+> 面向理工学堂平台的 Windows 桌面工具：查看课程与作业、浏览/导出题目
+> （图片 + 答案，Word / PDF）、单题与批量提交成绩。
 >
-> UI 为 Developer-Tool / Dark / Technical 风格，支持**搜索 / 筛选 / 排序**与自适应布局。
+> 界面为 **Developer Workbench** 风格：深色、无边框淡出层次、等宽技术字体、
+> 科目/作业**树状展开**、本地**搜索/筛选/排序**、字体随窗口自适应。
 
 ![Login](docs/screenshots/login_1280.png)
-![Courses](docs/screenshots/courses_1280.png)
+![Courses Tree](docs/screenshots/courses_1280.png)
 ![Works + Inspector](docs/screenshots/works_sel_1280.png)
 ![Questions 3-pane](docs/screenshots/questions_1280.png)
+![Matrix Rain on Exit](docs/screenshots/matrix_rain_1280.png)
 
 ---
 
-## 功能一览
+## 主要特性
 
-| 分类 | 功能 |
+| 特性 | 说明 |
 |---|---|
-| 登录 | 用户名 / 密码；记住密码（本地凭据库 keyring） |
-| 课程 | 课程列表、按名称/ID **搜索**、按名称/ID **排序**、OPEN 进入作业 |
-| 作业 | 左列表 + 右 **Inspector**；**搜索**（作业名/章节/ID）、**筛选**（全部/可提交/已用完）、**排序**（截止时间/剩余次数/名称）；单击选中、双击打开 |
-| 题目 | 三栏：题目列表｜题面+图片｜Inspector（答案/成绩）；**搜索/筛选/排序**；`‹ ›` 切换 |
-| 成绩 | 单题提交 0–100；批量把当前课程/全部课程作业提交为 100 |
-| 导出 | 单作业 / 当前课程 / 全部课程 → Word(.docx) / PDF(.pdf) + 题目图片（重复导出有本地缓存，不重复下载） |
-| 配置 | 导出路径、格式、是否含答案；保存到 `config.ini` |
+| 全屏工作区 | 启动即最大化；`F11` 在「最大化 / 真全屏」之间切换 |
+| 自适应字体 | 窗口尺寸变化时按比例缩放全部 UI / 技术字体（0.9×–1.5×） |
+| 树状主页 | 课程（科目）为父节点，展开时才懒加载该科目的作业子节点 |
+| 搜索 / 筛选 / 排序 | 全部本地执行，不额外请求服务器（课程 / 作业 / 题目三页均可） |
+| 无边框淡出美学 | 去掉所有硬线条：层级只靠背景深浅（BG → SURFACE → HOVER）表达 |
+| 关闭代码雨 | 关闭窗口或点「退出」时播放 Matrix 代码雨特效后再退出 |
+| 后台任务 | 页面加载 / 图片 / 提交 / 导出全部后台线程 + 队列，界面不阻塞 |
+| 图片缓存 | 导出题目图片命中本地文件即跳过下载，损坏自动重下 |
+| 导出 | 单作业 / 当前课程 / 全部课程 → Word(.docx)、PDF(.pdf)，可选含答案 |
 
 ## 环境要求
 
@@ -32,75 +36,79 @@
 ## 快速开始
 
 ```bash
-# 1) 安装依赖
 pip install -r requirements.txt
-
-# 2) 运行
 python default.pyw
 ```
 
 依赖：`keyring` `requests` `ttkbootstrap` `Pillow` `python-docx` `reportlab`
 
+---
+
 ## 使用教程
 
 ### 1. 登录
-启动后在 AUTH 面板输入理工学堂用户名/密码，勾选“记住密码”可写入本地凭据库。
-登录成功右上角状态变为 `● CONNECTED`。
+AUTH 面板输入理工学堂用户名 / 密码；勾选「记住密码」写入本地凭据库（keyring）。
+成功后右上角出现 `● CONNECTED`。
 
-### 2. 浏览课程
-侧栏 → **课程列表**。顶部命令条：
+### 2. 主页：科目 / 作业树状展开
+主页是一棵 **课程树**：
 
-- `SEARCH` 输入课程名或 ID，实时过滤；
-- `SORT` 选择 名称 A→Z / Z→A / ID；
-- `REFRESH` 重新拉取；`EXPORT ALL` / `SUBMIT ALL 100` 为全课程批量操作。
+- 顶层节点 = 课程（科目），右侧显示课程 ID 与作业数量；
+- 点击左侧箭头 **展开** 才去请求该课程的作业（懒加载，不浪费请求）；
+- 作业子节点右侧显示 `STATUS`：`TRY 2/3`、`EXHAUSTED`、`DONE`；
+- **单击**选中节点；**双击**：
+  - 双击课程 → 进入该课程的作业工作区（List + Inspector）；
+  - 双击作业 → 直接进入题目三栏工作区（自动选中该作业）。
+- 顶部命令条：
+  - `SEARCH`：按课程名 / ID 本地过滤；
+  - `SORT`：默认 / 名称 A→Z / Z→A / ID；
+  - `OPEN ▸ 作业 | 题目`（跟随当前选中节点）、`REFRESH`、`EXPORT ALL`、`SUBMIT ALL 100`。
 
-点行内 `OPEN` 进入该课程的作业页。
+### 3. 作业工作区（List + Inspector）
+- 左列表：`SEARCH`（作业名/章节/ID）、`FILTER`（全部/可提交/已用完）、`SORT`（截止时间/剩余/名称）；
+- 单击选中 → 右侧 **INSPECTOR** 显示 ID / 章节 / 截止 / 成绩 / 尝试次数 / 状态；
+- `OPEN ▸ 题目` 进入题目页（也可双击行）；`EXPORT 题目` 单独导出该作业；
+- 顶部 `EXPORT ALL` / `SUBMIT ALL 100` / `REFRESH` 为该课程批量操作。
 
-### 3. 作业页（List + Inspector）
-- 左侧列表单击选中，右侧 **INSPECTOR** 显示 ID / 章节 / 截止 / 成绩 / 尝试次数 / 状态；
-- 双击行或点 Inspector 的 `OPEN ▸ 题目` 进入题目页；
-- `EXPORT 题目` 只导出当前选中的作业；
-- 顶部命令条可 `SEARCH`（作业名/章节/ID）、`FILTER`（全部/可提交/已用完）、`SORT`，
-  以及 `EXPORT ALL` / `SUBMIT ALL 100` / `REFRESH`；
-- 页头 `‹ 返回课程列表` 返回。
+### 4. 题目工作区（三栏）
+- 左：题目列表（`SEARCH` 题名/答案/ID，`FILTER` 全部/有答案/无图片，`SORT` 编号/名称）；
+- 中：当前题目名称、ID 与题面图片（异步加载 + 内存缓存）；
+- 右：**INSPECTOR** 显示答案，输入 0–100 点 `SUBMIT` 提交该作业成绩；
+- `‹` / `›` 切换题目；页头 `‹ 返回作业列表` 返回。
 
-### 4. 题目页（三栏工作区）
-- 左栏题目列表：可用顶部 `SEARCH`（题名/答案/ID）、`FILTER`（全部/有答案/无图片）、`SORT`（编号/名称）；
-- 中栏显示当前题目名称、ID 与题面图片（异步加载并缓存）；
-- 右栏 **INSPECTOR** 显示答案，输入 0–100 后点 `SUBMIT` 提交该作业成绩；
-- 使用 `‹` / `›` 切换题目，页头 `‹ 返回作业列表` 返回。
+### 5. 设置
+- `EXPORT`：Word / PDF、是否含答案；
+- `PATH`：导出目录；
+- 右侧 `SYSTEM`：API 地址、版本、许可、登录状态（真实信息，不伪造指标）；
+- `SAVE` 写入 `config.ini`，`USER INFO` 查看账号信息。
 
-### 5. 导出与批量操作
-- 导出到**设置页**配置的路径，目录结构：
-  `导出路径/作业/<课程名>(ID_x)/<作业名>(ID_y)/题目图片/…docx/…pdf`
-- 批量操作会在页面底部出现**内嵌 Task Panel** 显示进度，完成后弹出结果汇总；
-- 无需长时间等待：页面加载、图片下载、提交、导出都在后台线程执行，界面不冻结。
+### 6. 全屏 / 字体 / 退出特效
+- 启动默认最大化（`state('zoomed')`，非锁定式全屏，可自由缩放）；
+- `F11` 切换真全屏；
+- 拖动窗口大小，字体自动按 `width/1440` 比例缩放（限幅 0.9–1.5）；
+- 点侧栏「退出」或点窗口关闭按钮 → 播放约 1.8s **代码雨**（字符下落 + 层次渐隐）后退出。
 
-### 6. 设置
-- `EXPORT`：选择 Word / PDF、是否含答案；
-- `PATH`：浏览选择导出目录；
-- 右侧 `SYSTEM` 显示 API 地址、版本、许可、登录状态（真实信息）；
-- `SAVE` 写入 `config.ini`；`USER INFO` 查看账号信息。
+---
 
 ## 项目结构
 
 ```
 default.pyw   入口（python default.pyw）
-theme.py      UI 设计令牌与主题
-ui.py         主窗口/页面/搜索筛选排序/异步加载/任务面板
-api.py        API 客户端（session/鉴权/统一错误）
-tasks.py      题目收集/批量提交/批量导出（后台线程）
-exporter.py   图片缓存 + Word/PDF 导出
-config.py     config.ini 设置 + 本地凭据
-docs/         截图等文档资源
+theme.py      Design Token、无边框主题、字体缩放接口
+ui.py         主窗口 / 树状主页 / 页面 / 搜索筛选排序 / 自适应字体 / 代码雨
+api.py        API 客户端（session / 鉴权 / 统一 (ok, data) 错误结构）
+tasks.py      题目收集、批量提交、批量导出（后台线程）
+exporter.py   图片缓存 + Word / PDF 导出
+config.py     config.ini 设置 + 本地凭据（keyring）
+docs/         截图与文档资源
 ```
 
 ### 线程模型（开发者须知）
 
-后台 worker **从不直接操作控件**：只把事件放入 `queue.Queue`，
-主线程通过 `after(60ms)` 轮询把状态/进度/图片/结果应用到 UI。
-导出开关在启动任务前由主线程读取为只读快照（`ExportOptions`），
-因此批量任务进行中界面始终可响应。
+后台 worker 不直接操作任何控件，只把事件写入 `queue.Queue`；
+主线程以 `after(60ms)` 轮询消费事件（状态 / 进度 / 图片 / 结果）。
+导出开关在主线程读取为只读快照 `ExportOptions` 后传入 worker。
+（若 worker 直接调用 `root.after`，在 Python 3.13 会抛 `RuntimeError` —— 本项目已规避。）
 
 ## 许可
 
