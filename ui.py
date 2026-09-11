@@ -7,6 +7,7 @@ Content(可含 Inspector) · 内嵌 TaskPanel · StatusBar。
 线程安全：worker 只向 queue 投事件，主线程 after() 轮询更新 UI。
 """
 import io
+import logging
 import os
 import queue
 import random
@@ -14,6 +15,7 @@ import tkinter.font as tkfont
 import threading
 import time
 import tkinter as tk
+import tkinter.ttk as tkttk
 from tkinter import filedialog
 from tkinter.constants import *
 
@@ -34,6 +36,7 @@ except ImportError:  # ttkbootstrap >= 2 exports ScrolledFrame at top level
     from ttkbootstrap import ScrolledFrame
 
 SERVICE = '理工学堂助手'
+log = logging.getLogger(__name__)
 SIDEBAR_W = 188
 PAD = 24          # 内容左右边距
 GAP = 10          # 按钮组内间距
@@ -88,7 +91,11 @@ class App:
         self._fullscreen = False
         self.scale = 1.0
         self._font_bases = {}
+        self._font_pool = {}
         self._resize_job = None
+        self._debounce_job = None
+        self._inflight = 0
+        self._placeholders = {}
         self._quitting = False
 
         self.setup_ui()
@@ -111,6 +118,7 @@ class App:
         header = tk.Frame(self.main_frame, bg=theme.BG_RAISED, height=46)
         header.pack(side=TOP, fill=X)
         header.pack_propagate(False)
+        self._header = header
         tk.Label(header, text='LGXT::ASSISTANT', bg=theme.BG_RAISED, fg=theme.PRIMARY,
                  font=('Consolas', 12, 'bold')).pack(side=LEFT, padx=(24, 0))
         tk.Frame(header, bg=theme.BORDER, width=1).pack(side=LEFT, fill=Y, padx=20, pady=12)
@@ -125,6 +133,7 @@ class App:
         statusbar = tk.Frame(self.main_frame, bg=theme.BG_RAISED, height=24)
         statusbar.pack(side=BOTTOM, fill=X)
         statusbar.pack_propagate(False)
+        self._statusbar = statusbar
         self.log_label = tk.Label(statusbar, text='> SYSTEM READY', bg=theme.BG_RAISED,
                                   fg=theme.DIM, font=('Consolas', 8), anchor='w')
         self.log_label.pack(side=LEFT, fill=X, expand=YES, padx=12)
@@ -141,6 +150,7 @@ class App:
         sidebar = tk.Frame(parent, bg=theme.SURFACE, width=SIDEBAR_W)
         sidebar.pack(side=LEFT, fill=Y)
         sidebar.pack_propagate(False)
+        self._sidebar = sidebar
 
         tk.Label(sidebar, text='LGXT', bg=theme.SURFACE, fg=theme.PRIMARY,
                  font=('Consolas', 13, 'bold'), anchor='w').pack(fill=X, padx=16, pady=(18, 0))
@@ -154,7 +164,7 @@ class App:
 
         def item(text, command, indent=True):
             lbl = tk.Label(sidebar, text=('  ' + text if indent else text), bg=theme.SURFACE,
-                           fg=theme.MUTED, anchor='w', font=theme.FONT_UI, cursor='hand2',
+                           fg=theme.MUTED, anchor='w', font=theme.ui(10), cursor='hand2',
                            padx=8, pady=6)
             lbl.pack(fill=X, padx=(8, 4))
             lbl.bind('<Enter>', lambda e: lbl.configure(bg=theme.HOVER, fg=theme.FG))
@@ -200,7 +210,7 @@ class App:
             try:
                 self.root.after_cancel(self._resize_job)
             except Exception:
-                pass
+                log.debug('after_cancel 失败（窗口可能已销毁）', exc_info=True)
         self._resize_job = self.root.after(150, self._apply_font_scale)
 
     def _apply_font_scale(self):
@@ -215,29 +225,85 @@ class App:
         theme.set_scale(target)
         self._rescale_fonts()
         theme.apply_theme(self.style)
+        self._apply_scale_geometry()
 
     def _rescale_fonts(self):
+        """按 scale 调整 tk 控件字体（ttk 走 style，避免按控件改字体导致裁剪）。
+
+        - 字体对象按 (family,size,weight) 复用，避免命名 Tk 字体泄漏；
+        - _font_bases 每轮按存活控件重建，避免字典随页面销毁无限增长。
+        """
+        bases = {}
         for wdg in self._all_widgets(self.root):
+            if isinstance(wdg, tkttk.Widget):
+                continue
             try:
                 current = wdg.cget('font')
-            except Exception:
-                continue
-            if not current:
-                continue
-            try:
+                if not current:
+                    continue
                 f = tkfont.Font(root=self.root, font=current)
                 family, size, weight = f.actual('family'), f.actual('size'), f.actual('weight')
             except Exception:
                 continue
             key = str(wdg)
-            if key not in self._font_bases:
-                self._font_bases[key] = abs(size)
-            base = self._font_bases[key]
+            base = self._font_bases.get(key, abs(size))
+            bases[key] = base
             new_size = max(8, int(round(base * self.scale)))
+            fkey = (family, new_size, weight)
+            font = self._font_pool.get(fkey)
+            if font is None:
+                try:
+                    font = tkfont.Font(root=self.root, family=family, size=new_size, weight=weight)
+                except Exception:
+                    continue
+                self._font_pool[fkey] = font
             try:
-                wdg.configure(font=(family, new_size, weight))
+                wdg.configure(font=font)
             except Exception:
+                log.debug('字体应用失败: %s', wdg, exc_info=True)
+        self._font_bases = bases
+
+    def _apply_scale_geometry(self):
+        """随字体同步调整固定尺寸容器/行高/列宽，避免文字被裁切。"""
+        scale = self.scale
+        for widget, base_height in ((getattr(self, '_header', None), 46),
+                                    (getattr(self, '_statusbar', None), 24)):
+            if widget is not None and widget.winfo_exists():
+                try:
+                    widget.configure(height=int(base_height * scale))
+                except tk.TclError:
+                    pass
+        sidebar = getattr(self, '_sidebar', None)
+        if sidebar is not None and sidebar.winfo_exists():
+            try:
+                sidebar.configure(width=int(SIDEBAR_W * scale))
+            except tk.TclError:
                 pass
+        try:
+            self.style.configure('Treeview', rowheight=int(26 * scale))
+        except tk.TclError:
+            pass
+        tree = getattr(self, '_tree', None)
+        if tree is not None and tree.winfo_exists():
+            try:
+                tree.column('#0', width=int(560 * scale))
+                tree.column('id', width=int(90 * scale))
+                tree.column('meta', width=int(220 * scale))
+            except tk.TclError:
+                pass
+        for name, base_width in (('_works_listbox', 440), ('_works_inspector', 300),
+                                 ('_q_list_pane', 240), ('_q_inspector', 280)):
+            widget = getattr(self, name, None)
+            if widget is not None and widget.winfo_exists():
+                try:
+                    widget.configure(width=int(base_width * scale))
+                except tk.TclError:
+                    pass
+        try:
+            self.root.minsize(max(1200, int(1200 * min(scale, 1.25))),
+                              max(800, int(800 * min(scale, 1.25))))
+        except tk.TclError:
+            pass
 
     def _all_widgets(self, wdg):
         yield wdg
@@ -253,6 +319,7 @@ class App:
         try:
             self._matrix_rain(self.root.destroy)
         except Exception:
+            log.exception('代码雨播放失败，直接退出')
             self.root.destroy()
 
     def _matrix_rain(self, on_done, duration_ms=1800):
@@ -331,8 +398,36 @@ class App:
     def search_entry(self, parent, var, placeholder):
         tk.Label(parent, text='SEARCH', bg=theme.BG_RAISED, fg=theme.DIM,
                  font=('Consolas', 8)).pack(side=LEFT, padx=(0, 6))
-        ttk.Entry(parent, textvariable=var, width=24).pack(side=LEFT, padx=(0, GROUP))
-        return var
+        entry = ttk.Entry(parent, textvariable=var, width=24)
+        entry.pack(side=LEFT, padx=(0, GROUP))
+        if placeholder:
+            self._placeholders[str(var)] = placeholder
+            if not var.get().strip():
+                var.set(placeholder)
+
+            def clear_placeholder(_event=None):
+                if var.get() == placeholder:
+                    var.set('')
+
+            def restore_placeholder(_event=None):
+                if not var.get().strip():
+                    var.set(placeholder)
+
+            entry.bind('<FocusIn>', clear_placeholder)
+            entry.bind('<FocusOut>', restore_placeholder)
+        return entry
+
+    def _query_text(self, var):
+        if var is None:
+            return ''
+        value = (var.get() or '').strip()
+        return '' if value == self._placeholders.get(str(var)) else value
+
+    def _short(self, text, limit):
+        """按当前缩放截断过长文本，避免行内文字互相遮挡/被裁切。"""
+        text = str(text)
+        limit = max(6, int(limit * self.scale))
+        return text if len(text) <= limit else text[:limit - 1] + '…' 
 
     def combo_box(self, parent, var, values, width=10):
         ttk.Combobox(parent, textvariable=var, values=values, state='readonly',
@@ -344,10 +439,16 @@ class App:
                  'warning': 'warning', 'danger': 'danger', 'ghost': 'secondary'}[kind]
         return ttk.Button(parent, text=text, command=command, bootstyle=style, cursor='hand2')
 
+    def _debounce(self, job, delay=180):
+        if self._debounce_job:
+            try:
+                self.root.after_cancel(self._debounce_job)
+            except tk.TclError:
+                pass
+        self._debounce_job = self.root.after(delay, job)
+
     def _go(self, page):
-        return {'课程列表': self.show_courses,
-                '作业列表': self.show_works,
-                '返回课程列表': self.show_courses}[page]
+        return self.show_courses
 
     # ---------- 状态 / 导航辅助 ----------
 
@@ -380,6 +481,10 @@ class App:
         self.clear_content()
 
     def fetch(self, job, on_done):
+        if self._inflight >= 4:
+            self.log('请求过于频繁，已忽略本次加载')
+            return
+        self._inflight += 1
         token = self._token
 
         def work():
@@ -394,13 +499,15 @@ class App:
     # ---------- queue 轮询（主线程唯一更新点） ----------
 
     def _poll_queue(self):
+        busy = False
         try:
             while True:
                 self._handle_event(self.queue.get_nowait())
+                busy = True
         except queue.Empty:
             pass
         try:
-            self.root.after(60, self._poll_queue)
+            self.root.after(15 if busy else 120, self._poll_queue)
         except (tk.TclError, RuntimeError):
             pass
 
@@ -409,8 +516,13 @@ class App:
         try:
             if kind == 'deliver':
                 _, token, on_done, result = event
+                self._inflight = max(0, self._inflight - 1)
                 if token == self._token:
-                    on_done(result)
+                    try:
+                        on_done(result)
+                    except Exception as exc:
+                        log.exception('处理异步结果失败')
+                        self._write_log(f'ERROR {exc}')
             elif kind == 'status':
                 self._set_status(event[1])
             elif kind == 'progress':
@@ -444,6 +556,9 @@ class App:
                 self._render_image(holder, data, error)
         except tk.TclError:
             pass
+        except Exception as exc:
+            log.exception('事件处理失败')
+            self._write_log(f'ERROR {exc}')
 
     # ---------- 任务面板（内嵌 Task Panel，替代独立弹窗） ----------
 
@@ -547,7 +662,7 @@ class App:
         tk.Label(panel, text='AUTHENTICATION', bg=theme.SURFACE, fg=theme.PRIMARY,
                  font=('Consolas', 15, 'bold')).pack(anchor='w', padx=32, pady=(28, 2))
         tk.Label(panel, text='输入理工学堂账号以建立会话。', bg=theme.SURFACE, fg=theme.MUTED,
-                 font=theme.FONT_UI).pack(anchor='w', padx=32, pady=(0, 20))
+                 font=theme.ui(10)).pack(anchor='w', padx=32, pady=(0, 20))
 
         form = tk.Frame(panel, bg=theme.SURFACE)
         form.pack(anchor='w', padx=32, pady=(0, 8))
@@ -650,7 +765,7 @@ class App:
             mono(empty, '> ERROR', fg=theme.ERROR, size=10, bg=theme.SURFACE
                  ).pack(anchor='w', padx=12, pady=(8, 0))
             tk.Label(empty, text='获取课程列表失败 · 请检查网络后重试', bg=theme.SURFACE, fg=theme.MUTED,
-                     font=theme.FONT_UI, anchor='w').pack(anchor='w', padx=12, pady=(0, 8))
+                     font=theme.ui(10), anchor='w').pack(anchor='w', padx=12, pady=(0, 8))
             return
 
         self._tree_courses = {}
@@ -676,13 +791,13 @@ class App:
         self._tree.bind('<<TreeviewOpen>>', self._on_tree_open)
         self._tree.bind('<Double-1>', self._on_tree_activate)
         self._tree.bind('<<TreeviewSelect>>', self._on_tree_select)
-        self._c_search.trace_add('write', lambda *_: self._draw_courses_tree())
+        self._c_search.trace_add('write', lambda *_: self._debounce(self._draw_courses_tree))
         self._c_sort.trace_add('write', lambda *_: self._draw_courses_tree())
         self._draw_courses_tree()
 
     def _filtered_courses(self):
         rows = list(self.courses)
-        q = (self._c_search.get() if hasattr(self, '_c_search') else '').strip().lower()
+        q = self._query_text(getattr(self, '_c_search', None)).lower() if hasattr(self, '_c_search') else ''
         if q:
             rows = [c for c in rows
                     if q in str(c.get('courseName', '')).lower() or q in str(c.get('courseId', ''))]
@@ -708,7 +823,7 @@ class App:
         for course in rows:
             iid = f"c{course['courseId']}"
             self._tree_courses[iid] = course
-            self._tree.insert('', 'end', iid=iid, text=course['courseName'],
+            self._tree.insert('', 'end', iid=iid, text=self._short(course['courseName'], 42),
                               values=(course['courseId'], '展开查看作业'))
             self._tree.insert(iid, 'end', iid=iid + ':dummy', text='…', values=('', ''))
         if self._open_btn is not None and self._open_btn.winfo_exists():
@@ -736,12 +851,13 @@ class App:
                    lambda res, c=course, i=iid: self._fill_course_works(c, i, res))
 
     def _fill_course_works(self, course, iid, result):
-        if not self._tree.winfo_exists():
+        if not self._tree.winfo_exists() or not self._tree.exists(iid):
             return
         ok, data = result
         for child in self._tree.get_children(iid):
             self._tree.delete(child)
         if not ok:
+            self._loaded_courses.discard(course['courseId'])   # 允许重新展开重试
             self._tree.item(iid, values=(course['courseId'], 'load failed'))
             self._tree.insert(iid, 'end', iid=iid + ':err', text=str(data), values=('', 'ERR'))
             return
@@ -749,7 +865,7 @@ class App:
         for work in data:
             wid = f"w{work['workId']}"
             self._tree_works[wid] = (course, work)
-            self._tree.insert(iid, 'end', iid=wid, text=work['workName'],
+            self._tree.insert(iid, 'end', iid=wid, text=self._short(work['workName'], 42),
                               values=(work['workId'], self._work_status(work)))
 
     def _on_tree_select(self, event=None):
@@ -826,15 +942,16 @@ class App:
         self.btn(right, 'REFRESH', self.refresh_works, 'secondary').pack(side=LEFT, padx=(0, GAP))
         self.btn(right, 'EXPORT ALL', self.export_all_works, 'info').pack(side=LEFT, padx=(0, GAP))
         self.btn(right, 'SUBMIT ALL 100', self.submit_all_works_100, 'warning').pack(side=LEFT)
-        self._w_search.trace_add('write', lambda *_: self._draw_works())
-        self._w_status.trace_add('write', lambda *_: self._draw_works())
-        self._w_sort.trace_add('write', lambda *_: self._draw_works())
+        self._w_search.trace_add('write', lambda *_: self._debounce(self._draw_works))
+        self._w_status.trace_add('write', lambda *_: self._debounce(self._draw_works, 60))
+        self._w_sort.trace_add('write', lambda *_: self._debounce(self._draw_works, 60))
 
         body = tk.Frame(self.content_frame, bg=theme.BG)
         body.pack(fill=BOTH, expand=YES)
         list_box = tk.Frame(body, bg=theme.BG, width=440)
         list_box.pack(side=LEFT, fill=BOTH, expand=YES)
         list_box.pack_propagate(False)
+        self._works_listbox = list_box
         head = tk.Frame(list_box, bg=theme.BG)
         head.pack(fill=X, pady=(0, 8))
         mono(head, 'ASSIGNMENTS', fg=theme.DIM, size=9, bg=theme.BG).pack(side=LEFT)
@@ -855,7 +972,7 @@ class App:
 
     def _filtered_works(self):
         rows = list(self.works)
-        q = (self._w_search.get() if hasattr(self, '_w_search') else '').strip().lower()
+        q = self._query_text(getattr(self, '_w_search', None)).lower() if hasattr(self, '_w_search') else ''
         st = self._w_status.get() if hasattr(self, '_w_status') else '全部'
         srt = self._w_sort.get() if hasattr(self, '_w_sort') else '默认'
         if q:
@@ -888,7 +1005,7 @@ class App:
             mono(empty, '> NO MATCH', fg=theme.PRIMARY, size=9, bg=theme.SURFACE
                  ).pack(anchor='w', padx=12, pady=(8, 0))
             tk.Label(empty, text='该课程目前没有可用的作业。', bg=theme.SURFACE, fg=theme.MUTED,
-                     font=theme.FONT_UI, anchor='w').pack(anchor='w', padx=12, pady=(0, 8))
+                     font=theme.ui(10), anchor='w').pack(anchor='w', padx=12, pady=(0, 8))
         else:
             for work in rows:
                 self._work_row(self._w_lst, work)
@@ -899,7 +1016,7 @@ class App:
         bg = theme.HOVER if selected else theme.SURFACE
         row = tk.Frame(parent, bg=bg, highlightthickness=0)
         row.pack(fill=X, pady=(0, 6))
-        name_lbl = tk.Label(row, text=work['workName'], bg=bg, fg=theme.FG, anchor='w',
+        name_lbl = tk.Label(row, text=self._short(work['workName'], 34), bg=bg, fg=theme.FG, anchor='w',
                             font=('Microsoft YaHei', 10, 'bold'))
         name_lbl.pack(fill=X, padx=12, pady=(8, 0))
         line = tk.Frame(row, bg=bg)
@@ -939,9 +1056,9 @@ class App:
         body.pack(fill=X, padx=12)
         if work is None:
             tk.Label(body, text='未选择作业', bg=theme.SURFACE, fg=theme.MUTED,
-                     font=theme.FONT_UI, anchor='w').pack(anchor='w', pady=12)
+                     font=theme.ui(10), anchor='w').pack(anchor='w', pady=12)
             return
-        mono(body, work['workName'], fg=theme.FG, size=10, bg=theme.SURFACE).pack(anchor='w', pady=(2, 0))
+        mono(body, self._short(work['workName'], 24), fg=theme.FG, size=10, bg=theme.SURFACE).pack(anchor='w', pady=(2, 0))
 
         def field(k, label):
             rowf = tk.Frame(body, bg=theme.SURFACE)
@@ -950,7 +1067,9 @@ class App:
                      font=('Consolas', 8), width=9, anchor='w').pack(side=LEFT)
             val = work.get(k)
             shown = str(val) if val not in (None, '') else '—'
-            mono(rowf, shown, fg=theme.MUTED, size=9, bg=theme.SURFACE).pack(side=LEFT)
+            tk.Label(rowf, text=shown, bg=theme.SURFACE, fg=theme.MUTED, anchor='w',
+                     justify='left', wraplength=int(170 * self.scale),
+                     font=('Consolas', max(8, int(9 * self.scale)))).pack(side=LEFT)
 
         field('workId', 'ID')
         field('chapterName', 'CHAPTER')
@@ -1002,10 +1121,26 @@ class App:
         self._q_filter = tk.StringVar(value='全部')
         self._q_sort = tk.StringVar(value='默认')
         self._q_pos = 0
+        self.images = []          # 重新进入题目页时释放上一轮的 PhotoImage 引用
+        self._q_search.trace_add('write', lambda *_: self._q_trace(220))
+        self._q_filter.trace_add('write', lambda *_: self._q_trace(60))
+        self._q_sort.trace_add('write', lambda *_: self._q_trace(60))
         self.set_page(f'{self.selected_work_name} :: QUESTIONS')
         self._layout_questions()
 
+    def _q_trace(self, delay):
+        if getattr(self, '_building', False):
+            return  # 重建控件（Combobox 回写变量）时忽略
+        self._debounce(self._layout_questions, delay)
+
     def _layout_questions(self):
+        self._building = True
+        try:
+            self._layout_questions_inner()
+        finally:
+            self._building = False
+
+    def _layout_questions_inner(self):
         self.clear_content()
         self._qrows = self._filtered_questions()
         if self._q_pos >= len(self._qrows):
@@ -1029,9 +1164,6 @@ class App:
         right.pack(side=RIGHT)
         mono(right, f'{len(self._qrows)}/{len(self.questions)} SHOWN', fg=theme.DIM, size=9,
              bg=theme.BG_RAISED).pack(side=RIGHT)
-        self._q_search.trace_add('write', lambda *_: self._layout_questions())
-        self._q_filter.trace_add('write', lambda *_: self._layout_questions())
-        self._q_sort.trace_add('write', lambda *_: self._layout_questions())
 
         body = tk.Frame(self.content_frame, bg=theme.BG)
         body.pack(fill=BOTH, expand=YES)
@@ -1039,6 +1171,7 @@ class App:
         lst_pane = tk.Frame(body, bg=theme.BG, width=240)
         lst_pane.pack(side=LEFT, fill=Y)
         lst_pane.pack_propagate(False)
+        self._q_list_pane = lst_pane
         mono(lst_pane, 'QUESTIONS', fg=theme.DIM, size=9, bg=theme.BG).pack(anchor='w', pady=(0, 8))
         lst_frame = ScrolledFrame(lst_pane, autohide=True)
         lst_frame.pack(fill=BOTH, expand=YES)
@@ -1061,7 +1194,7 @@ class App:
 
     def _filtered_questions(self):
         rows = list(self.questions)
-        q = (self._q_search.get() if hasattr(self, '_q_search') else '').strip().lower()
+        q = self._query_text(getattr(self, '_q_search', None)).lower() if hasattr(self, '_q_search') else ''
         flt = self._q_filter.get() if hasattr(self, '_q_filter') else '全部'
         srt = self._q_sort.get() if hasattr(self, '_q_sort') else '默认'
         if q:
@@ -1073,10 +1206,18 @@ class App:
         elif flt == '无图片':
             rows = [x for x in rows if not x.get('imgurl') or x.get('imgurl') == 'N/A']
         if srt == '编号 ↑':
-            rows.sort(key=lambda x: int(x.get('id') or 0))
+            rows.sort(key=self._question_id_key)
         elif srt == '名称 A→Z':
             rows.sort(key=lambda x: str(x.get('name', '')))
         return rows
+
+    @staticmethod
+    def _question_id_key(item):
+        raw = item.get('id')
+        try:
+            return (0, int(raw), '')
+        except (TypeError, ValueError):
+            return (1, 0, str(raw))
 
     def _qlist_row(self, parent, pos, q):
         selected = (pos == self._q_pos)
@@ -1087,8 +1228,8 @@ class App:
                           fg=theme.PRIMARY if selected else theme.MUTED,
                           font=('Consolas', 9, 'bold'))
         id_lbl.pack(side=LEFT, padx=(10, 8), pady=9)
-        name_lbl = tk.Label(row, text=q.get('name', 'N/A'), bg=bg, fg=theme.FG, anchor='w',
-                            font=theme.FONT_UI)
+        name_lbl = tk.Label(row, text=self._short(q.get('name', 'N/A'), 26), bg=bg, fg=theme.FG, anchor='w',
+                            font=theme.ui(10))
         name_lbl.pack(side=LEFT, fill=X, expand=YES, pady=9)
         for wd in (row, id_lbl, name_lbl):
             wd.bind('<Button-1>', lambda e, p=pos: self._select_qpos(p))
@@ -1123,7 +1264,8 @@ class App:
                  bg=theme.SURFACE).pack(anchor='w', padx=16, pady=24)
             return
 
-        tk.Label(self._view, text=q.get('name', 'N/A'), bg=theme.SURFACE, fg=theme.FG, anchor='w',
+        tk.Label(self._view, text=self._short(q.get('name', 'N/A'), 48), bg=theme.SURFACE,
+                 fg=theme.FG, anchor='w', justify='left', wraplength=int(520 * self.scale),
                  font=('Microsoft YaHei', 12, 'bold')).pack(anchor='w', padx=16, pady=(6, 0))
         mono(self._view, f'ID {q.get("id", "N/A")}', fg=theme.DIM, size=9,
              bg=theme.SURFACE).pack(anchor='w', padx=16, pady=(2, 0))
@@ -1151,7 +1293,7 @@ class App:
                  font=('Consolas', 8), width=9, anchor='w').pack(side=LEFT)
         tk.Label(body, text=str(q.get('answer', 'N/A')), bg=theme.SURFACE, fg=theme.WARNING,
                  anchor='w', font=('Consolas', 10), justify='left',
-                 wraplength=220).pack(fill=X, pady=(0, 8))
+                 wraplength=int(220 * self.scale)).pack(fill=X, pady=(0, 8))
         score = tk.Frame(self._inspector, bg=theme.SURFACE)
         score.pack(fill=X, padx=14, pady=(4, 0))
         tk.Label(score, text='SCORE', bg=theme.SURFACE, fg=theme.DIM,
@@ -1159,7 +1301,7 @@ class App:
         self.grade_entry = ttk.Entry(score, width=8)
         self.grade_entry.pack(side=LEFT)
         tk.Label(self._inspector, text='提交成绩（0-100）', bg=theme.SURFACE, fg=theme.MUTED,
-                 font=theme.FONT_UI).pack(anchor='w', padx=14, pady=(6, 0))
+                 font=theme.ui(10)).pack(anchor='w', padx=14, pady=(6, 0))
         self.submit_grade_button = self.btn(self._inspector, 'SUBMIT', self.submit_grade, 'primary')
         self.submit_grade_button.pack(fill=X, padx=14, pady=(10, 14))
 
@@ -1182,6 +1324,8 @@ class App:
             try:
                 data = self.api.fetch_image(imgurl)
                 cache[imgurl] = data
+                while len(cache) > 40:      # 简单的图片字节上限，防内存增长
+                    cache.pop(next(iter(cache)))
                 self.queue.put(('image_bytes', holder, data, None))
             except Exception as exc:
                 self.queue.put(('image_bytes', holder, None, str(exc)))
@@ -1206,6 +1350,8 @@ class App:
         label = tk.Label(parent, image=photo, bg=theme.SURFACE)
         label.image = photo
         self.images.append(photo)
+        while len(self.images) > 40:        # 只保留最近若干张，避免引用泄漏
+            self.images.pop(0)
         label.pack()
 
     def submit_grade(self):
@@ -1357,7 +1503,7 @@ class App:
                       foreground=theme.SECONDARY).pack(anchor='w', padx=24, pady=(12, 4))
 
         def line(text):
-            ttk.Label(content, text=text, font=theme.FONT_UI, foreground=theme.MUTED,
+            ttk.Label(content, text=text, font=theme.ui(10), foreground=theme.MUTED,
                       justify='left').pack(anchor='w', padx=40, pady=1)
 
         head('功能介绍')

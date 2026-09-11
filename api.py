@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 """API 客户端：统一的 session / 超时 / 错误处理 / 鉴权。返回 (ok, data)。"""
+import os
+
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-BASE_URL = 'http://lgxt.wutp.com.cn/api'
+BASE_URL = os.environ.get('LGXT_API_BASE', 'http://lgxt.wutp.com.cn/api')
 TIMEOUT = 5
+MAX_IMAGE_BYTES = 8 * 1024 * 1024   # 单张题目图片上限
 
 
 class APIClient:
@@ -30,12 +33,18 @@ class APIClient:
             response = self.session.post(f'{self.base_url}/{endpoint}', headers=self.headers,
                                          data=data, timeout=TIMEOUT)
             response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            return False, f'网络错误：{e}'
+        try:
             result = response.json()
+        except ValueError:
+            return False, f'{fail_msg}：服务器返回了非 JSON 响应'
+        try:
             if result['code'] == 0:
                 return True, result['data']
             return False, f'{fail_msg}：{result["msg"]}'
-        except requests.exceptions.RequestException as e:
-            return False, f'网络错误：{e}'
+        except KeyError:
+            return False, f'{fail_msg}：响应缺少必要字段'
 
     def login(self, username, password):
         ok, data = self._post('login', {'loginName': username, 'password': password}, '登录失败')
@@ -64,10 +73,18 @@ class APIClient:
         return False, data
 
     def fetch_image(self, url):
-        """下载图片字节；失败抛异常，由调用方决定 UI 呈现。"""
+        """下载图片字节；做基础校验，失败抛异常由调用方呈现为 IMAGE ERROR。"""
         response = self.session.get(url, headers=self.headers, timeout=TIMEOUT)
         response.raise_for_status()
-        return response.content
+        ctype = response.headers.get('Content-Type', '')
+        if ctype and not ctype.lower().startswith('image/'):
+            raise ValueError(f'响应不是图片（{ctype}）')
+        data = response.content
+        if len(data) > MAX_IMAGE_BYTES:
+            raise ValueError(f'图片过大（{len(data)} bytes）')
+        if not data:
+            raise ValueError('图片内容为空')
+        return data
 
 
 # 默认实例：全应用共享（登录态/会话集中于此处）

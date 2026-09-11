@@ -7,7 +7,6 @@ LAYOUT 3：无硬线条 —— 层级完全靠背景深浅表达；字体按窗�
 BG = '#0B0D10'          # 窗口/内容底
 BG_RAISED = '#0D1117'   # header / status / command bar
 SURFACE = '#11161D'     # 面板/行
-SURFACE_2 = '#151B24'   # 次级面（淡出层次）
 HOVER = '#18212B'
 BORDER = '#161C24'      # 近乎不可见的“淡出”分隔（替代实线）
 FG = '#D7E0EA'
@@ -19,9 +18,6 @@ WARNING = '#FBBF24'     # amber
 ERROR = '#F87171'
 
 FONT_UI = ('Microsoft YaHei', 10)
-FONT_UI_BOLD = ('Microsoft YaHei', 10, 'bold')
-FONT_MONO = ('Consolas', 10)
-FONT_MONO_BOLD = ('Consolas', 10, 'bold')
 
 SCALE = 1.0             # 运行时由 App 根据窗口尺寸调整
 

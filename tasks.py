@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """后台任务：题目收集 / 批量提交 / 批量导出。
 
-线程安全约定：worker 内绝不直接操作 Tkinter 控件，只调用 ui 适配器的方法，
-这些方法内部一律通过 root.after() 把 UI 更新调度回主线程执行。
+线程安全约定：worker 内绝不直接操作 Tkinter 控件，只调用 ui 适配器的方法；
+适配器把事件写入 queue，由主线程轮询（after）消费后更新界面。
 """
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -25,6 +25,13 @@ def _merge_questions(collected, questions):
             collected[qid] = q
             new_found = True
     return new_found
+
+
+def _cancel_pending(futures):
+    """提前结束收集时取消尚未执行的任务，避免无意义的 API 请求。"""
+    for future in futures:
+        if not future.done():
+            future.cancel()
 
 
 def collect_single(ui, client, work_id, work_name, course_name, course_id, opts, max_iterations=100):
@@ -55,6 +62,7 @@ def collect_single(ui, client, work_id, work_name, course_name, course_id, opts,
                     if not _merge_questions(collected, questions):
                         no_new += 1
                         if processed >= MIN_ITERATIONS and no_new >= NO_NEW_THRESHOLD:
+                            _cancel_pending(futures)
                             break
                     else:
                         no_new = 0
@@ -63,8 +71,10 @@ def collect_single(ui, client, work_id, work_name, course_name, course_id, opts,
                     err = f'API错误: {questions}'
                     ui.status(f'获取题目时发生错误: {err}\n重试中... ({api_errors}/{MAX_API_ERRORS})')
                     if api_errors >= MAX_API_ERRORS:
+                        _cancel_pending(futures)
                         return fail('获取题目失败: 多次请求失败')
             except Exception as exc:
+                _cancel_pending(futures)
                 return fail(f'处理题目时出现错误: {exc}')
 
         if not collected:

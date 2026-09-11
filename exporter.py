@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """导出：题目图片缓存 + Word / PDF 输出。任务线程中调用，不触碰 UI。"""
 import collections
+import logging
 import os
 
 from docx import Document
@@ -8,6 +9,9 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, RGBColor
 from reportlab.lib import colors
 from reportlab.lib.units import inch
+
+log = logging.getLogger(__name__)
+WINDOWS_RESERVED = {'CON','PRN','AUX','NUL'} | {f'COM{i}' for i in range(1, 10)} | {f'LPT{i}' for i in range(1, 10)}
 
 IMAGE_DIR = '题目图片'
 FOLDER_ROOT = '作业'
@@ -18,7 +22,13 @@ ExportOptions = collections.namedtuple(
 
 
 def clean_name(name):
-    return ''.join(c for c in name if c not in r'<>:"/\|?*')
+    """清洗文件名：非法字符、结尾空格/点、Windows 保留名、超长截断。"""
+    cleaned = ''.join(c for c in str(name) if c not in r'<>:"/\|?*').strip().rstrip(' .')
+    if not cleaned:
+        cleaned = 'unnamed'
+    if cleaned.upper().split('.')[0] in WINDOWS_RESERVED:
+        cleaned = '_' + cleaned
+    return cleaned[:120]
 
 
 def assignment_folder(export_path, course_name, course_id, work_name, work_id):
@@ -42,7 +52,7 @@ def save_question(client, question, assignment_folder_path):
         with open(image_path, 'wb') as f:
             f.write(client.fetch_image(imgurl))
     except Exception as e:
-        print(f'无法下载题目 {question_id} 的图片：{e}')
+        log.warning('无法下载题目 %s 的图片：%s', question_id, e)
 
 
 def save_collected(client, collected_questions, work_name, course_name, work_id, course_id,
