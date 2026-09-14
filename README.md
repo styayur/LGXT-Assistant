@@ -177,7 +177,51 @@ python -m PyInstaller --noconfirm --clean --onedir --noconsole \
   --collect-all ttkbootstrap default.pyw
 ```
 
-## 十、Windows 安装包（MSI）
+## 十、Android 版（APK）
+
+移动端使用 **Flet（Python + Flutter）** 实现，通过 GitHub Actions 云端构建（无需本机 Android SDK）。
+
+### 下载安装
+1. 从 Releases 下载 `LGXT-Assistant-3.1.0-android.apk`
+2. 手机上允许"安装未知应用"后点击安装（APK 已签名，支持直接侧载）
+3. 支持 Android 7.0+，ABI：arm64-v8a / armeabi-v7a / x86_64
+
+### 移动端功能
+- 登录（记住账号密码，保存在应用本地存储 `client_storage`）
+- 仪表盘：待激活 / 已完成 / 平均分（真实 API 统计）
+- 课程 → 作业 → 题目浏览，题目图片在线查看
+- 成绩提交（0–100），错误提示与桌面版一致的语义
+- 深色宇宙主题、导航栏（仪表盘 / 课程 / 设置）
+
+### 与桌面版的差异（v1）
+- **不包含 Word / PDF 导出**（Android 上 python-docx/reportlab 的原生依赖难以打包）；导出请在桌面版使用
+- 不做本地文件写盘，改为在线查看题目与提交成绩
+- APK 当前使用构建时生成的调试签名；如需上架应用商店或长期发布，请用自有 keystore 做 release 签名（见下）
+
+### 构建 APK
+云端（推荐，仓库已配置工作流 `.github/workflows/android-apk.yml`）：
+```bash
+gh workflow run android-apk.yml          # 触发构建
+gh run download -n lgxt-android-apk      # 下载 APK 产物
+```
+
+本地构建（需要 Flutter 3.24.x + Android SDK + JDK 17）：
+```bash
+pip install flet==0.25.2
+cd mobile
+flet build apk
+# 产物：mobile/build/apk/app-release.apk
+```
+
+### 自有签名（可选）
+```bash
+flet build apk --android-signing-key-store my-release.jks \
+  --android-signing-key-store-password <pwd> \
+  --android-signing-key-alias <alias> \
+  --android-signing-key-password <pwd>
+```
+
+## 十一、Windows 安装包（MSI）
 
 提供用户级 MSI 安装包（**无需管理员权限**）：
 
@@ -199,7 +243,7 @@ powershell -ExecutionPolicy Bypass -File packaging\build_exe.ps1
 powershell -ExecutionPolicy Bypass -File packaging\build_msi.ps1 -WixBin <wix3 目录>
 ```
 
-## 十一、代码签名
+## 十二、代码签名
 
 ```powershell
 # 使用已有证书（推荐：CA 签发的代码签名证书）
@@ -219,7 +263,7 @@ powershell -ExecutionPolicy Bypass -File packaging\sign.ps1 -Path dist\*.exe `
   （导入到"受信任的根证书颁发机构"后，本机将显示签名有效；请勿在生产环境这样做）。
 - 创建自签名证书（仅开发/测试）：`packaging/new_selfsigned_cert.ps1`
 
-## 十二、许可
+## 十三、许可
 
 GPL-3.0-or-later，详见 [LICENSE](LICENSE)。
 本工具仅限学习交流使用，请勿转卖或用于商业用途。
