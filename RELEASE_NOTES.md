@@ -27,6 +27,7 @@
 |---|---|
 | `LGXT-Assistant.exe` | 单文件版：下载后双击即可运行 |
 | `LGXT-Assistant-portable.zip` | 便携版：解压后运行 `LGXT-Assistant-portable.exe`，启动更快 |
+| `LGXT-Assistant-3.1.0-setup.msi` | MSI 安装包：用户级安装（无需管理员），自动创建开始菜单快捷方式，可在「设置 → 应用」卸载 |
 
 两种产物均由 PyInstaller 打包，内置 Python 运行时与全部依赖（ttkbootstrap 主题、
 Pillow、python-docx、reportlab、keyring 等），**在未安装 Python 的 Windows 电脑上可直接运行**。

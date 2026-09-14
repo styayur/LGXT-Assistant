@@ -177,7 +177,49 @@ python -m PyInstaller --noconfirm --clean --onedir --noconsole \
   --collect-all ttkbootstrap default.pyw
 ```
 
-## 十、许可
+## 十、Windows 安装包（MSI）
+
+提供用户级 MSI 安装包（**无需管理员权限**）：
+
+```powershell
+msiexec /i LGXT-Assistant-3.1.0-setup.msi
+```
+
+- 安装位置：`%LOCALAPPDATA%\Programs\LGXT Assistant`
+- 自动创建开始菜单快捷方式；卸载可在「设置 → 应用」或开始菜单中完成
+- 卸载：`msiexec /x LGXT-Assistant-3.1.0-setup.msi`
+
+构建 MSI（WiX Toolset v3 免安装二进制 + 脚本）：
+
+```powershell
+# 1) 下载并解压 wix314-binaries.zip（https://github.com/wixtoolset/wix3/releases）
+# 2) 先构建便携版（MSI 安装的是便携版目录）
+powershell -ExecutionPolicy Bypass -File packaging\build_exe.ps1
+# 3) 构建 MSI
+powershell -ExecutionPolicy Bypass -File packaging\build_msi.ps1 -WixBin <wix3 目录>
+```
+
+## 十一、代码签名
+
+```powershell
+# 使用已有证书（推荐：CA 签发的代码签名证书）
+powershell -ExecutionPolicy Bypass -File packaging\sign.ps1 `
+  -Path dist\LGXT-Assistant.exe, dist\LGXT-Assistant-3.1.0-setup.msi `
+  -Thumbprint <证书指纹>
+# 或使用 PFX
+powershell -ExecutionPolicy Bypass -File packaging\sign.ps1 -Path dist\*.exe `
+  -PfxPath cert.pfx -PfxPassword (Read-Host -AsSecureString)
+```
+
+- 本仓库当前产物使用**自签名证书**签名（用于完整性验证与流程演示），
+  因此 Windows 仍会显示"未知发布者"——这是预期行为。
+- 若要让 SmartScreen 不再警告，需要购买 **CA 签发的代码签名证书（OV/EV）**，
+  然后用上面的 `sign.ps1` 重新签名（脚本会自动尝试 RFC3161 时间戳）。
+- 自签名证书公钥已导出：`packaging/LGXT-Assistant-SelfSigned.cer`
+  （导入到"受信任的根证书颁发机构"后，本机将显示签名有效；请勿在生产环境这样做）。
+- 创建自签名证书（仅开发/测试）：`packaging/new_selfsigned_cert.ps1`
+
+## 十二、许可
 
 GPL-3.0-or-later，详见 [LICENSE](LICENSE)。
 本工具仅限学习交流使用，请勿转卖或用于商业用途。
