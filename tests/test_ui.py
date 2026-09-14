@@ -23,8 +23,8 @@ def test_short_truncates_with_ellipsis():
 
 def test_app_is_composed_from_mixins():
     from ui import App
-    for mixin in (ui.base.AppBase, ui.login.LoginMixin, ui.courses.CoursesMixin,
-                  ui.works.WorksMixin, ui.questions.QuestionsMixin,
+    for mixin in (ui.base.AppBase, ui.login.LoginMixin, ui.dashboard.DashboardMixin,
+                  ui.courses.CoursesMixin, ui.works.WorksMixin, ui.questions.QuestionsMixin,
                   ui.settings.SettingsMixin, ui.actions.TasksMixin, ui.widgets.WidgetsMixin):
         assert issubclass(App, mixin)
 
@@ -44,3 +44,31 @@ def test_app_can_start_headless(monkeypatch):
     app = ui.App(root)
     assert app.username_entry is not None          # 登录页已构建
     root.destroy()
+
+
+def test_dashboard_stats_collector():
+    from ui.dashboard import DashboardMixin
+
+    class Dummy(DashboardMixin):
+        def __init__(self, works_by_course, fail=()):
+            self.api = self
+            self._works = works_by_course
+            self._fail = set(fail)
+
+        def get_course_works(self, cid):
+            if cid in self._fail:
+                return (False, 'boom')
+            return (True, self._works.get(cid, []))
+
+    dummy = Dummy({
+        1: [{'grade': 90, 'times': 1, 'tryTimes': 3},
+            {'grade': None, 'times': 1, 'tryTimes': 3},
+            {'grade': None, 'times': 3, 'tryTimes': 3}],
+        2: [{'grade': 70, 'times': 1, 'tryTimes': 2}],
+    }, fail=[3])
+    stats = dummy._collect_dashboard([{'courseId': 1, 'courseName': 'A'},
+                                      {'courseId': 2, 'courseName': 'B'},
+                                      {'courseId': 3, 'courseName': 'C'}])
+    assert stats['pending'] == 1 and stats['completed'] == 2
+    assert abs(stats['average'] - 80.0) < 1e-6
+    assert stats['total'] == 4 and stats['fetch_fail'] == 1

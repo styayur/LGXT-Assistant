@@ -3,6 +3,7 @@
 from .actions import TasksMixin
 from .base import AppBase, PAD, SIDEBAR_W
 from .courses import CoursesMixin
+from .dashboard import DashboardMixin
 from .login import LoginMixin
 from .questions import QuestionsMixin
 from .settings import SettingsMixin
@@ -10,7 +11,7 @@ from .widgets import WidgetsMixin
 from .works import WorksMixin
 
 
-class App(LoginMixin, CoursesMixin, WorksMixin, QuestionsMixin, SettingsMixin,
+class App(LoginMixin, DashboardMixin, CoursesMixin, WorksMixin, QuestionsMixin, SettingsMixin,
           TasksMixin, WidgetsMixin, AppBase):
     """完整应用：由各职责 mixin 组合而成（方法体与拆分前一致）。"""
 

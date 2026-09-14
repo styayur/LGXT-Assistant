@@ -21,6 +21,141 @@ def mono(parent, text, fg=theme.MUTED, size=9, bg=theme.BG):
                     font=('Consolas', size), anchor='w')
 
 
+def cut_points(x1, y1, x2, y2, cut):
+    """硬朗金属切角矩形的多边形顶点（左上/右下切角）。"""
+    return [x1 + cut, y1, x2, y1, x2, y2 - cut, x2 - cut, y2, x1, y2, x1, y1 + cut]
+
+
+def draw_metal(canvas, points, fill, light=theme.METAL_LIGHT, dark=theme.METAL_DARK, width=1):
+    canvas.create_polygon(points, fill=fill, outline='')
+    half = len(points) // 2
+    canvas.create_line(points[:2] + [points[2], points[3]], fill=light, width=width)
+    canvas.create_line(points[4:8], fill=dark, width=width)
+    canvas.create_line([points[-2], points[-1], points[0], points[1]], fill=dark, width=width)
+
+
+class AngularPanel(tk.Canvas):
+    """金属切角面板：内部 body Frame 供业务放置内容。"""
+
+    def __init__(self, parent, cut=16, padding=14, bg=theme.SURFACE, line=theme.METAL_LIGHT):
+        parent_bg = theme.BG
+        try:
+            parent_bg = parent.cget('bg')
+        except Exception:
+            pass
+        super().__init__(parent, bg=parent_bg, highlightthickness=0, bd=0)
+        self._cut = cut
+        self._padding = padding
+        self._fill = bg
+        self._line = line
+        self.body = tk.Frame(self, bg=bg)
+        self._win = self.create_window(padding, padding, anchor='nw', window=self.body)
+        self.bind('<Configure>', lambda e: self._redraw())
+
+    def _redraw(self):
+        self.delete('metal')
+        w, h = self.winfo_width(), self.winfo_height()
+        if w < 8 or h < 8:
+            return
+        pts = cut_points(1, 1, w - 1, h - 1, self._cut)
+        self.create_polygon(pts, fill=self._fill, outline='', tags='metal')
+        self.create_line(pts[:4], fill=self._line, width=1, tags='metal')
+        self.create_line(pts[-4:], fill=theme.METAL_DARK, width=1, tags='metal')
+        self.tag_lower('metal')
+        pad = self._padding
+        self.itemconfigure(self._win, width=max(1, w - pad * 2), height=max(1, h - pad * 2))
+
+
+class GlowButton(tk.Canvas):
+    """深色透光切角按钮：hover 光效 + 音效（音效经 ui.audio 静默降级）。"""
+
+    def __init__(self, parent, text='', command=None, kind='primary', width=None,
+                 height=30, cut=9, font=None):
+        self._text = text
+        self._command = command
+        self._kind = kind
+        self._font = font or ('Microsoft YaHei', 10)
+        self._disabled = False
+        self._hover = False
+        self._bg, self._fg, self._active, _pressed = theme.BUTTON_SCHEMES.get(kind, theme.BUTTON_SCHEMES['primary'])
+        if kind == 'ghost':
+            self._bg, self._fg = theme.BG_RAISED, theme.MUTED
+        try:
+            parent_bg = parent.cget('bg')
+        except Exception:
+            parent_bg = theme.BG
+        w = width or self._measure() + 26
+        super().__init__(parent, width=w, height=height, bg=parent_bg,
+                         highlightthickness=0, bd=0, cursor='hand2')
+        self.bind('<Enter>', self._on_enter)
+        self.bind('<Leave>', self._on_leave)
+        self.bind('<Button-1>', self._on_click)
+        self._draw()
+
+    def _measure(self):
+        import tkinter.font as tkfont
+        return tkfont.Font(family=self._font[0], size=self._font[1]).measure(self._text)
+
+    def _on_enter(self, _e=None):
+        if self._disabled:
+            return
+        self._hover = True
+        try:
+            from . import audio
+            audio.play('hover')
+        except Exception:
+            pass
+        self._draw()
+
+    def _on_leave(self, _e=None):
+        self._hover = False
+        self._draw()
+
+    def _on_click(self, _e=None):
+        if self._disabled:
+            return
+        try:
+            from . import audio
+            audio.play('click')
+        except Exception:
+            pass
+        if self._command:
+            self._command()
+
+    def _draw(self):
+        self.delete('all')
+        w, h = int(self['width']), int(self['height'])
+        pts = cut_points(1, 1, w - 1, h - 1, 9)
+        fill = self._active if self._hover else self._bg
+        self.create_polygon(pts, fill=fill, outline='')
+        glow = theme.SECONDARY if self._kind in ('info', 'secondary', 'ghost') else theme.PRIMARY
+        self.create_line(pts[:4], fill=glow if self._hover else theme.METAL_LIGHT, width=1)
+        self.create_line(pts[-4:], fill=theme.METAL_DARK, width=1)
+        fg = theme.DIM if self._disabled else self._fg
+        self.create_text(w / 2, h / 2, text=self._text, fill=fg, font=self._font)
+
+    # ---- 兼容 ttk 风格调用 ----
+    def configure(self, cnf=None, **kw):
+        if 'text' in kw:
+            self._text = kw.pop('text')
+        if 'state' in kw:
+            self.state(kw.pop('state'))
+        return super().configure(cnf, **kw)
+
+    config = configure
+
+    def state(self, states):
+        if isinstance(states, str):
+            states = [states]
+        for s in states:
+            if s == 'disabled':
+                self._disabled = True
+            elif s == '!disabled':
+                self._disabled = False
+        self.configure(cursor='arrow' if self._disabled else 'hand2')
+        self._draw()
+
+
 class WidgetsMixin:
     def page_header(self, title, subtitle='', back=None):
         """标准 Page Header：标题 + 可选 meta + 可选返回，返回容器供页面加右侧动作。"""
@@ -85,9 +220,7 @@ class WidgetsMixin:
         return var
 
     def btn(self, parent, text, command, kind='primary'):
-        style = {'primary': 'primary', 'secondary': 'secondary', 'info': 'info',
-                 'warning': 'warning', 'danger': 'danger', 'ghost': 'secondary'}[kind]
-        return ttk.Button(parent, text=text, command=command, bootstyle=style, cursor='hand2')
+        return GlowButton(parent, text=text, command=command, kind=kind)
 
     def _debounce(self, job, delay=180):
         if self._debounce_job:

@@ -35,6 +35,7 @@ class Settings:
         self.export_word_include_answers = True
         self.export_pdf = False
         self.export_pdf_include_answers = True
+        self.ui_sound = True
         self.load()
 
     def _read(self, path):
@@ -67,6 +68,7 @@ class Settings:
         self.export_word_include_answers = s.getboolean('export_word_include_answers', True)
         self.export_pdf = s.getboolean('export_pdf', False)
         self.export_pdf_include_answers = s.getboolean('export_pdf_include_answers', True)
+        self.ui_sound = s.getboolean('ui_sound', True)
         if migrated:
             self.save()
 
@@ -78,6 +80,7 @@ class Settings:
             'export_word_include_answers': str(self.export_word_include_answers),
             'export_pdf': str(self.export_pdf),
             'export_pdf_include_answers': str(self.export_pdf_include_answers),
+            'ui_sound': str(self.ui_sound),
         }
         try:
             os.makedirs(os.path.dirname(self.path), exist_ok=True)

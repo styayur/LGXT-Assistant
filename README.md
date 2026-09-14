@@ -1,162 +1,162 @@
 # LGXT Assistant · 理工学堂助手
 
-> 面向理工学堂平台的 Windows 桌面工具：查看课程与作业、浏览/导出题目
-> （图片 + 答案，Word / PDF）、单题与批量提交成绩。
+> 一个面向理工学堂平台的 Windows 桌面工具：课程星图浏览、作业与题目查看、
+> Word/PDF 导出（含答案与题目图片）、单个/批量成绩提交。
 >
-> 界面为 **Developer Workbench** 风格：深色、无边框淡出层次、等宽技术字体、
-> 科目/作业**树状展开**、本地**搜索/筛选/排序**、字体随窗口自适应。
+> 界面为 **宇宙星链 / Developer Workbench** 风格：无边框工作台、代码绘制的星点背景、
+> 悬停光轨、科目恒星系与行星习题、金属切角面板、深色透光按钮（悬停光效 + 轻音效）、
+> 仪表盘统计，以及退出时的代码雨特效。
 
-![Login](docs/screenshots/login_1280.png)
-![Courses Tree](docs/screenshots/courses_1280.png)
+![Star Map](docs/screenshots/starmap_1280.png)
+![Dashboard](docs/screenshots/dashboard_1280.png)
+![Courses](docs/screenshots/courses_1280.png)
 ![Works + Inspector](docs/screenshots/works_sel_1280.png)
-![Questions 3-pane](docs/screenshots/questions_1280.png)
-![Matrix Rain on Exit](docs/screenshots/matrix_rain_1280.png)
+![Questions](docs/screenshots/questions_1280.png)
+![Matrix Rain](docs/screenshots/matrix_rain_1280.png)
 
 ---
 
-## 主要特性
+## 一、快速开始
 
-| 特性 | 说明 |
-|---|---|
-| 全屏工作区 | 启动即最大化；`F11` 在「最大化 / 真全屏」之间切换 |
-| 自适应字体 | 窗口尺寸变化时按比例缩放全部 UI / 技术字体（0.9×–1.5×） |
-| 树状主页 | 课程（科目）为父节点，展开时才懒加载该科目的作业子节点 |
-| 搜索 / 筛选 / 排序 | 全部本地执行，不额外请求服务器（课程 / 作业 / 题目三页均可） |
-| 无边框淡出美学 | 去掉所有硬线条：层级只靠背景深浅（BG → SURFACE → HOVER）表达 |
-| 关闭代码雨 | 关闭窗口或点「退出」时播放 Matrix 代码雨特效后再退出 |
-| 后台任务 | 页面加载 / 图片 / 提交 / 导出全部后台线程 + 队列，界面不阻塞 |
-| 图片缓存 | 导出题目图片命中本地文件即跳过下载，损坏自动重下 |
-| 导出 | 单作业 / 当前课程 / 全部课程 → Word(.docx)、PDF(.pdf)，可选含答案 |
+### 1. 直接运行（推荐）
+从 Releases 下载 `LGXT-Assistant.exe`，双击运行，无需安装 Python。
 
-## 环境要求
-
-- Windows
-- Python 3.7+
-
-## 快速开始
-
+### 2. 从源码运行
 ```bash
 pip install -r requirements.txt
 python default.pyw
 ```
+环境：Windows + Python 3.7 及以上。
 
-依赖：`keyring` `requests` `ttkbootstrap` `Pillow` `python-docx` `reportlab`
+## 二、界面与交互
 
----
+| 特性 | 说明 |
+|---|---|
+| 无边框工作台 | 隐藏系统原生标题栏与最小化/关闭按钮；标题栏可拖动，右下角三角可缩放 |
+| 退出方式 | **ESC** 退出（先播放约 1.8s 代码雨）；也可点侧栏「退出」 |
+| 全屏 | **F11** 在「全屏 / 工作区」间切换；双击标题栏最大化工作区 |
+| 星点背景 | 全部由 Canvas 代码绘制：星点持续漂浮闪烁 |
+| 悬停光轨 | 鼠标靠近星点时，附近星点产生向光标汇聚的青色光轨 |
+| 金属切角 | 面板/按钮使用硬朗切角多边形 + 双色金属描边（无圆角、无系统边框） |
+| 透光按钮 | 深色透光切角按钮；悬停出现光效并播放轻音效（设置页可关闭） |
 
-## 使用教程
+## 三、功能教程
 
 ### 1. 登录
-AUTH 面板输入理工学堂用户名 / 密码；勾选「记住密码」写入本地凭据库（keyring）。
-成功后右上角出现 `● CONNECTED`。
+AUTH 面板输入用户名/密码；勾选「记住密码」写入 Windows 凭据库（keyring）。
+登录成功后右上角显示 `● CONNECTED`。
 
-### 2. 主页：科目 / 作业树状展开
-主页是一棵 **课程树**：
+### 2. 仪表盘
+侧栏 → **仪表盘**：
+- **待激活 PENDING**：尚未提交且仍有剩余次数的作业数量；
+- **已完成 DONE**：已有成绩的作业数量；
+- **平均分 AVG**：已完成作业成绩的算术平均；
+- 下方显示作业总数与读取失败的课程；`REFRESH` 重新统计。
 
-- 顶层节点 = 课程（科目），右侧显示课程 ID 与作业数量；
-- 点击左侧箭头 **展开** 才去请求该课程的作业（懒加载，不浪费请求）；
-- 作业子节点右侧显示 `STATUS`：`TRY 2/3`、`EXHAUSTED`、`DONE`；
-- **单击**选中节点；**双击**：
-  - 双击课程 → 进入该课程的作业工作区（List + Inspector）；
-  - 双击作业 → 直接进入题目三栏工作区（自动选中该作业）。
-- 顶部命令条：
-  - `SEARCH`：按课程名 / ID 本地过滤；
-  - `SORT`：默认 / 名称 A→Z / Z→A / ID；
-  - `OPEN ▸ 作业 | 题目`（跟随当前选中节点）、`REFRESH`、`EXPORT ALL`、`SUBMIT ALL 100`。
+> 所有数字均来自服务器真实返回，不做任何推测或伪造。
 
-### 3. 作业工作区（List + Inspector）
+### 3. 课程星图（科目 = 恒星系，习题 = 行星）
+侧栏 → **课程星图**：
+- 每颗恒星代表一门课程；**单击恒星**展开/收起其习题行星（展开时才请求该课程作业）；
+- 行星颜色：🟢 可提交 / 🟠 仅剩最后一次 / 🔴 已用完 / 🔵 已完成；
+- **单击行星**直接进入题目工作区；展开失败时恒星下方显示 `LOAD FAILED`，再次单击可重试；
+- 顶部：`SEARCH` 按课程名/ID 过滤，`SORT` 名称或 ID 排序，`REFRESH` 重新同步；
+- 右侧：`EXPORT ALL` 导出全部课程、`SUBMIT ALL 100` 批量提交全部课程。
+
+### 4. 作业工作区（List + Inspector）
 - 左列表：`SEARCH`（作业名/章节/ID）、`FILTER`（全部/可提交/已用完）、`SORT`（截止时间/剩余/名称）；
-- 单击选中 → 右侧 **INSPECTOR** 显示 ID / 章节 / 截止 / 成绩 / 尝试次数 / 状态；
-- `OPEN ▸ 题目` 进入题目页（也可双击行）；`EXPORT 题目` 单独导出该作业；
-- 顶部 `EXPORT ALL` / `SUBMIT ALL 100` / `REFRESH` 为该课程批量操作。
+- 右侧 **INSPECTOR**：ID、章节、截止时间、成绩、尝试次数、状态（DONE/EXHAUSTED）；
+- `OPEN ▸ 题目` 进入题目页（或双击列表行）；`EXPORT 题目` 单独导出该作业；
+- 顶部 `EXPORT ALL` / `SUBMIT ALL 100` / `REFRESH` 作用于当前课程。
 
-### 4. 题目工作区（三栏）
-- 左：题目列表（`SEARCH` 题名/答案/ID，`FILTER` 全部/有答案/无图片，`SORT` 编号/名称）；
-- 中：当前题目名称、ID 与题面图片（异步加载 + 内存缓存）；
-- 右：**INSPECTOR** 显示答案，输入 0–100 点 `SUBMIT` 提交该作业成绩；
-- `‹` / `›` 切换题目；页头 `‹ 返回作业列表` 返回。
+### 5. 题目工作区（三栏）
+- 左：题目列表（`SEARCH` 题名/答案/ID、`FILTER` 全部/有答案/无图片、`SORT` 编号/名称）；
+- 中：题面名称、ID 与图片（后台下载，内存 + 文件双层缓存）；
+- 右：**INSPECTOR** 显示答案，输入 0–100 后 `SUBMIT` 提交该作业成绩；
+- `‹` / `›` 切换题目，页头 `‹ 返回作业列表` 返回。
 
-### 5. 设置
-- `EXPORT`：Word / PDF、是否含答案；
-- `PATH`：导出目录；
-- 右侧 `SYSTEM`：API 地址、版本、许可、登录状态（真实信息，不伪造指标）；
-- `SAVE` 写入 `config.ini`，`USER INFO` 查看账号信息。
+### 6. 导出
+- 目录结构：`<导出路径>/作业/<课程名>(ID_x)/<作业名>(ID_y)/`
+  - `题目图片/<题目ID>.png`
+  - `<作业名>.docx`、`<作业名>.pdf`（可选含答案）
+- 同一作业重复导出时，已存在且非空的图片会跳过下载；
+- 批量任务在页面底部 **Task Panel** 显示进度，完成后弹出结果汇总。
 
-### 6. 全屏 / 字体 / 退出特效
-- 启动默认最大化（`state('zoomed')`，非锁定式全屏，可自由缩放）；
-- `F11` 切换真全屏；
-- 拖动窗口大小，字体自动按 `width/1440` 比例缩放（限幅 0.9–1.5）；
-- 点侧栏「退出」或点窗口关闭按钮 → 播放约 1.8s **代码雨**（字符下落 + 层次渐隐）后退出。
+### 7. 设置与帮助
+- `EXPORT`：Word/PDF 与是否含答案；`PATH`：导出目录；`UI`：界面音效开关；
+- `SAVE` 保存（写入 `%APPDATA%\LGXT-Assistant\config.ini`）；`USER INFO` 查看账号信息；
+- 右侧 `SYSTEM` 面板显示 API 地址、版本、许可与登录状态；
+- 帮助窗口包含：界面与窗口、星图、仪表盘、作业/题目、导出、快捷键、常见问题与声明。
 
----
+## 四、快捷键
 
-## 项目结构
+| 按键 | 作用 |
+|---|---|
+| `ESC` | 退出（代码雨特效） |
+| `F11` | 全屏 / 还原 |
+| 双击标题栏 | 最大化 / 还原工作区 |
+| 单击恒星 / 行星 | 展开恒星系 / 打开题目 |
+| 双击作业行 | 打开题目 |
+
+## 五、数据与配置位置
+
+| 内容 | 位置 |
+|---|---|
+| 配置 | `%APPDATA%\LGXT-Assistant\config.ini`（旧版脚本目录配置自动迁移） |
+| 凭据 | Windows 凭据管理器（keyring，不写入配置文件） |
+| 导出 | 设置页指定目录（默认当前工作目录） |
+
+## 六、常见问题
+
+| 问题 | 处理 |
+|---|---|
+| 登录失败 | 检查账号密码；错误提示会区分「网络错误 / 非 JSON 响应 / 缺少字段」 |
+| 星图展开失败 | 确认网络后再次单击该恒星重试 |
+| 图片显示失败 | 提示 `[ IMAGE ERROR ]`；可重新进入题目页重试 |
+| 导出失败 | 检查导出路径是否可写；结果弹窗会列出失败原因 |
+| 没有声音 | 设置页 `UI` 分组开启「界面音效」 |
+| 想用 HTTPS | 设置环境变量 `LGXT_API_BASE=https://<host>/api` 后启动 |
+
+## 七、项目结构
 
 ```
-default.pyw        入口（python default.pyw）
-theme.py           Design Token、无边框主题、字体缩放接口
-api.py             API 客户端（session / 鉴权 / 统一 (ok, data) 错误结构）
-tasks.py           题目收集、批量提交、批量导出（后台线程）
-exporter.py        图片缓存 + Word / PDF 导出
-config.py          %APPDATA% 配置 + 本地凭据（keyring，全部容错）
-ui/                UI 包（按职责拆分，App 由 mixin 组合）
-  ├── base.py      窗口框架 / 状态 / 队列轮询 / 任务适配 / 字体缩放 / 代码雨
-  ├── widgets.py   PageHeader / CommandBar / 搜索框 / 下拉框 / 文本助手
-  ├── login.py     登录页
-  ├── courses.py   课程树（科目 → 作业 懒加载）
-  ├── works.py     作业工作区（List + Inspector）
-  ├── questions.py 题目工作区（List + View + Inspector）
-  ├── settings.py  设置与帮助
-  └── actions.py   批量 / 收集任务入口
-tests/             pytest 测试（22 项：api/config/exporter/tasks/ui）
-docs/              截图与文档资源
+default.pyw        启动入口
+theme.py           Design Token / 金属切角配色 / 字体缩放
+api.py             API 客户端（session、鉴权、错误分类、图片校验）
+tasks.py           收集器与批量任务（后台线程 + future 取消）
+exporter.py        图片缓存 + Word/PDF 导出
+config.py          %APPDATA% 配置 + keyring 凭据（全部容错）
+ui/
+  base.py          无边框外壳、队列轮询、字体缩放、星点背景、代码雨
+  widgets.py       切角金属面板 / 光效按钮 / PageHeader / CommandBar
+  space.py         星图（恒星系 = 科目，行星 = 习题，悬停光轨）
+  dashboard.py     仪表盘统计
+  login.py / courses.py / works.py / questions.py / settings.py / actions.py
+tests/             pytest 测试集（23 项）
+docs/screenshots/  README / Release 截图
 ```
 
-### 线程模型（开发者须知）
+线程模型：worker 只把事件写入 `queue.Queue`，主线程用 `after()` 轮询更新 UI；
+导出开关在主线程读取为 `ExportOptions` 快照后传入 worker，避免跨线程访问 Tk 变量。
 
-后台 worker 不直接操作任何控件，只把事件写入 `queue.Queue`；
-主线程以 `after(60ms)` 轮询消费事件（状态 / 进度 / 图片 / 结果）。
-导出开关在主线程读取为只读快照 `ExportOptions` 后传入 worker。
-（若 worker 直接调用 `root.after`，在 Python 3.13 会抛 `RuntimeError` —— 本项目已规避。）
-
-## 稳定性修复（代码审计后）
-
-- **登录不再被 keyring 打断**：凭据读写全部容错；删除仅针对已存在条目，后端缺失也不会抛异常。
-- **配置文件迁移**：默认写入 `%APPDATA%\LGXT-Assistant\config.ini`，首次运行自动读取并迁移旧版脚本目录配置。
-- **内存占用可控**：题目图片字节与 `PhotoImage` 均设上限（40），重新进入题目页释放上一轮引用；字体缓存池化，不再为每个控件创建命名 Tk 字体。
-- **树状主页更稳**：展开失败可重新展开重试；异步回调用 `exists(iid)` 保护，避免导航竞态抛 `TclError`。
-- **非数字题目 ID 不再导致排序崩溃**（数字优先、字符串兜底）。
-- **请求更克制**：页面加载最多 4 个在途请求，超出会忽略并提示；收集提前结束时取消未执行的 future。
-- **字体遮挡修复**：缩放时同步调整 Header/StatusBar/Sidebar 高度与宽度、Treeview 行高/列宽、三栏与 Inspector 宽度；过长文本自动省略号，长标题/答案自动换行；ttk 控件字体统一走 Style，避免按控件改字体造成文字被裁切。
-- **API 错误更准确**：区分"网络错误 / 非 JSON 响应 / 缺少字段"；图片下载校验 Content-Type、大小与空内容。
-
-## 测试
+## 八、开发与测试
 
 ```bash
 pip install -r requirements-dev.txt
-python -m pytest
+python -m pytest           # 23 passed
+python -m compileall default.pyw theme.py api.py config.py exporter.py tasks.py ui tests
 ```
 
-覆盖：API 错误分类与鉴权、配置迁移与 keyring 容错、导出与图片缓存、
-收集器停止条件与 future 取消、UI 组合/排序/文本截断/无头启动。
+## 九、打包
 
-## 切换到 HTTPS（可选）
-
-客户端默认使用服务端现有地址；若服务端启用 HTTPS，可通过环境变量覆盖：
-
-```powershell
-# PowerShell
-$env:LGXT_API_BASE = "https://lgxt.wutp.com.cn/api"
-python default.pyw
+```bash
+pip install pyinstaller
+python -m PyInstaller --noconfirm --clean --onefile --noconsole \
+  --name LGXT-Assistant --collect-all ttkbootstrap default.pyw
+# 产物：dist/LGXT-Assistant.exe
 ```
 
-```cmd
-:: CMD
-set LGXT_API_BASE=https://lgxt.wutp.com.cn/api
-python default.pyw
-```
-
-## 许可
+## 十、许可
 
 GPL-3.0-or-later，详见 [LICENSE](LICENSE)。
 本工具仅限学习交流使用，请勿转卖或用于商业用途。

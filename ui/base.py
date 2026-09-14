@@ -47,8 +47,12 @@ class AppBase:
         self.selected_work_id = None
         self.selected_work_name = ''
 
-        self.config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
-        self.settings = config.Settings(self.config_file)
+        project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.config_file = config.default_config_path()
+        self.settings = config.Settings(self.config_file,
+                                        legacy_path=config.legacy_config_path(project_dir))
+        from . import audio
+        audio.set_enabled(getattr(self.settings, 'ui_sound', True))
         self.export_path = self.settings.export_path
         self.export_word_var = tk.BooleanVar(value=self.settings.export_word)
         self.export_word_include_answers_var = tk.BooleanVar(value=self.settings.export_word_include_answers)
@@ -76,6 +80,16 @@ class AppBase:
         self._placeholders = {}
         self._quitting = False
 
+        self.root.overrideredirect(True)          # 隐藏系统原生标题栏
+        screen_w, screen_h = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
+        self._work_height = max(600, screen_h - 48)   # 预留任务栏
+        self.root.geometry(f'{screen_w}x{self._work_height}+0+0')
+        self._drag_offset = None
+        self._resize_origin = None
+        self._ambient_stars = []
+        self._ambient_mouse = (0, 0)
+        self._ambient_running = False
+
         self.setup_ui()
         self.set_state('STANDBY')
         self.set_page('AUTH')
@@ -83,27 +97,49 @@ class AppBase:
         self.root.protocol('WM_DELETE_WINDOW', self.quit_app)
         self.root.bind('<F11>', lambda e: self._toggle_fullscreen())
         self.root.bind('<Configure>', self._on_configure)
-        self.root.after(80, self._maximize)
+        self.root.bind_all('<Escape>', lambda e: self.quit_app())
+        self.root.after(120, self.root.focus_force)
         self.root.after(60, self._poll_queue)
 
     def setup_ui(self):
-        self.main_frame = ttk.Frame(self.root)
-        self.main_frame.pack(fill=BOTH, expand=YES)
+        # 星点背景 Canvas：主容器内缩 14px，四周可见浮动星点
+        self.star_canvas = tk.Canvas(self.root, bg=theme.BG, highlightthickness=0, bd=0)
+        self.star_canvas.pack(fill=BOTH, expand=YES)
+        self.main_frame = tk.Frame(self.star_canvas, bg=theme.BG)
+        self.main_frame.place(x=14, y=14, relwidth=1.0, relheight=1.0, width=-28, height=-28)
+        self.star_canvas.bind('<Motion>', lambda e: setattr(self, '_ambient_mouse', (e.x, e.y)))
+        self._init_ambient()
+        self._ambient_running = True
+        self.root.after(80, self._animate_ambient)
 
-        # Header：品牌 | breadcrumb | ● 连接态
+        # 自绘标题栏（无最小化/关闭按钮；ESC 退出）
         header = tk.Frame(self.main_frame, bg=theme.BG_RAISED, height=46)
         header.pack(side=TOP, fill=X)
         header.pack_propagate(False)
         self._header = header
-        tk.Label(header, text='LGXT::ASSISTANT', bg=theme.BG_RAISED, fg=theme.PRIMARY,
-                 font=('Consolas', 12, 'bold')).pack(side=LEFT, padx=(24, 0))
-        tk.Frame(header, bg=theme.BORDER, width=1).pack(side=LEFT, fill=Y, padx=20, pady=12)
+        brand = tk.Label(header, text='LGXT::ASSISTANT', bg=theme.BG_RAISED, fg=theme.PRIMARY,
+                         font=('Consolas', 12, 'bold'))
+        brand.pack(side=LEFT, padx=(24, 0))
         self.page_label = tk.Label(header, text='', bg=theme.BG_RAISED, fg=theme.MUTED,
                                    font=('Consolas', 11))
-        self.page_label.pack(side=LEFT)
+        self.page_label.pack(side=LEFT, padx=(24, 0))
+        hint = tk.Label(header, text='[ ESC ] EXIT   [ F11 ] FULLSCREEN', bg=theme.BG_RAISED,
+                        fg=theme.DIM, font=('Consolas', 8))
+        hint.pack(side=RIGHT, padx=(0, 24))
         self.state_label = tk.Label(header, text='', bg=theme.BG_RAISED, fg=theme.DIM,
                                     font=('Consolas', 9, 'bold'))
-        self.state_label.pack(side=RIGHT, padx=24)
+        self.state_label.pack(side=RIGHT, padx=(0, 16))
+        for widget in (header, brand, self.page_label, hint, self.state_label):
+            self._bind_drag(widget)
+
+        # 右下角自绘缩放把手（无原生边框时用来调整窗口）
+        grip = tk.Canvas(self.star_canvas, width=18, height=18, bg=theme.BG,
+                         highlightthickness=0, bd=0, cursor='size_nw_se')
+        grip.place(relx=1.0, rely=1.0, anchor='se')
+        grip.create_line(4, 14, 14, 4, fill=theme.METAL_LIGHT)
+        grip.create_line(9, 15, 15, 9, fill=theme.METAL_DARK)
+        grip.bind('<Button-1>', self._resize_start)
+        grip.bind('<B1-Motion>', self._resize_drag)
 
         # StatusBar：左日志 / 右版本（API/AUTH 细节移入设置页系统信息）
         statusbar = tk.Frame(self.main_frame, bg=theme.BG_RAISED, height=24)
@@ -143,13 +179,21 @@ class AppBase:
                            fg=theme.MUTED, anchor='w', font=theme.ui(10), cursor='hand2',
                            padx=8, pady=6)
             lbl.pack(fill=X, padx=(8, 4))
-            lbl.bind('<Enter>', lambda e: lbl.configure(bg=theme.HOVER, fg=theme.FG))
+            def on_enter(_e, w=lbl):
+                w.configure(bg=theme.HOVER, fg=theme.FG)
+                try:
+                    from . import audio
+                    audio.play('hover')
+                except Exception:
+                    pass
+            lbl.bind('<Enter>', on_enter)
             lbl.bind('<Leave>', lambda e: lbl.configure(bg=theme.SURFACE, fg=theme.MUTED))
             lbl.bind('<Button-1>', lambda e: command())
             return lbl
 
         section('WORKSPACE')
-        item('课程列表', self.show_courses)
+        item('仪表盘', self.show_dashboard)
+        item('课程星图', self.show_courses)
         section('SYSTEM')
         item('设置', self.show_settings)
         item('帮助', self.show_help)
@@ -159,14 +203,9 @@ class AppBase:
                  font=('Consolas', 8), anchor='w').pack(side=BOTTOM, fill=X, padx=16, pady=(0, 14))
 
     def _maximize(self):
-        try:
-            self.root.state('zoomed')
-        except tk.TclError:
-            try:
-                self.root.attributes('-fullscreen', True)
-                self._fullscreen = True
-            except tk.TclError:
-                pass
+        """无边框窗口的“最大化”：铺满屏幕工作区（保留任务栏）。"""
+        screen_w = self.root.winfo_screenwidth()
+        self.root.geometry(f'{screen_w}x{self._work_height}+0+0')
 
     def _toggle_fullscreen(self):
         self._fullscreen = not self._fullscreen
@@ -176,6 +215,76 @@ class AppBase:
             return
         if not self._fullscreen:
             self._maximize()
+
+    # ---- 自绘标题栏拖拽 / 右下角缩放 ----
+
+    def _bind_drag(self, widget):
+        widget.bind('<Button-1>', self._drag_start)
+        widget.bind('<B1-Motion>', self._drag_move)
+        widget.bind('<Double-Button-1>', lambda e: self._maximize())
+
+    def _drag_start(self, event):
+        self._drag_offset = (event.x_root - self.root.winfo_x(),
+                             event.y_root - self.root.winfo_y())
+
+    def _drag_move(self, event):
+        if not self._drag_offset:
+            return
+        x = event.x_root - self._drag_offset[0]
+        y = event.y_root - self._drag_offset[1]
+        self.root.geometry(f'+{max(0, x)}+{max(0, y)}')
+
+    def _resize_start(self, event):
+        self._resize_origin = (event.x_root, event.y_root,
+                               self.root.winfo_width(), self.root.winfo_height())
+
+    def _resize_drag(self, event):
+        if not self._resize_origin:
+            return
+        x0, y0, w0, h0 = self._resize_origin
+        w = max(1200, w0 + (event.x_root - x0))
+        h = max(800, h0 + (event.y_root - y0))
+        self.root.geometry(f'{w}x{h}')
+
+    # ---- 背景星点 / 悬停光轨 ----
+
+    def _init_ambient(self):
+        width = max(400, self.root.winfo_screenwidth())
+        height = max(300, self._work_height)
+        self._ambient_stars = [{
+            'x': random.uniform(0, width),
+            'y': random.uniform(0, height),
+            'r': random.choice((1, 1, 1, 2)),
+            'speed': random.uniform(0.10, 0.45),
+            'phase': random.uniform(0, 6.28),
+        } for _ in range(90)]
+
+    def _animate_ambient(self):
+        if self._quitting or not self.star_canvas.winfo_exists():
+            self._ambient_running = False
+            return
+        canvas = self.star_canvas
+        canvas.delete('star')
+        width, height = canvas.winfo_width(), canvas.winfo_height()
+        mx, my = self._ambient_mouse
+        for star in self._ambient_stars:
+            star['y'] += star['speed']
+            if star['y'] > height + 2:
+                star['y'] = -2
+                star['x'] = random.uniform(0, max(1, width))
+            star['phase'] += 0.08
+            x, y, r = star['x'], star['y'], star['r']
+            brightness = 0.55 + 0.45 * abs(random.random())
+            color = theme.STAR if brightness > 0.8 else '#7C93A6'
+            dist = ((x - mx) ** 2 + (y - my) ** 2) ** 0.5
+            if dist < 140 and dist > 4:      # 悬停光轨：向鼠标方向汇聚
+                nx = x + (mx - x) * 0.18
+                ny = y + (my - y) * 0.18
+                trail = theme.SECONDARY if dist < 70 else '#1C6B80'
+                canvas.create_line(x, y, nx, ny, fill=trail, width=1, tags='star')
+            canvas.create_oval(x - r, y - r, x + r, y + r, fill=color, outline='', tags='star')
+        canvas.tag_lower('star')
+        self.root.after(50, self._animate_ambient)
 
     def _on_configure(self, event):
         if event.widget is not self.root:

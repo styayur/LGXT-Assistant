@@ -37,8 +37,7 @@ class LoginMixin:
         self.remember_var = tk.BooleanVar()
         ttk.Checkbutton(panel, text='记住密码（本地凭据库）', variable=self.remember_var,
                         bootstyle='round-toggle').pack(anchor='w', padx=32, pady=(4, 14))
-        self.login_button = ttk.Button(panel, text='LOGIN ▸ 登录', command=self.login,
-                                       bootstyle='primary', width=24)
+        self.login_button = self.btn(panel, 'LOGIN ▸ 登录', self.login, 'primary')
         self.login_button.pack(anchor='w', padx=32, pady=(0, 28))
 
         saved_username = config.get_saved_username()
