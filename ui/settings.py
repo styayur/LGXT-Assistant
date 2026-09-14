@@ -200,7 +200,7 @@ class SettingsMixin:
 
         head('声明 · LICENSE')
         line('本工具仅限学习交流使用，请勿转卖或用于商业用途。')
-        line('LGXT v3.0 · Author: Styayur · License: GPL-3.0-or-later')
+        line('LGXT v3.1.0 · Author: Styayur · License: GPL-3.0-or-later')
 
         ttk.Button(content, text='关闭', command=help_window.destroy,
                    bootstyle='danger').pack(anchor='w', padx=40, pady=(20, 28))

@@ -149,7 +149,7 @@ class AppBase:
         self.log_label = tk.Label(statusbar, text='> SYSTEM READY', bg=theme.BG_RAISED,
                                   fg=theme.DIM, font=('Consolas', 8), anchor='w')
         self.log_label.pack(side=LEFT, fill=X, expand=YES, padx=12)
-        tk.Label(statusbar, text='v3.0 · GPL-3.0', bg=theme.BG_RAISED, fg=theme.DIM,
+        tk.Label(statusbar, text='v3.1.0 · GPL-3.0', bg=theme.BG_RAISED, fg=theme.DIM,
                  font=('Consolas', 8)).pack(side=RIGHT, padx=12)
 
         body = tk.Frame(self.main_frame, bg=theme.BG)
@@ -199,7 +199,7 @@ class AppBase:
         item('帮助', self.show_help)
         item('退出', self.quit_app)
 
-        tk.Label(sidebar, text='v3.0.0', bg=theme.SURFACE, fg=theme.FG,
+        tk.Label(sidebar, text='v3.1.0', bg=theme.SURFACE, fg=theme.FG,
                  font=('Consolas', 8), anchor='w').pack(side=BOTTOM, fill=X, padx=16, pady=(0, 14))
 
     def _maximize(self):
