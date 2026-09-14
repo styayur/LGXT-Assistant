@@ -9,3 +9,7 @@ packaging/installer/obj/
 packaging/installer/harvest.wxs
 *.wixobj
 *.wixpdb
+mobile/build/
+mobile/.dart_tool/
+mobile/.packages
+mobile/pubspec.lock

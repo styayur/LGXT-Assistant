@@ -1,0 +1,22 @@
+[project]
+name = "lgxt-assistant-mobile"
+version = "3.1.0"
+description = "LGXT Assistant · 理工学堂助手（Android / Flet）"
+requires-python = ">=3.9"
+dependencies = [
+  "flet==0.25.2",
+  "requests>=2.28",
+]
+
+[tool.flet]
+org = "io.github.styayur"
+product = "LGXT Assistant"
+company = "Styayur"
+copyright = "GPL-3.0-or-later (c) Styayur"
+build_number = 1
+
+[tool.flet.app]
+path = "src"
+
+[tool.flet.android]
+permissions = ["android.permission.INTERNET"]
