@@ -21,8 +21,18 @@
 - ui 拆分为 ui/ 包（base / widgets / space / dashboard / 页面 mixin）
 - pytest 测试集 23 项；README 全面重写为使用与开发指南
 
-## 安装
-下载 `LGXT-Assistant.exe` 直接运行，或源码运行：
+## 下载与安装（无需 Python 环境）
+
+| 资产 | 适用场景 |
+|---|---|
+| `LGXT-Assistant.exe` | 单文件版：下载后双击即可运行 |
+| `LGXT-Assistant-portable.zip` | 便携版：解压后运行 `LGXT-Assistant-portable.exe`，启动更快 |
+
+两种产物均由 PyInstaller 打包，内置 Python 运行时与全部依赖（ttkbootstrap 主题、
+Pillow、python-docx、reportlab、keyring 等），**在未安装 Python 的 Windows 电脑上可直接运行**。
+已在剥离 Python 环境变量的条件下实测通过。
+
+源码运行：
 ```bash
 pip install -r requirements.txt
 python default.pyw

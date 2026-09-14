@@ -149,11 +149,32 @@ python -m compileall default.pyw theme.py api.py config.py exporter.py tasks.py 
 
 ## 九、打包
 
-```bash
+提供两种产物（均无需安装 Python）：
+
+| 产物 | 说明 |
+|---|---|
+| `dist/LGXT-Assistant.exe` | 单文件版（onefile），最方便分发，首次启动稍慢 |
+| `dist/LGXT-Assistant-portable.zip` | 便携版（onedir 压缩），启动更快，解压即用 |
+
+一键构建（含图标与版本资源）：
+
+```powershell
 pip install pyinstaller
+powershell -ExecutionPolicy Bypass -File packaging\build_exe.ps1
+```
+
+等价的手工命令：
+
+```bash
 python -m PyInstaller --noconfirm --clean --onefile --noconsole \
-  --name LGXT-Assistant --collect-all ttkbootstrap default.pyw
-# 产物：dist/LGXT-Assistant.exe
+  --name LGXT-Assistant --icon assets/icon.ico \
+  --version-file packaging/version_info.txt \
+  --collect-all ttkbootstrap default.pyw
+
+python -m PyInstaller --noconfirm --clean --onedir --noconsole \
+  --name LGXT-Assistant-portable --icon assets/icon.ico \
+  --version-file packaging/version_info.txt \
+  --collect-all ttkbootstrap default.pyw
 ```
 
 ## 十、许可
