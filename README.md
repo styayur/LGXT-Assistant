@@ -28,7 +28,115 @@ python default.pyw
 ```
 环境：Windows + Python 3.7 及以上。
 
-## 二、界面与交互
+## 二、Release 文件使用方法（全部资产）
+
+Release 页面：<https://github.com/styayur/LGXT-Assistant-3.0/releases/tag/v3.1.0>
+
+下载链接规则：`https://github.com/styayur/LGXT-Assistant-3.0/releases/download/v3.1.0/<文件名>`
+
+| 资产 | 平台 | 用途 |
+|---|---|---|
+| `LGXT-Assistant.exe` | Windows | 单文件版：下载双击即用（无需 Python） |
+| `LGXT-Assistant-portable.zip` | Windows | 便携版：解压即用，启动更快，可放 U 盘 |
+| `LGXT-Assistant-3.1.0-setup.msi` | Windows | 安装包：用户级安装、开始菜单快捷方式、可卸载 |
+| `LGXT-Assistant-3.1.0-android.apk` | Android | 手机版：侧载安装（Android 7.0+） |
+| `LGXT-Assistant-SelfSigned.cer` | Windows | 自签名公钥证书（可选，用于本机验证签名） |
+| `SHA256SUMS.txt` | 通用 | 所有文件的 SHA-256 校验值 |
+
+### 1. `LGXT-Assistant.exe`（Windows 单文件版）
+1. 下载后放到任意目录（如桌面），双击运行；
+2. 若出现 SmartScreen「Windows 已保护你的电脑」：点「更多信息」→「仍要运行」
+   （原因：当前为自签名证书，未购买 CA 证书，详见第十三节）；
+3. 首次启动稍慢（单文件需要解压运行时），随后正常；
+4. 配置写在 `%APPDATA%\LGXT-Assistant\config.ini`；凭据写入 Windows 凭据管理器；
+5. 卸载：直接删除该 exe 即可（无系统残留；如需清理配置，删除上述目录）。
+
+### 2. `LGXT-Assistant-portable.zip`（Windows 便携版）
+1. 解压到**非系统保护目录**（如 `D:\LGXT`、U 盘根目录），不要在压缩包里直接运行；
+2. 双击 `LGXT-Assistant-portable.exe` 启动（启动速度快于单文件版）；
+3. 整个文件夹可整体拷贝/移动，适合多机或离线使用；
+4. 卸载：删除整个文件夹即可。
+
+### 3. `LGXT-Assistant-3.1.0-setup.msi`（Windows 安装包）
+推荐方式（图形界面）：双击 MSI → 按提示完成安装（**用户级安装，不需要管理员权限**），
+安装完成后从开始菜单「LGXT Assistant」启动。
+
+命令行方式：
+
+```powershell
+# 安装（静默）
+msiexec /i LGXT-Assistant-3.1.0-setup.msi /qn /norestart
+# 卸载（静默）
+msiexec /x LGXT-Assistant-3.1.0-setup.msi /qn /norestart
+```
+
+- 安装位置：`%LOCALAPPDATA%\Programs\LGXT Assistant`
+- 卸载也可在「设置 → 应用 → 已安装的应用」中点击卸载
+- 安装/卸载实测：exit code 0，目录与开始菜单快捷方式均正确创建/清理
+
+### 4. `LGXT-Assistant-3.1.0-android.apk`（Android 手机版）
+1. 用手机浏览器打开 Release 页面下载 APK（或从电脑传输到手机）；
+2. 首次安装需允许「安装未知应用」：
+   设置 → 应用 → 特殊应用权限 → 安装未知应用 → 允许浏览器/文件管理器；
+3. 点击 APK 安装；若提示「应用未安装」：
+   - 先卸载同包名的旧版本，再重试；
+   - 确认手机剩余存储空间 ≥ 200 MB；
+   - 部分机型需关闭「外部来源应用检查」或安全中心的拦截提示；
+4. 支持 ABI：`arm64-v8a` / `armeabi-v7a` / `x86_64`（Android 7.0+）；
+5. 功能：登录、仪表盘（待激活/已完成/平均分）、课程→作业→题目浏览、
+   图片查看、成绩提交、设置；**移动端 v1 不含 Word/PDF 导出**（请在桌面版导出）；
+6. 卸载：长按图标 → 卸载（应用数据一并清除）。
+
+### 5. `LGXT-Assistant-SelfSigned.cer`（代码签名公钥，可选）
+用途：本机导入后可验证当前产物的签名者身份（**仅用于测试，不建议在生产环境信任**）。
+
+```powershell
+# 查看证书信息（不导入）
+Get-PfxCertificate .\LGXT-Assistant-SelfSigned.cer | Format-List Subject,Thumbprint,NotAfter
+
+# 导入当前用户「受信任的根证书颁发机构」（导入后签名状态会变为 Valid）
+Import-Certificate -FilePath .\LGXT-Assistant-SelfSigned.cer `
+  -CertStoreLocation Cert:\CurrentUser\Root
+```
+
+验证签名：
+
+```powershell
+Get-AuthenticodeSignature .\LGXT-Assistant.exe | Format-List Status,SignerCertificate
+# 未导入证书时：Status = UnknownError（签名有效但根证书不受信任，属预期）
+```
+
+### 6. `SHA256SUMS.txt`（完整性校验，推荐）
+下载所有需要的文件与 `SHA256SUMS.txt` 放在同一目录，然后：
+
+```powershell
+# 逐文件校验（PowerShell 7）
+Get-FileHash .\LGXT-Assistant.exe -Algorithm SHA256
+# 与 SHA256SUMS.txt 中对应行比对
+
+# 或使用 certutil（Windows 自带）
+certutil -hashfile LGXT-Assistant-3.1.0-setup.msi SHA256
+```
+
+本版本校验值（与 `SHA256SUMS.txt` 一致）：
+
+| 文件 | SHA-256 |
+|---|---|
+| `LGXT-Assistant.exe` | `a2d133069235497691a680f7aab982f5dcf7be8ed0cb69c33e23a0d327c5da5d` |
+| `LGXT-Assistant-portable.zip` | `489b92c6e89f7dba91109887fc35bfe98a4cbe7bcc2596471ad2fa9c0c5472b8` |
+| `LGXT-Assistant-3.1.0-setup.msi` | `1e03215f09b56a3cc6fbc7b70f09089dd169592cde55949c491c443ba5bae650` |
+| `LGXT-Assistant-3.1.0-android.apk` | `e8dd83b7797113b16e56f835d331658599eaf526ad8873663ab21e7e5831ac8f` |
+| `LGXT-Assistant-SelfSigned.cer` | `cdea811ab5b8b846e838fa25550efe948bee7ac7e98701060a5b7528d74bcd2f` |
+
+### 7. 常见拦截与处理
+| 现象 | 原因 | 处理 |
+|---|---|---|
+| Windows 提示「未知发布者」 | 使用自签名证书（未购买 CA 证书） | 点「更多信息 → 仍要运行」，或按第十三节用自有证书重新签名 |
+| 手机提示「禁止安装」 | Android 默认禁止未知来源 | 允许浏览器/文件管理器安装未知应用 |
+| 手机提示「应用未安装」 | 旧版本包名冲突/空间不足/被安全中心拦截 | 先卸载旧版，清理空间后重试 |
+| 校验值不一致 | 下载不完整或被篡改 | 重新下载并再次比对 SHA-256 |
+
+## 三、界面与交互
 
 | 特性 | 说明 |
 |---|---|
@@ -40,7 +148,7 @@ python default.pyw
 | 金属切角 | 面板/按钮使用硬朗切角多边形 + 双色金属描边（无圆角、无系统边框） |
 | 透光按钮 | 深色透光切角按钮；悬停出现光效并播放轻音效（设置页可关闭） |
 
-## 三、功能教程
+## 四、功能教程
 
 ### 1. 登录
 AUTH 面板输入用户名/密码；勾选「记住密码」写入 Windows 凭据库（keyring）。
@@ -88,7 +196,7 @@ AUTH 面板输入用户名/密码；勾选「记住密码」写入 Windows 凭�
 - 右侧 `SYSTEM` 面板显示 API 地址、版本、许可与登录状态；
 - 帮助窗口包含：界面与窗口、星图、仪表盘、作业/题目、导出、快捷键、常见问题与声明。
 
-## 四、快捷键
+## 五、快捷键
 
 | 按键 | 作用 |
 |---|---|
@@ -98,7 +206,7 @@ AUTH 面板输入用户名/密码；勾选「记住密码」写入 Windows 凭�
 | 单击恒星 / 行星 | 展开恒星系 / 打开题目 |
 | 双击作业行 | 打开题目 |
 
-## 五、数据与配置位置
+## 六、数据与配置位置
 
 | 内容 | 位置 |
 |---|---|
@@ -106,7 +214,7 @@ AUTH 面板输入用户名/密码；勾选「记住密码」写入 Windows 凭�
 | 凭据 | Windows 凭据管理器（keyring，不写入配置文件） |
 | 导出 | 设置页指定目录（默认当前工作目录） |
 
-## 六、常见问题
+## 七、常见问题
 
 | 问题 | 处理 |
 |---|---|
@@ -117,7 +225,7 @@ AUTH 面板输入用户名/密码；勾选「记住密码」写入 Windows 凭�
 | 没有声音 | 设置页 `UI` 分组开启「界面音效」 |
 | 想用 HTTPS | 设置环境变量 `LGXT_API_BASE=https://<host>/api` 后启动 |
 
-## 七、项目结构
+## 八、项目结构
 
 ```
 default.pyw        启动入口
@@ -139,7 +247,7 @@ docs/screenshots/  README / Release 截图
 线程模型：worker 只把事件写入 `queue.Queue`，主线程用 `after()` 轮询更新 UI；
 导出开关在主线程读取为 `ExportOptions` 快照后传入 worker，避免跨线程访问 Tk 变量。
 
-## 八、开发与测试
+## 九、开发与测试
 
 ```bash
 pip install -r requirements-dev.txt
@@ -147,7 +255,7 @@ python -m pytest           # 23 passed
 python -m compileall default.pyw theme.py api.py config.py exporter.py tasks.py ui tests
 ```
 
-## 九、打包
+## 十、打包
 
 提供两种产物（均无需安装 Python）：
 
@@ -177,7 +285,7 @@ python -m PyInstaller --noconfirm --clean --onedir --noconsole \
   --collect-all ttkbootstrap default.pyw
 ```
 
-## 十、Android 版（APK）
+## 十一、Android 版（APK）
 
 移动端使用 **Flet（Python + Flutter）** 实现，通过 GitHub Actions 云端构建（无需本机 Android SDK）。
 
@@ -221,7 +329,7 @@ flet build apk --android-signing-key-store my-release.jks \
   --android-signing-key-password <pwd>
 ```
 
-## 十一、Windows 安装包（MSI）
+## 十二、Windows 安装包（MSI）
 
 提供用户级 MSI 安装包（**无需管理员权限**）：
 
@@ -243,7 +351,7 @@ powershell -ExecutionPolicy Bypass -File packaging\build_exe.ps1
 powershell -ExecutionPolicy Bypass -File packaging\build_msi.ps1 -WixBin <wix3 目录>
 ```
 
-## 十二、代码签名
+## 十三、代码签名
 
 ```powershell
 # 使用已有证书（推荐：CA 签发的代码签名证书）
@@ -263,7 +371,7 @@ powershell -ExecutionPolicy Bypass -File packaging\sign.ps1 -Path dist\*.exe `
   （导入到"受信任的根证书颁发机构"后，本机将显示签名有效；请勿在生产环境这样做）。
 - 创建自签名证书（仅开发/测试）：`packaging/new_selfsigned_cert.ps1`
 
-## 十三、许可
+## 十四、许可
 
 GPL-3.0-or-later，详见 [LICENSE](LICENSE)。
 本工具仅限学习交流使用，请勿转卖或用于商业用途。
