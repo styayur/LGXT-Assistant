@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import threading
+import time
 
 import tasks
 from exporter import ExportOptions
@@ -17,6 +18,7 @@ class FakeClient:
         with self.lock:
             self.calls += 1
             idx = self.calls - 1
+        time.sleep(0.001)          # 让提前取消可确定生效，避免测试竞态
         if idx >= len(self.answers):
             return (True, [])
         return (True, self.answers[idx])
