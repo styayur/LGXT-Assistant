@@ -1,72 +1,54 @@
-# LGXT Assistant v3.1.0 — 宇宙星链
+# LGXT Assistant v3.2.0 — 主推 Android 移动版
 
-## 本次更新
+## 本次更新（移动端）
 
-### UI / UX
-- 无边框工作台：隐藏系统标题栏与最小化/关闭按钮；标题栏拖动、右下角三角缩放、ESC 退出（代码雨特效）
-- 代码绘制的星空背景：星点漂浮闪烁；鼠标悬停产生向光标汇聚的青色光轨
-- 课程星图：科目 = 恒星系，习题 = 行星；单击恒星展开/收起（懒加载），单击行星进入题目
-- 金属切角面板与深色透光按钮：悬停光效 + 轻音效（设置页可关闭）
-- 新增仪表盘：待激活 / 已完成 / 平均分（真实 API 数据）
-- 帮助内容完善：窗口与快捷键、星图、仪表盘、导出、常见问题、声明
+- **SafeArea 顶栏**：顶栏自动避让手机状态栏 / 刘海，不再被系统栏遮挡；顶栏加高（APP 名 + 当前页面 + 副标题），触控更友好
+- **返回键导航**：进入 课程 → 作业 → 题目 时逐级压栈，手机返回键**返回上一级菜单**；
+  根菜单（仪表盘/课程/设置）连按两次返回才退出应用
+- 视图栈重写：根级用底部导航（仪表盘 / 课程 / 设置），详情页带显式返回箭头，与系统返回键行为一致
+- 版本号统一升级为 **v3.2.0**（桌面端同步升级打包）
 
-### 稳定性
-- 登录不再被 keyring 异常打断；配置文件迁移到 %APPDATA%\\LGXT-Assistant
-- 图片字节与 PhotoImage 缓存上限；字体对象池化；修复字体遮挡/裁切（容器、行高、列宽随缩放同步）
-- 星图展开失败可重试；非数字题目 ID 排序不再崩溃
-- 收集提前结束时取消未执行请求；页面在途请求上限 4
-- API 错误分类（网络 / 非 JSON / 缺字段）与图片校验
+## 下载（Android 优先，无需 Python）
 
-### 工程
-- ui 拆分为 ui/ 包（base / widgets / space / dashboard / 页面 mixin）
-- pytest 测试集 23 项；README 全面重写为使用与开发指南
+| 资产 | 平台 | 说明 |
+|---|---|---|
+| `LGXT-Assistant-3.2.0-android.apk` | Android | **推荐**：下载 → 允许安装未知应用 → 安装（Android 7.0+，arm64/armv7/x86_64） |
+| `LGXT-Assistant-3.2.0-setup.msi` | Windows | 用户级安装（无需管理员），开始菜单快捷方式，可在「设置 → 应用」卸载 |
+| `LGXT-Assistant.exe` | Windows | 单文件版：双击运行；SmartScreen 提示时「更多信息 → 仍要运行」 |
+| `LGXT-Assistant-portable.zip` | Windows | 便携版：解压后运行 `LGXT-Assistant-portable.exe`，启动更快 |
+| `LGXT-Assistant-SelfSigned.cer` | Windows | 自签名公钥证书（可选，仅测试用途） |
+| `SHA256SUMS.txt` | 通用 | 全部文件 SHA-256 校验值 |
 
-## 下载与安装（无需 Python 环境）
+每个文件的完整下载 / 安装 / 卸载 / 校验步骤见 README「二、Release 文件使用方法（全部资产）」。
 
-| 资产 | 适用场景 |
+## Android 版功能
+
+- 登录（记住账号密码，保存于 App 本地存储）
+- 仪表盘：待激活 / 已完成 / 平均分（服务器真实数据）
+- 课程 → 作业 → 题目浏览，题目图片在线查看
+- 成绩提交（0–100）
+- 移动端 v3.2 **不含 Word/PDF 导出**（请在桌面版使用）
+
+## SHA-256 校验
+
+| 文件 | SHA-256 |
 |---|---|
-| `LGXT-Assistant.exe` | 单文件版：下载后双击即可运行 |
-| `LGXT-Assistant-portable.zip` | 便携版：解压后运行 `LGXT-Assistant-portable.exe`，启动更快 |
-| `LGXT-Assistant-3.1.0-setup.msi` | MSI 安装包：用户级安装（无需管理员），自动创建开始菜单快捷方式，可在「设置 → 应用」卸载 |
-| `LGXT-Assistant-3.1.0-android.apk` | **Android 版**：Flet 实现，支持登录 / 仪表盘 / 课程-作业-题目浏览 / 成绩提交；侧载安装 |
-| `LGXT-Assistant-SelfSigned.cer` | 自签名公钥证书（可选，用于本机验证签名） |
-| `SHA256SUMS.txt` | 全部文件的 SHA-256 校验值（下载后建议校验） |
-
-Windows 产物由 PyInstaller 打包，内置 Python 运行时与全部依赖（ttkbootstrap 主题、
-Pillow、python-docx、reportlab、keyring 等），**在未安装 Python 的 Windows 电脑上可直接运行**
-（已在剥离 Python 环境变量的条件下实测）。Android APK 由 Flet + GitHub Actions 云端构建，
-内置三套 ABI，支持 Android 7.0+，可直接侧载安装。
-
-源码运行：
-```bash
-pip install -r requirements.txt
-python default.pyw
-```
-
-## 使用说明（每个文件的用法）
-
-完整的下载 / 安装 / 卸载 / 校验步骤见 README「二、Release 文件使用方法（全部资产）」，摘要如下：
-
-| 文件 | 使用方法 |
-|---|---|
-| `LGXT-Assistant.exe` | 下载后双击运行；SmartScreen 提示时点「更多信息 → 仍要运行」；删除文件即卸载 |
-| `LGXT-Assistant-portable.zip` | 解压到普通目录（勿在压缩包内运行）→ 双击 `LGXT-Assistant-portable.exe`；删除文件夹即卸载 |
-| `LGXT-Assistant-3.1.0-setup.msi` | 双击安装（用户级，无需管理员），开始菜单启动；`msiexec /x LGXT-Assistant-3.1.0-setup.msi` 卸载 |
-| `LGXT-Assistant-3.1.0-android.apk` | 手机允许「安装未知应用」后点击安装；提示「应用未安装」时先卸载旧版并清理空间 |
-| `LGXT-Assistant-SelfSigned.cer` | 可选：导入当前用户「受信任的根证书颁发机构」后，签名状态显示 Valid（仅测试用） |
-| `SHA256SUMS.txt` | 与下载文件放同目录，用 `Get-FileHash -Algorithm SHA256` 或 `certutil -hashfile <文件> SHA256` 比对 |
-
-签名验证：
+| `LGXT-Assistant-3.2.0-android.apk` | `dfd711c7f3938cf22129a1a75f5cbdf4568522568f763c1d555070344b4c4a2b` |
+| `LGXT-Assistant.exe` | `3941ea111984318eac6c666e2066b867a0c3d945b305f414979b3798a4e62bde` |
+| `LGXT-Assistant-portable.zip` | `eea6abde380886603f640df38268aeedc8be2b2da65dd2988d05a73c3323625f` |
+| `LGXT-Assistant-3.2.0-setup.msi` | `075ce80b7625d0a820f515b00d46387c7bc304d2096efb74509bf558a3015775` |
+| `LGXT-Assistant-SelfSigned.cer` | `cdea811ab5b8b846e838fa25550efe948bee7ac7e98701060a5b7528d74bcd2f` |
 
 ```powershell
-Get-AuthenticodeSignature .\LGXT-Assistant.exe | Format-List Status,SignerCertificate
-# 未导入自签名证书时 Status = UnknownError（签名有效但根证书不受信任，属预期）
+Get-FileHash .\LGXT-Assistant-3.2.0-android.apk -Algorithm SHA256
 ```
 
-## 快捷操作
-- `ESC` 退出（代码雨）
-- `F11` 全屏 / 还原
-- 单击恒星展开科目 → 单击行星打开题目
+## 构建说明
+
+- **Android APK**：Flet 0.25.2（Python + Flutter），由 GitHub Actions `.github/workflows/android-apk.yml` 云端构建（Flutter 3.24.5 + Android SDK 37 + JDK 17）
+- **Windows**：PyInstaller（单文件 / 便携版）+ WiX v3（MSI），Authenticode 自签名
+- 应用内版本号：`v3.2.0`（桌面端与移动端一致）
 
 ## 许可
+
 GPL-3.0-or-later · 仅限学习交流使用，请勿转卖或用于商业用途 · Author: Styayur
