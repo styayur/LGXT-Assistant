@@ -130,7 +130,9 @@ class GlowButton(tk.Canvas):
         self.delete('all')
         w, h = int(self['width']), int(self['height'])
         pts = cut_points(1, 1, w - 1, h - 1, 9)
-        shadow = [(x, y + 2) for x, y in pts]
+        shadow = []
+        for i in range(0, len(pts), 2):
+            shadow.extend((pts[i], pts[i + 1] + 2))
         self.create_polygon(shadow, fill='#070A0D', outline='')   # 轻投影
         fill = self._active if self._hover else self._bg
         self.create_polygon(pts, fill=fill, outline='')

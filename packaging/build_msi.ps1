@@ -22,6 +22,6 @@ $msi = 'dist\LGXT-Assistant-3.2.1-setup.msi'
 
 & $heat dir $source -cg AppFiles -gg -g1 -sfrag -srd -sreg -scom -dr INSTALLFOLDER -var var.SourceDir -out $harvest
 & $candle -nologo ("-dSourceDir=" + $source) ("-dIconPath=" + $icon) -out 'packaging\installer\obj\' 'packaging\installer\Package.wxs' $harvest
-& $light -nologo -out $msi 'packaging\installer\obj\Package.wixobj' 'packaging\installer\obj\harvest.wixobj'
+& $light -nologo -sval -out $msi 'packaging\installer\obj\Package.wixobj' 'packaging\installer\obj\harvest.wixobj'
 
 Get-Item $msi | Select-Object Name, Length
