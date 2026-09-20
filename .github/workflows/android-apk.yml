@@ -52,7 +52,7 @@ jobs:
         run: |
           mkdir -p out
           find mobile/build -name '*.apk' -print
-          cp $(find mobile/build -name '*.apk' | head -n 1) out/LGXT-Assistant-3.2.0-android.apk
+          cp $(find mobile/build -name '*.apk' | head -n 1) out/LGXT-Assistant-3.2.1-android.apk
           ls -l out
 
       - uses: actions/upload-artifact@v4

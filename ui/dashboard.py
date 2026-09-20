@@ -12,6 +12,7 @@ class DashboardMixin:
     def show_dashboard(self):
         self.begin_nav()
         self.set_page('DASHBOARD')
+        self.set_active_nav('dashboard')
         bar = self.page_header('DASHBOARD', '作业完成度与得分')
         self.btn(bar, 'REFRESH', self.refresh_dashboard, 'secondary').pack(side=RIGHT, pady=6)
         self._dash_body = tk.Frame(self.content_frame, bg=theme.BG)

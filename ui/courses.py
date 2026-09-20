@@ -18,6 +18,7 @@ class CoursesMixin:
             return
         self.begin_nav()
         self.set_page('COURSES')
+        self.set_active_nav('courses')
         self.log('LOADING courses...')
         self.fetch(self.api.get_my_courses, self._render_courses)
 

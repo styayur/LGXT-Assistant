@@ -17,7 +17,8 @@ from urllib3.util.retry import Retry
 
 BASE_URL = os.environ.get('LGXT_API_BASE', 'http://lgxt.wutp.com.cn/api')
 TIMEOUT = 8
-APP_VERSION = '3.2.0'
+LOGIN_TIMEOUT = 20
+APP_VERSION = '3.2.1'
 
 COLORS = getattr(ft, 'Colors', None) or getattr(ft, 'colors')
 ICONS = getattr(ft, 'Icons', None) or getattr(ft, 'icons')
@@ -46,7 +47,7 @@ class ApiClient:
             'Content-Type': 'application/x-www-form-urlencoded',
         }
         adapter = HTTPAdapter(pool_connections=10, pool_maxsize=10, max_retries=Retry(
-            total=3, backoff_factor=0.5, status_forcelist=[500, 502, 503, 504],
+            total=2, backoff_factor=0.3, status_forcelist=[500, 502, 503, 504],
             allowed_methods=['POST', 'GET']))
         self.session = requests.Session()
         self.session.mount('http://', adapter)
@@ -116,9 +117,21 @@ def main(page):
         page.snack_bar.open = True
         page.update()
 
-    def bg(fn, *args):
-        """后台线程执行，UI 更新经 page.run_task 回到主线程。"""
-        threading.Thread(target=lambda: page.run_task(fn, *args), daemon=True).start()
+    def ui(fn, *args, **kwargs):
+        """从后台线程安全更新 UI。
+
+        Flet 允许从任意线程调用控件方法与 page.update()；
+        注意：不能用 ui(同步函数)（Flet 断言只接受协程函数，
+        会抛 AssertionError 并导致界面停在 CONNECTING）。
+        """
+        try:
+            fn(*args, **kwargs)
+        except Exception as exc:      # 兜底：任何 UI 异常都不能让界面卡死
+            print('ui error:', exc, flush=True)
+            try:
+                page.update()
+            except Exception:
+                pass
 
     def card(content, padding=14, bg=SURFACE):
         return ft.Container(
@@ -258,29 +271,62 @@ def main(page):
         show(make_view('/login', '登录', 'AUTH · 建立会话', controls))
 
     def do_login(_e=None):
+        if state.get('login_pending'):
+            return
         if not user_field.value or not pass_field.value:
             snack('请输入用户名和密码', WARN)
             return
-        show(make_view('/login', '登录', 'CONNECTING ...', [loading('CONNECTING ...')]))
+        state['login_pending'] = True
+        state['login_started'] = time.time()
+        connecting = [
+            loading('CONNECTING ...'),
+            ft.Text('正在连接理工学堂服务器，请稍候', color=MUTED, size=12),
+            ft.Row([
+                ft.ElevatedButton('取消', bgcolor=SURFACE_2, color=FG,
+                                  on_click=lambda e: cancel_login()),
+                ft.ElevatedButton('重试', bgcolor=PRIMARY, color='#062018',
+                                  on_click=lambda e: (cancel_login(), do_login())),
+            ], alignment=ft.MainAxisAlignment.CENTER, spacing=12),
+        ]
+        show(make_view('/login', '登录', 'CONNECTING ...', connecting))
+        username = user_field.value.strip()
+        password = pass_field.value
 
         def work():
-            ok, msg = api.login(user_field.value.strip(), pass_field.value)
+            try:
+                ok, msg = api.login(username, password)
+            except Exception as exc:              # 理论不会发生，兜底
+                ok, msg = False, f'登录异常：{exc}'
+            if not state.get('login_pending'):
+                return                            # 用户已取消
+            state['login_pending'] = False
             if ok:
-                state['username'] = user_field.value.strip()
-                state['password'] = pass_field.value
+                state['username'] = username
+                state['password'] = password
                 try:
-                    page.client_storage.set('lgxt.user', state['username'])
+                    page.client_storage.set('lgxt.user', username)
                     if remember.value:
-                        page.client_storage.set('lgxt.pass', state['password'])
+                        page.client_storage.set('lgxt.pass', password)
                     else:
                         page.client_storage.remove('lgxt.pass')
                 except Exception:
                     pass
-                page.run_task(show_dashboard)
+                ui(show_dashboard)
             else:
-                page.run_task(show_login, msg)
+                ui(show_login, msg)
 
         threading.Thread(target=work, daemon=True).start()
+
+        def watchdog():
+            time.sleep(LOGIN_TIMEOUT)
+            if state.get('login_pending'):
+                state['login_pending'] = False
+                ui(show_login, f'登录超时（{LOGIN_TIMEOUT}s）：请检查网络或服务器状态后重试')
+
+        threading.Thread(target=watchdog, daemon=True).start()
+
+    def cancel_login():
+        state['login_pending'] = False
 
     # ---------------- 仪表盘 ----------------
     def show_dashboard():
@@ -290,8 +336,8 @@ def main(page):
         def work():
             ok, data = api.get_my_courses()
             if not ok:
-                page.run_task(snack, data, ERR)
-                page.run_task(show_login, data)
+                ui(snack, data, ERR)
+                ui(show_login, data)
                 return
             state['courses'] = data
             pending = done = 0
@@ -311,7 +357,7 @@ def main(page):
                     elif max(0, w.get('tryTimes', 0) - w.get('times', 0)) > 0:
                         pending += 1
             avg = sum(scores) / len(scores) if scores else 0
-            page.run_task(render_dashboard, pending, done, avg, len(data))
+            ui(render_dashboard, pending, done, avg, len(data))
 
         threading.Thread(target=work, daemon=True).start()
 
@@ -344,9 +390,9 @@ def main(page):
             ok, data = api.get_my_courses()
             if ok:
                 state['courses'] = data
-                page.run_task(render_courses, data, '')
+                ui(render_courses, data, '')
             else:
-                page.run_task(render_courses, [], data)
+                ui(render_courses, [], data)
 
         threading.Thread(target=work, daemon=True).start()
 
@@ -376,11 +422,11 @@ def main(page):
         def work():
             ok, data = api.get_course_works(course['courseId'])
             if not ok:
-                page.run_task(snack, data, ERR)
-                page.run_task(back_to, '/courses')
+                ui(snack, data, ERR)
+                ui(back_to, '/courses')
                 return
             state['works'] = data
-            page.run_task(render_works, data)
+            ui(render_works, data)
 
         threading.Thread(target=work, daemon=True).start()
 
@@ -419,11 +465,11 @@ def main(page):
         def work_fn():
             ok, data = api.get_questions(work['workId'])
             if not ok:
-                page.run_task(snack, data, ERR)
-                page.run_task(back_to, '/works')
+                ui(snack, data, ERR)
+                ui(back_to, '/works')
                 return
             state['questions'] = data
-            page.run_task(render_questions, data)
+            ui(render_questions, data)
 
         threading.Thread(target=work_fn, daemon=True).start()
 
@@ -451,7 +497,7 @@ def main(page):
 
             def work():
                 ok, msg = api.submit_answer(state['work']['workId'], value)
-                page.run_task(snack, msg, PRIMARY if ok else ERR)
+                ui(snack, msg, PRIMARY if ok else ERR)
 
             threading.Thread(target=work, daemon=True).start()
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Id="*" Name="LGXT Assistant" Language="2052" Codepage="936" Version="3.2.0.0"
+  <Product Id="*" Name="LGXT Assistant" Language="2052" Codepage="936" Version="3.2.1.0"
            Manufacturer="Styayur"
            UpgradeCode="0D5655EF-2FE6-48ED-9EA7-D0892E7C7AB1">
     <Package Id="*" InstallerVersion="500" Compressed="yes"

@@ -59,6 +59,10 @@ class AngularPanel(tk.Canvas):
             return
         pts = cut_points(1, 1, w - 1, h - 1, self._cut)
         self.create_polygon(pts, fill=self._fill, outline='', tags='metal')
+        # 顶部微高光带（现代玻璃质感，非线条）
+        band_h = max(8, int(h * 0.30))
+        band = [1 + self._cut, 1, w - 1, 1, w - 1, 1 + band_h, 1, 1 + band_h, 1, 1 + self._cut]
+        self.create_polygon(band, fill='#151C25', outline='', tags='metal')
         self.create_line(pts[:4], fill=self._line, width=1, tags='metal')
         self.create_line(pts[-4:], fill=theme.METAL_DARK, width=1, tags='metal')
         self.tag_lower('metal')
@@ -126,6 +130,8 @@ class GlowButton(tk.Canvas):
         self.delete('all')
         w, h = int(self['width']), int(self['height'])
         pts = cut_points(1, 1, w - 1, h - 1, 9)
+        shadow = [(x, y + 2) for x, y in pts]
+        self.create_polygon(shadow, fill='#070A0D', outline='')   # 轻投影
         fill = self._active if self._hover else self._bg
         self.create_polygon(pts, fill=fill, outline='')
         glow = theme.SECONDARY if self._kind in ('info', 'secondary', 'ghost') else theme.PRIMARY

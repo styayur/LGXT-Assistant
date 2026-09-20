@@ -78,6 +78,9 @@ class AppBase:
         self._debounce_job = None
         self._inflight = 0
         self._placeholders = {}
+        self._nav_items = {}
+        self._active_nav = None
+        self._current_page = ''
         self._quitting = False
 
         self.root.overrideredirect(True)          # 隐藏系统原生标题栏
@@ -98,6 +101,7 @@ class AppBase:
         self.root.bind('<F11>', lambda e: self._toggle_fullscreen())
         self.root.bind('<Configure>', self._on_configure)
         self.root.bind_all('<Escape>', lambda e: self.quit_app())
+        self.root.bind('<Control-r>', lambda e: self.refresh_current())
         self.root.after(120, self.root.focus_force)
         self.root.after(60, self._poll_queue)
 
@@ -149,7 +153,7 @@ class AppBase:
         self.log_label = tk.Label(statusbar, text='> SYSTEM READY', bg=theme.BG_RAISED,
                                   fg=theme.DIM, font=('Consolas', 8), anchor='w')
         self.log_label.pack(side=LEFT, fill=X, expand=YES, padx=12)
-        tk.Label(statusbar, text='v3.2.0 · GPL-3.0', bg=theme.BG_RAISED, fg=theme.DIM,
+        tk.Label(statusbar, text='v3.2.1 · GPL-3.0', bg=theme.BG_RAISED, fg=theme.DIM,
                  font=('Consolas', 8)).pack(side=RIGHT, padx=12)
 
         body = tk.Frame(self.main_frame, bg=theme.BG)
@@ -174,32 +178,47 @@ class AppBase:
             tk.Label(sidebar, text=text, bg=theme.SURFACE, fg=theme.DIM, anchor='w',
                      font=('Consolas', 8, 'bold')).pack(fill=X, padx=16, pady=(0, 4))
 
-        def item(text, command, indent=True):
-            lbl = tk.Label(sidebar, text=('  ' + text if indent else text), bg=theme.SURFACE,
+        def item(text, command, key=None, indent=True):
+            row = tk.Frame(sidebar, bg=theme.SURFACE)
+            row.pack(fill=X, padx=(8, 4))
+            accent = tk.Frame(row, bg=theme.SURFACE, width=2)
+            accent.pack(side=LEFT, fill=Y)
+            lbl = tk.Label(row, text=('  ' + text if indent else text), bg=theme.SURFACE,
                            fg=theme.MUTED, anchor='w', font=theme.ui(10), cursor='hand2',
-                           padx=8, pady=6)
-            lbl.pack(fill=X, padx=(8, 4))
-            def on_enter(_e, w=lbl):
-                w.configure(bg=theme.HOVER, fg=theme.FG)
+                           padx=8, pady=7)
+            lbl.pack(side=LEFT, fill=X, expand=True)
+
+            def on_enter(_e):
+                accent.configure(bg=theme.PRIMARY)
+                lbl.configure(bg=theme.HOVER, fg=theme.FG)
                 try:
                     from . import audio
                     audio.play('hover')
                 except Exception:
                     pass
+
+            def on_leave(_e):
+                if key and self._active_nav == key:
+                    return
+                accent.configure(bg=theme.SURFACE)
+                lbl.configure(bg=theme.SURFACE, fg=theme.MUTED)
+
             lbl.bind('<Enter>', on_enter)
-            lbl.bind('<Leave>', lambda e: lbl.configure(bg=theme.SURFACE, fg=theme.MUTED))
+            lbl.bind('<Leave>', on_leave)
             lbl.bind('<Button-1>', lambda e: command())
-            return lbl
+            if key:
+                self._nav_items[key] = (accent, lbl)
+            return row
 
         section('WORKSPACE')
-        item('仪表盘', self.show_dashboard)
-        item('课程星图', self.show_courses)
+        item('仪表盘', self.show_dashboard, key='dashboard')
+        item('课程星图', self.show_courses, key='courses')
         section('SYSTEM')
-        item('设置', self.show_settings)
+        item('设置', self.show_settings, key='settings')
         item('帮助', self.show_help)
         item('退出', self.quit_app)
 
-        tk.Label(sidebar, text='v3.2.0', bg=theme.SURFACE, fg=theme.FG,
+        tk.Label(sidebar, text='v3.2.1', bg=theme.SURFACE, fg=theme.FG,
                  font=('Consolas', 8), anchor='w').pack(side=BOTTOM, fill=X, padx=16, pady=(0, 14))
 
     def _maximize(self):
@@ -447,7 +466,23 @@ class AppBase:
         tick()
 
     def set_page(self, text):
+        self._current_page = text
         self.page_label.configure(text=f':: {text}')
+
+    def set_active_nav(self, key):
+        """高亮当前侧栏项（左侧 2px 强调条）。"""
+        self._active_nav = key
+        for name, (accent, label) in self._nav_items.items():
+            active = (name == key)
+            accent.configure(bg=theme.PRIMARY if active else theme.SURFACE)
+            label.configure(bg=theme.SURFACE, fg=theme.FG if active else theme.MUTED)
+
+    def refresh_current(self):
+        """Ctrl+R：按当前页面刷新。"""
+        if getattr(self, '_current_page', '') in ('DASHBOARD', '仪表盘'):
+            self.show_dashboard()
+        else:
+            self.show_courses()
 
     def set_state(self, text):
         colors = {'STANDBY': theme.DIM, 'READY': theme.PRIMARY, 'CONNECTED': theme.PRIMARY,

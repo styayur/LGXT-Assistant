@@ -15,6 +15,7 @@ class SettingsMixin:
     def show_settings(self):
         self.begin_nav()
         self.set_page('SETTINGS')
+        self.set_active_nav('settings')
         self.page_header('SETTINGS')
 
         body = tk.Frame(self.content_frame, bg=theme.BG)
@@ -200,7 +201,7 @@ class SettingsMixin:
 
         head('声明 · LICENSE')
         line('本工具仅限学习交流使用，请勿转卖或用于商业用途。')
-        line('LGXT v3.2.0 · Author: Styayur · License: GPL-3.0-or-later')
+        line('LGXT v3.2.1 · Author: Styayur · License: GPL-3.0-or-later')
 
         ttk.Button(content, text='关闭', command=help_window.destroy,
                    bootstyle='danger').pack(anchor='w', padx=40, pady=(20, 28))

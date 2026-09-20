@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LGXT Assistant · 理工学堂助手 使用教程</title>
+<meta name="description" content="LGXT Assistant v3.2.1 使用教程：Android APK 与 Windows 桌面版下载、安装、登录、仪表盘、课程星图、题目与成绩提交、导出。">
+<style>
+:root{
+  --bg:#080a0d; --panel:#0f141b; --panel2:#151c25; --line:#1e2833;
+  --fg:#d7e0ea; --muted:#8b98a5; --dim:#5c6672;
+  --primary:#34d399; --cyan:#22d3ee; --warn:#fbbf24; --err:#f87171;
+  --mono:'Cascadia Mono','Consolas','SFMono-Regular',monospace;
+  --sans:'Segoe UI Variable Text','Segoe UI','Microsoft YaHei',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.75}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:radial-gradient(rgba(52,211,153,.10) 1px,transparent 1px),radial-gradient(rgba(34,211,238,.08) 1px,transparent 1px);
+  background-size:48px 48px,72px 72px;background-position:0 0,24px 36px;opacity:.5}
+a{color:var(--cyan);text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:0 20px 80px}
+header.hero{padding:64px 0 36px;border-bottom:1px solid var(--line)}
+.brand{font-family:var(--mono);color:var(--primary);letter-spacing:2px;font-size:14px}
+h1{font-size:clamp(28px,5vw,44px);margin:10px 0 8px;font-weight:800}
+.sub{color:var(--muted);font-size:16px;max-width:760px}
+.badges{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 0}
+.badge{font-family:var(--mono);font-size:12px;color:var(--muted);background:var(--panel);
+  border:1px solid var(--line);padding:4px 10px;clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}
+.dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:26px 0 0}
+.dl a.card{display:block;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);
+  padding:16px;clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px);transition:.15s}
+.dl a.card:hover{border-color:var(--primary);text-decoration:none;transform:translateY(-2px)}
+.dl .t{font-family:var(--mono);font-size:12px;color:var(--dim)}
+.dl .n{font-size:17px;font-weight:700;color:var(--fg);margin:4px 0 2px}
+.dl .d{font-size:13px;color:var(--muted)}
+nav.toc{position:sticky;top:0;z-index:5;background:rgba(8,10,13,.92);backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--line);margin:28px 0 8px;padding:10px 0;overflow-x:auto;white-space:nowrap}
+nav.toc a{font-family:var(--mono);font-size:13px;color:var(--muted);margin-right:18px}
+nav.toc a:hover{color:var(--primary);text-decoration:none}
+section{padding:34px 0 6px;border-bottom:1px solid var(--line)}
+h2{font-size:22px;margin:0 0 6px}
+h2 .m{font-family:var(--mono);color:var(--cyan);font-size:13px;display:block;letter-spacing:1px}
+h3{font-size:16px;margin:22px 0 6px;color:var(--fg)}
+p,li{color:var(--muted);font-size:15px}
+ol,ul{padding-left:22px}
+code,kbd{font-family:var(--mono);font-size:13px;background:var(--panel2);border:1px solid var(--line);
+  padding:1px 6px;color:var(--fg)}
+pre{background:var(--panel);border:1px solid var(--line);padding:14px;overflow-x:auto;
+  clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}
+pre code{background:none;border:none;padding:0;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);padding:18px;margin:14px 0;
+  clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px)}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--dim);font-family:var(--mono);font-weight:600;font-size:12px}
+.ok{color:var(--primary)} .warn{color:var(--warn)} .err{color:var(--err)} .cy{color:var(--cyan)}
+footer{padding:36px 0 0;color:var(--dim);font-size:13px}
+@media(max-width:640px){header.hero{padding:40px 0 24px} h2{font-size:20px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="brand">LGXT::ASSISTANT</div>
+  <h1>理工学堂助手 · 使用教程</h1>
+  <p class="sub">查看课程与作业、浏览题目、提交成绩；<strong>Android 手机版（主推）</strong>与 Windows 桌面版（宇宙星链工作台）。
+     本页提供从下载安装到日常使用的完整步骤。</p>
+  <div class="badges">
+    <span class="badge">v3.2.1</span>
+    <span class="badge">Android 7.0+</span>
+    <span class="badge">Windows 10/11</span>
+    <span class="badge">GPL-3.0-or-later</span>
+  </div>
+  <div class="dl">
+    <a class="card" href="https://github.com/styayur/LGXT-Assistant/releases/download/v3.2.1/LGXT-Assistant-3.2.1-android.apk">
+      <div class="t">ANDROID · 推荐</div><div class="n">下载 APK</div>
+      <div class="d">手机直接安装，无需 Python</div></a>
+    <a class="card" href="https://github.com/styayur/LGXT-Assistant/releases/download/v3.2.1/LGXT-Assistant-3.2.1-setup.msi">
+      <div class="t">WINDOWS · 安装版</div><div class="n">下载 MSI</div>
+      <div class="d">用户级安装，无需管理员</div></a>
+    <a class="card" href="https://github.com/styayur/LGXT-Assistant/releases/download/v3.2.1/LGXT-Assistant.exe">
+      <div class="t">WINDOWS · 单文件</div><div class="n">下载 EXE</div>
+      <div class="d">双击即用</div></a>
+    <a class="card" href="https://github.com/styayur/LGXT-Assistant/releases/download/v3.2.1/LGXT-Assistant-portable.zip">
+      <div class="t">WINDOWS · 便携版</div><div class="n">下载 ZIP</div>
+      <div class="d">解压即用，启动更快</div></a>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#install">下载安装</a><a href="#android">Android 教程</a><a href="#windows">Windows 教程</a>
+  <a href="#export">导出题目</a><a href="#keys">快捷键</a><a href="#faq">常见问题</a>
+  <a href="#dev">开发构建</a><a href="#license">许可</a>
+</nav>
+
+<section id="install">
+  <h2><span class="m">01 · GET STARTED</span>下载与校验</h2>
+  <p>所有文件均在 <a href="https://github.com/styayur/LGXT-Assistant/releases">GitHub Releases</a> 发布；
+     下载后建议用 <a href="https://github.com/styayur/LGXT-Assistant/releases/download/v3.2.1/SHA256SUMS.txt">SHA256SUMS.txt</a> 校验完整性。</p>
+  <pre><code># Windows PowerShell
+Get-FileHash .\LGXT-Assistant-3.2.1-android.apk -Algorithm SHA256
+certutil -hashfile LGXT-Assistant-3.2.1-setup.msi SHA256
+
+# 查看签名（当前为自签名证书，UnknownError 属预期）
+Get-AuthenticodeSignature .\LGXT-Assistant.exe | Format-List Status,SignerCertificate</code></pre>
+</section>
+
+<section id="android">
+  <h2><span class="m">02 · ANDROID（主推）</span>手机版安装与使用</h2>
+  <div class="panel">
+    <h3>安装</h3>
+    <ol>
+      <li>手机浏览器打开 Releases，下载 <code>LGXT-Assistant-3.2.1-android.apk</code>；</li>
+      <li>进入「设置 → 应用 → 特殊应用权限 → 安装未知应用」，允许浏览器或文件管理器安装；</li>
+      <li>点击 APK 安装；若提示「应用未安装」：先卸载旧版本、确认剩余空间 ≥ 200MB、关闭安全中心拦截后重试。</li>
+    </ol>
+  </div>
+  <h3>使用步骤</h3>
+  <ol>
+    <li><strong>登录</strong>：输入理工学堂账号与密码；可勾选「记住账号密码」（保存在 App 本地存储）。
+        若长时间停在 CONNECTING，v3.2.1 会在 20 秒后提示超时，可点「取消 / 重试」。</li>
+    <li><strong>仪表盘</strong>：查看待激活、已完成作业数量与平均分，点 <code>REFRESH</code> 重新统计。</li>
+    <li><strong>课程</strong>：底部导航「课程」→ 选择科目。</li>
+    <li><strong>作业</strong>：查看状态（剩余次数 / 已完成 / 已用完）与截止时间 → 点「查看题目」。</li>
+    <li><strong>题目</strong>：查看题面与图片 → 右下输入 0–100 → 点 <code>SUBMIT</code> 提交成绩。</li>
+    <li><strong>返回</strong>：页面返回箭头或手机返回键逐级返回上一级菜单；根菜单（仪表盘/课程/设置）连按两次返回才退出。</li>
+  </ol>
+  <p class="warn">说明：移动端不含 Word / PDF 导出，请在 Windows 版使用导出功能。</p>
+</section>
+
+<section id="windows">
+  <h2><span class="m">03 · WINDOWS</span>桌面版安装与使用</h2>
+  <h3>安装</h3>
+  <ul>
+    <li><strong>MSI（推荐）</strong>：双击安装（用户级、无需管理员），从开始菜单启动；
+        卸载：设置 → 应用，或 <code>msiexec /x LGXT-Assistant-3.2.1-setup.msi /qn</code>。</li>
+    <li><strong>单文件 EXE</strong>：双击运行；SmartScreen 提示时选「更多信息 → 仍要运行」。</li>
+    <li><strong>便携版 ZIP</strong>：解压到普通目录后运行 <code>LGXT-Assistant-portable.exe</code>。</li>
+  </ul>
+  <h3>使用步骤</h3>
+  <ol>
+    <li><strong>登录</strong>：AUTH 面板输入账号密码，可勾选「记住密码」（写入 Windows 凭据管理器）。</li>
+    <li><strong>仪表盘</strong>：侧栏「仪表盘」→ 待激活 / 已完成 / 平均分。</li>
+    <li><strong>课程星图</strong>：侧栏「课程星图」→ 单击恒星展开科目的作业行星（按需加载）→ 单击行星进入题目。
+        行星颜色：<span class="ok">绿=可提交</span>、<span class="warn">橙=最后一次</span>、<span class="err">红=已用完</span>、<span class="cy">蓝=已完成</span>。</li>
+    <li><strong>作业区</strong>：左列表支持搜索 / 筛选 / 排序；右侧 Inspector 显示章节、截止、成绩、尝试次数与状态。</li>
+    <li><strong>题目区</strong>：三栏布局（题目列表 / 题面图片 / 答案与成绩提交）。</li>
+    <li><strong>设置</strong>：导出格式与是否含答案、导出路径、界面音效；右侧 SYSTEM 显示 API、版本、许可与登录状态。</li>
+  </ol>
+</section>
+
+<section id="export">
+  <h2><span class="m">04 · EXPORT</span>题目导出（Windows）</h2>
+  <ol>
+    <li>在设置页选择导出路径与格式（Word / PDF，是否含答案）；</li>
+    <li>单作业：作业 Inspector 内点 <code>EXPORT 题目</code>；</li>
+    <li>当前课程：作业页 <code>EXPORT ALL</code>；全部课程：星图页 <code>EXPORT ALL</code>；</li>
+    <li>产物目录：<code>&lt;导出路径&gt;/作业/&lt;课程&gt;(ID_x)/&lt;作业&gt;(ID_y)/</code>
+        内含 <code>题目图片/</code>、<code>.docx</code>、<code>.pdf</code>；</li>
+    <li>重复导出时已存在的题目图片会跳过下载，节省时间与流量。</li>
+  </ol>
+</section>
+
+<section id="keys">
+  <h2><span class="m">05 · SHORTCUTS</span>快捷键</h2>
+  <table>
+    <tr><th>按键</th><th>作用</th></tr>
+    <tr><td><kbd>ESC</kbd></td><td>退出（播放代码雨特效）</td></tr>
+    <tr><td><kbd>F11</kbd></td><td>全屏 / 还原</td></tr>
+    <tr><td><kbd>Ctrl</kbd> + <kbd>R</kbd></td><td>刷新当前页面</td></tr>
+    <tr><td>双击标题栏</td><td>最大化 / 还原工作区</td></tr>
+    <tr><td>双击作业行</td><td>打开题目</td></tr>
+  </table>
+</section>
+
+<section id="faq">
+  <h2><span class="m">06 · FAQ</span>常见问题</h2>
+  <table>
+    <tr><th>现象</th><th>处理方式</th></tr>
+    <tr><td>手机禁止安装</td><td>允许「安装未知应用」后重试</td></tr>
+    <tr><td>提示「应用未安装」</td><td>卸载旧版本、清理空间、关闭安全中心拦截</td></tr>
+    <tr><td>登录停在 CONNECTING</td><td>v3.2.1 已修复：20 秒超时提示，可取消/重试；仍失败请检查网络</td></tr>
+    <tr><td>Windows 未知发布者</td><td>自签名证书所致，选择「仍要运行」，或使用自有 CA 证书签名</td></tr>
+    <tr><td>星图展开失败</td><td>确认网络后再次单击该恒星重试</td></tr>
+    <tr><td>导出失败</td><td>检查导出目录是否可写；结果弹窗会显示原因</td></tr>
+  </table>
+</section>
+
+<section id="dev">
+  <h2><span class="m">07 · DEVELOP</span>开发与构建</h2>
+  <pre><code># Windows 桌面版
+pip install -r requirements.txt
+python default.pyw
+
+# 测试（CI 也运行）
+pip install -r requirements-dev.txt
+python -m pytest
+
+# Android APK（云端）
+gh workflow run android-apk.yml
+gh run download -n lgxt-android-apk
+
+# Android APK（本地，需 Flutter 3.24.x + Android SDK + JDK 17）
+pip install flet==0.25.2
+cd mobile &amp;&amp; flet build apk
+
+# Windows 打包 / MSI
+powershell -ExecutionPolicy Bypass -File packaging\build_exe.ps1
+powershell -ExecutionPolicy Bypass -File packaging\build_msi.ps1 -WixBin &lt;wix3&gt;</code></pre>
+  <p>源码仓库：<a href="https://github.com/styayur/LGXT-Assistant">github.com/styayur/LGXT-Assistant</a>　·　
+     项目结构：<code>default.pyw</code> / <code>ui/</code> / <code>mobile/</code> / <code>api.py</code> /
+     <code>tasks.py</code> / <code>exporter.py</code> / <code>config.py</code> / <code>tests/</code> / <code>packaging/</code></p>
+</section>
+
+<section id="license">
+  <h2><span class="m">08 · LICENSE</span>许可与声明</h2>
+  <p>GPL-3.0-or-later，详见仓库 <a href="https://github.com/styayur/LGXT-Assistant/blob/main/LICENSE">LICENSE</a>。</p>
+  <p>本工具仅限学习交流使用，请勿转卖或用于商业用途。Author: Styayur</p>
+</section>
+
+<footer>
+  <p>LGXT Assistant v3.2.1 · 教程页最后更新：2026-09-20 · 
+     <a href="https://github.com/styayur/LGXT-Assistant">GitHub</a> · 
+     <a href="https://github.com/styayur/LGXT-Assistant/releases">Releases</a></p>
+</footer>
+
+</div>
+</body>
+</html>

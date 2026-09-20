@@ -13,6 +13,7 @@ class LoginMixin:
     def show_login(self):
         self.begin_nav()
         self.set_page('AUTH')
+        self.set_active_nav(None)
         self.set_state('OFFLINE')
         self.log('AUTH required')
 

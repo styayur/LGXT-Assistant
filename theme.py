@@ -21,7 +21,7 @@ SECONDARY = '#22D3EE'   # cyan
 WARNING = '#FBBF24'     # amber
 ERROR = '#F87171'
 
-FONT_UI = ('Microsoft YaHei', 10)
+FONT_UI = ('Microsoft YaHei', 10)   # 兼容旧引用；实际字体由 ui() 决定
 
 SCALE = 1.0             # 运行时由 App 根据窗口尺寸调整
 
@@ -34,12 +34,34 @@ BUTTON_SCHEMES = {
 }
 
 
+_UI_FAMILY = None
+
+
+def ui_family():
+    """优先现代系统 UI 字体：Segoe UI Variable Text → Segoe UI → 微软雅黑。"""
+    global _UI_FAMILY
+    if _UI_FAMILY is None:
+        try:
+            import tkinter.font as tkfont
+            families = set(tkfont.families())
+            for name in ('Segoe UI Variable Text', 'Segoe UI', 'Microsoft YaHei'):
+                if name in families:
+                    _UI_FAMILY = name
+                    break
+        except Exception:
+            pass
+        if _UI_FAMILY is None:
+            _UI_FAMILY = 'Microsoft YaHei'
+    return _UI_FAMILY
+
+
 def set_scale(value):
     global SCALE
     SCALE = value
 
 
-def ui(size, bold=False, family='Microsoft YaHei'):
+def ui(size, bold=False, family=None):
+    family = family or ui_family()
     return (family, max(8, int(round(size * SCALE))), 'bold') if bold \
         else (family, max(8, int(round(size * SCALE))))
 
