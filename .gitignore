@@ -13,3 +13,7 @@ mobile/build/
 mobile/.dart_tool/
 mobile/.packages
 mobile/pubspec.lock
+pip-*
+pytest-of-*
+pytest-tmp/
+mobile/pip-*
