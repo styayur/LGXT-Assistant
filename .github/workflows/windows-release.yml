@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - packaging/version_info.txt
+      - frontend/package-lock.json
       - .github/workflows/windows-release.yml
 
 permissions:
