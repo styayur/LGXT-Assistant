@@ -4,4 +4,5 @@ ttkbootstrap
 Pillow
 python-docx
 reportlab
+pywebview>=5.4,<7
 

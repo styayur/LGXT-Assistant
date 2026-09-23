@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Id="*" Name="LGXT Assistant" Language="2052" Codepage="936" Version="3.2.1.0"
+  <Product Id="*" Name="LGXT Assistant" Language="2052" Codepage="936" Version="4.0.1.0"
            Manufacturer="Styayur"
            UpgradeCode="0D5655EF-2FE6-48ED-9EA7-D0892E7C7AB1">
     <Package Id="*" InstallerVersion="500" Compressed="yes"
@@ -13,8 +13,8 @@
 
     <Icon Id="AppIcon.ico" SourceFile="$(var.IconPath)" />
     <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
-    <Property Id="ARPHELPLINK" Value="https://github.com/styayur/LGXT-Assistant-3.0" />
-    <Property Id="ARPCOMMENTS" Value="理工学堂助手 · 宇宙星链 · GPL-3.0-or-later" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/styayur/LGXT-Assistant" />
+    <Property Id="ARPCOMMENTS" Value="理工学堂助手 · AI 学习工作空间 · GPL-3.0-or-later" />
     <Property Id="ARPNOMODIFY" Value="1" />
 
     <Directory Id="TARGETDIR" Name="SourceDir">
@@ -31,7 +31,7 @@
     <DirectoryRef Id="ApplicationProgramsFolder">
       <Component Id="ApplicationShortcut" Guid="3531F849-ACE5-440B-A275-F0D608C9F00F">
         <Shortcut Id="StartMenuShortcut" Name="LGXT Assistant"
-                  Description="理工学堂助手 · 宇宙星链"
+                  Description="理工学堂助手 · AI 学习工作空间"
                   Target="[INSTALLFOLDER]LGXT-Assistant-portable.exe"
                   WorkingDirectory="INSTALLFOLDER" Icon="AppIcon.ico" />
         <RemoveFolder Id="RemoveApplicationProgramsFolder" On="uninstall" />

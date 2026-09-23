@@ -1,14 +1,24 @@
 # -*- coding: utf-8 -*-
-"""LGXT Assistant 3.0 启动入口。"""
-import ttkbootstrap as ttk
-
-from ui import App
+"""LGXT Assistant 4.0.1 桌面入口，--legacy 保留旧版 Tk 界面。"""
+import sys
 
 
 def main():
-    root = ttk.Window()
-    App(root)
-    root.mainloop()
+    if '--legacy' in sys.argv:
+        import ttkbootstrap as ttk
+        from ui import App
+        root = ttk.Window()
+        App(root)
+        root.mainloop()
+    else:
+        try:
+            from desktop.app import main as desktop_main
+            desktop_main()
+        except Exception as exc:
+            if '--smoke-test' in sys.argv:
+                raise
+            from desktop.recovery import show_recovery
+            show_recovery(exc)
 
 
 if __name__ == '__main__':

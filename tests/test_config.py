@@ -45,3 +45,13 @@ def test_keyring_failures_do_not_raise(monkeypatch):
     assert config.get_saved_password('u') is None
     assert config.save_credentials('u', 'p') is False
     assert config.delete_saved_credentials() is False
+
+
+def test_invalid_legacy_booleans_and_percent_path_do_not_prevent_startup(tmp_path):
+    path=tmp_path/'config.ini'
+    original='[Settings]\nexport_word = invalid\nexport_pdf = True\nexport_path = D:\\100%\\notes\n'
+    path.write_text(original,encoding='utf-8')
+    settings=config.Settings(str(path))
+    assert settings.export_word is True and settings.export_pdf is True
+    assert settings.export_path == r'D:\100%\notes'
+    assert path.read_text(encoding='utf-8')==original

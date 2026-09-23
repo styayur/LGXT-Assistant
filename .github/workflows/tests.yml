@@ -20,4 +20,29 @@ jobs:
       - name: Run pytest
         run: python -m pytest -q
       - name: Compile check
-        run: python -m compileall -q default.pyw theme.py api.py config.py exporter.py tasks.py ui tests mobile/src/main.py
+        run: python -m compileall -q default.pyw theme.py api.py config.py exporter.py tasks.py ui desktop tests mobile/src/main.py
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install playwright
+      - run: python -m playwright install --with-deps chromium
+      - run: python scripts/check_frontend.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: desktop-ui-screenshots
+          path: docs/screenshots/modern-*.png

@@ -39,10 +39,10 @@ class Settings:
         self.load()
 
     def _read(self, path):
-        parser = configparser.ConfigParser()
+        parser = configparser.ConfigParser(interpolation=None)
         try:
             parser.read(path, encoding='utf-8')
-        except (OSError, configparser.Error) as exc:
+        except (OSError, UnicodeError, configparser.Error) as exc:
             log.warning('读取配置失败 %s: %s', path, exc)
             return None
         return parser
@@ -64,16 +64,22 @@ class Settings:
             return
         s = parser['Settings']
         self.export_path = s.get('export_path', self.export_path)
-        self.export_word = s.getboolean('export_word', True)
-        self.export_word_include_answers = s.getboolean('export_word_include_answers', True)
-        self.export_pdf = s.getboolean('export_pdf', False)
-        self.export_pdf_include_answers = s.getboolean('export_pdf_include_answers', True)
-        self.ui_sound = s.getboolean('ui_sound', True)
+        def boolean(name, default):
+            try:
+                return s.getboolean(name, default)
+            except ValueError:
+                log.warning('配置项 %s 无效，使用默认值（原文件保留）', name)
+                return default
+        self.export_word = boolean('export_word', True)
+        self.export_word_include_answers = boolean('export_word_include_answers', True)
+        self.export_pdf = boolean('export_pdf', False)
+        self.export_pdf_include_answers = boolean('export_pdf_include_answers', True)
+        self.ui_sound = boolean('ui_sound', True)
         if migrated:
             self.save()
 
     def save(self):
-        parser = configparser.ConfigParser()
+        parser = configparser.ConfigParser(interpolation=None)
         parser['Settings'] = {
             'export_path': self.export_path,
             'export_word': str(self.export_word),

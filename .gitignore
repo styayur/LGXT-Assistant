@@ -17,3 +17,7 @@ pip-*
 pytest-of-*
 pytest-tmp/
 mobile/pip-*
+frontend/node_modules/
+frontend/dist/
+.venv/
+tmp/pdfs/
