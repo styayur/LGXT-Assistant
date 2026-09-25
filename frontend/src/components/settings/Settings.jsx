@@ -15,7 +15,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button, Toggle, Badge, Busy } from "../ui";
-import { call, providers, switchProvider } from "../../lib/bridge";
+import { call, providers, switchProvider, isBrowserApp } from "../../lib/bridge";
 export default function Settings({
   settings,
   exportSettings,
@@ -359,7 +359,7 @@ export default function Settings({
             {tab === "export" && (
               <section className="settings-card">
                 <h2>题目导出</h2>
-                <p>兼容原有 Word、PDF 格式与目录结构。</p>
+                <p>{isBrowserApp() ? "输入 Windows 本机文件夹路径，Word / PDF 将保存到该目录，例如 D:\\LGXT-Exports。" : "兼容原有 Word、PDF 格式与目录结构。"}</p>
                 <label className="field">
                   <span>导出目录</span>
                   <div className="input-action">
@@ -370,7 +370,7 @@ export default function Settings({
                         setExports({ ...exports, export_path: e.target.value })
                       }
                     />
-                    <Button
+                    {!isBrowserApp() && <Button
                       icon={FolderOpen}
                       label="选择导出目录"
                       onClick={async () => {
@@ -382,7 +382,7 @@ export default function Settings({
                           toast(e.message, true);
                         }
                       }}
-                    />
+                    />}
                   </div>
                 </label>
                 {[

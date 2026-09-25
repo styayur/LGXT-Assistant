@@ -1,5 +1,15 @@
 # LGXT Assistant · 理工学堂助手
 
+## Windows 网页版 4.1.0
+
+**[下载 Windows 网页版](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.1.0-web)**：下载并双击 `LGXT-Assistant-Web.exe`，自动打开默认浏览器，无需安装 Python、Node.js 或 WebView2。请保留启动窗口，退出时按 Ctrl+C。
+
+支持课程与作业、AI 流式对话、会话与工作区、Word / PDF 本地导出。导出设置中直接输入 Windows 文件夹路径，Markdown 会话从浏览器下载。资料与桌面版共用，请避免同时编辑；本机服务不面向公网或局域网。刷新标签页可继续使用，重新打开请用启动窗口中的链接。
+
+源码运行：先按下方步骤安装依赖并构建前端，然后运行 `py -3.13 web_app.py`。可选 `--port 8765` 固定端口、`--no-browser` 仅启动服务。打包运行 `powershell -ExecutionPolicy Bypass -File packaging/build_web.ps1`。
+
+[网页版发布说明](docs/releases/v4.1.0-web.md)。以下为仍可下载的 4.0.1 桌面版说明。
+
 面向学习的 Windows 桌面助手：查看理工学堂课程与作业、整理题目、导出 Word / PDF，并通过 AI 对话理解知识、分析资料。
 
 **[下载 Windows 4.0.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.0.1)** · **[中文 PDF 使用说明](https://github.com/styayur/LGXT-Assistant/releases/download/v4.0.1/LGXT-Assistant-4.0.1-User-Guide.pdf)** · [反馈问题](https://github.com/styayur/LGXT-Assistant/issues)

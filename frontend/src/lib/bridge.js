@@ -55,6 +55,13 @@ const read = (key, fallback) =>
 const write = (key, value) =>
   localStorage.setItem(`lgxt.preview.${key}`, JSON.stringify(value));
 export const isDesktop = () => Boolean(window.pywebview?.api);
+export const isBrowserApp = () => document.documentElement.dataset.browser === "true";
+export const isConnected = () => isDesktop() || isBrowserApp();
+const launchToken = new URLSearchParams(location.hash.slice(1)).get("token");
+if (isBrowserApp() && launchToken) {
+  sessionStorage.setItem("lgxt.browser.token", launchToken);
+  history.replaceState(null, "", location.pathname);
+}
 export const desktopExpected = () =>
   document.documentElement.dataset.desktop === "true";
 export function withTimeout(promise, ms, message) {
@@ -93,6 +100,22 @@ export function waitForBridge(ms = 12000) {
 }
 export async function call(method, ...args) {
   if (isDesktop()) return window.pywebview.api[method](...args);
+  if (isBrowserApp() && method !== "export_chat") {
+    if (method === "choose_directory") throw Error("请在导出目录中输入 Windows 文件夹路径，例如 D:\\LGXT-Exports");
+    let response;
+    try {
+      response = await fetch("/api/call", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-LGXT-Token": sessionStorage.getItem("lgxt.browser.token") || "" },
+        body: JSON.stringify({ method, args }),
+      });
+    } catch {
+      throw Error("本机服务连接已断开，请重新运行 Windows 网页版启动程序。");
+    }
+    const data = await response.json();
+    if (!response.ok) throw Error(response.status === 403 ? "连接凭证已失效，请使用启动窗口中的链接重新打开。" : data.error || "本机服务请求失败");
+    return data.result;
+  }
   if (desktopExpected()) throw Error("桌面连接尚未就绪，请重新打开程序。");
   // Browser development mode supports local editing, never simulated server responses.
   switch (method) {

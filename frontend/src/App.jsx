@@ -26,6 +26,8 @@ import {
   uid,
   newConversation,
   isDesktop,
+  isConnected,
+  isBrowserApp,
   browserFiles,
   switchProvider,
   waitForBridge,
@@ -136,7 +138,7 @@ export default function App() {
         setTask(b.workspace?.task || "");
         setUsername(b.username);
         setSavedUsername(b.savedUsername);
-        setDesktop(isDesktop());
+        setDesktop(isConnected());
         if (b.settings.startup === "last" && b.conversations.length) {
           try {
             const c = await withTimeout(
@@ -157,7 +159,7 @@ export default function App() {
         if (b.settings.startup === "courses") setPage("courses");
         setReady(true);
         for (const warning of b.warnings || []) toast(warning, true);
-        if (isDesktop())
+        if (isConnected())
           withTimeout(call("credential_status"), 8000, "凭据库响应超时")
             .then((c) => {
               if (!disposed && thisVersion === version) {
@@ -650,6 +652,7 @@ export default function App() {
             <strong>{titles[page]}</strong>
           </div>
           <div className="topbar-actions">
+            {isBrowserApp() && <span className="preview-badge" title="已连接 Windows 本机服务">Windows 网页版</span>}
             {!desktop && (
               <span
                 className="preview-badge"
