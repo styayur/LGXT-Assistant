@@ -4,7 +4,7 @@ version = "3.2.1"
 description = "LGXT Assistant · 理工学堂助手（Android / Flet）"
 requires-python = ">=3.9"
 dependencies = [
-  "flet==0.25.2",
+  "flet==1.0.1",
   "requests>=2.28",
 ]
 
