@@ -1,0 +1,35 @@
+name: Feature request
+description: Propose a scoped improvement to a supported channel.
+title: '[Feature]: '
+body:
+  - type: dropdown
+    id: channel
+    attributes:
+      label: Target channel
+      options:
+        - Windows desktop
+        - Windows web
+        - Android
+        - Legacy compatibility
+        - Shared core or packaging
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+    validations:
+      required: true
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Architecture and privacy impact
+      description: Note core/UI boundaries, persistence, platform account access, AI providers, packaging, or legacy compatibility.
+    validations:
+      required: true

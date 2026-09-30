@@ -2,13 +2,24 @@
 
 ## Windows 网页版 4.1.0
 
-**[下载 Windows 网页版](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.1.0-web)**：下载并双击 `LGXT-Assistant-Web.exe`，自动打开默认浏览器，无需安装 Python、Node.js 或 WebView2。请保留启动窗口，退出时按 Ctrl+C。
+**[从 Releases 选择 Windows 版本](https://github.com/styayur/LGXT-Assistant/releases)**：下载并双击 `LGXT-Assistant-Web.exe`，自动打开默认浏览器，无需安装 Python、Node.js 或 WebView2。请保留启动窗口，退出时按 Ctrl+C。
 
 支持课程与作业、AI 流式对话、会话与工作区、Word / PDF 本地导出。导出设置中直接输入 Windows 文件夹路径，Markdown 会话从浏览器下载。资料与桌面版共用，请避免同时编辑；本机服务不面向公网或局域网。刷新标签页可继续使用，重新打开请用启动窗口中的链接。
 
 源码运行：先按下方步骤安装依赖并构建前端，然后运行 `py -3.13 web_app.py`。可选 `--port 8765` 固定端口、`--no-browser` 仅启动服务。打包运行 `powershell -ExecutionPolicy Bypass -File packaging/build_web.ps1`。
 
-[网页版发布说明](docs/releases/v4.1.0-web.md)。以下为仍可下载的 4.0.1 桌面版说明。
+[网页版发布说明](docs/releases/v4.1.0-web.md)。
+
+## 发布渠道
+
+| 渠道 | 当前状态 | 入口 / 说明 |
+| --- | --- | --- |
+| Windows 网页版 | 当前 Windows 主要渠道 | `web_app.py` 启动本机服务；本 README 上方说明优先描述此渠道 |
+| Windows 桌面版 | 仍受支持的桌面渠道 | 使用 WebView2 的现代 `desktop/` + `frontend/` 实现；下方 4.0.1 说明保留 |
+| Android | 独立版本渠道 | `mobile/` Flet 客户端；请按 Android 发布说明下载，不与 Windows 版本号同步 |
+| Legacy Tk | 兼容渠道 | `py -3.13 default.pyw --legacy`；仅修复兼容问题，不作为新功能主入口 |
+
+详细边界见 [架构文档](docs/architecture.md)，各渠道 tag/asset 规则见 [发布渠道说明](docs/release-channels.md)。以下为仍可下载的 4.0.1 桌面版说明。
 
 面向学习的 Windows 桌面助手：查看理工学堂课程与作业、整理题目、导出 Word / PDF，并通过 AI 对话理解知识、分析资料。
 
@@ -113,6 +124,14 @@ python scripts/check_package.py
 [重构设计与架构](docs/UI_MODERNIZATION.md) · [验证记录与测试边界](docs/VERIFICATION.md) · [4.0.1 发布说明](docs/releases/v4.0.1.md)
 
 发布流程先测试、构建并验证两种 EXE 的真实启动，再上传附件。界面验证覆盖 1280×720、1920×1080、3840×2160 和窄窗口；`*-fixture.png` 中的课程、成绩与对话为测试示例。没有使用真实账号执行成绩提交或付费模型请求。
+
+## 参与开发与反馈
+
+- 共享领域、桌面 WebView、Android、legacy 与 release 边界见 [docs/architecture.md](docs/architecture.md)。
+- 开发环境、测试与架构规则见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+- Security：不要公开平台密码、AI Key、学生数据或私密课程内容，按 [SECURITY.md](SECURITY.md) 私下报告。
+- Discord：[加入社区](https://discord.gg/wA2xy6VPK)，用于快速交流、设计讨论和早期反馈；不是 SLA 支持渠道。
+- Release：Windows desktop、Windows web、Android 使用独立渠道与 SemVer tag；维护者负责发布，贡献者不需要创建 tag。
 
 ## 许可
 
