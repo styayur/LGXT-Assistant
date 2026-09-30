@@ -56,7 +56,7 @@ jobs:
           cp $(find mobile/build -name '*.apk' | head -n 1) "out/LGXT-Assistant-Android-${version}.apk"
           ls -l out
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: lgxt-android-apk
           path: out/*.apk
