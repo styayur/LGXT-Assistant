@@ -1,12 +1,23 @@
+<div align="center">
+
+<img src="docs/assets/brand/logo-mark.svg" width="84" alt="LGXT Assistant logo" />
+
 # LGXT Assistant · 理工学堂助手
 
-## Windows 网页版 4.1.0
+**A learning assistant for courses, assignments, AI study chat and local exports.**
 
-**[从 Releases 选择 Windows 版本](https://github.com/styayur/LGXT-Assistant/releases)**：下载并双击 `LGXT-Assistant-Web.exe`，自动打开默认浏览器，无需安装 Python、Node.js 或 WebView2。请保留启动窗口，退出时按 Ctrl+C。
+[Download](https://github.com/styayur/LGXT-Assistant/releases/latest) · [Documentation](docs/architecture.md) · [Releases](https://github.com/styayur/LGXT-Assistant/releases) · [Issues](https://github.com/styayur/LGXT-Assistant/issues)
 
-支持课程与作业、AI 流式对话、会话与工作区、Word / PDF 本地导出。导出设置中直接输入 Windows 文件夹路径，Markdown 会话从浏览器下载。资料与桌面版共用，请避免同时编辑；本机服务不面向公网或局域网。刷新标签页可继续使用，重新打开请用启动窗口中的链接。
+[![release](https://img.shields.io/github/v/release/styayur/LGXT-Assistant)](https://github.com/styayur/LGXT-Assistant/releases/latest)
+[![CI](https://github.com/styayur/LGXT-Assistant/actions/workflows/tests.yml/badge.svg)](https://github.com/styayur/LGXT-Assistant/actions/workflows/tests.yml)
+[![license: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)]()
+[![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white)]()
+[![Android](https://img.shields.io/badge/Android-3DDC84?logo=android&logoColor=white)]()
 
-源码运行：先按下方步骤安装依赖并构建前端，然后运行 `py -3.13 web_app.py`。可选 `--port 8765` 固定端口、`--no-browser` 仅启动服务。打包运行 `powershell -ExecutionPolicy Bypass -File packaging/build_web.ps1`。
+![LGXT Assistant modern Windows UI](docs/screenshots/modern-dark-1440.png)
+
+</div>
 
 [网页版发布说明](docs/releases/v4.1.0-web.md)。
 
