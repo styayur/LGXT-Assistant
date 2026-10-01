@@ -6,6 +6,8 @@
 
 **A learning assistant for courses, assignments, AI study chat and local exports.**
 
+**Status:** 🟡 Beta
+
 [Download](https://github.com/styayur/LGXT-Assistant/releases/latest) · [Documentation](docs/architecture.md) · [Releases](https://github.com/styayur/LGXT-Assistant/releases) · [Issues](https://github.com/styayur/LGXT-Assistant/issues)
 
 [![release](https://img.shields.io/github/v/release/styayur/LGXT-Assistant)](https://github.com/styayur/LGXT-Assistant/releases/latest)
@@ -135,6 +137,25 @@ python scripts/check_package.py
 [重构设计与架构](docs/UI_MODERNIZATION.md) · [验证记录与测试边界](docs/VERIFICATION.md) · [4.0.1 发布说明](docs/releases/v4.0.1.md)
 
 发布流程先测试、构建并验证两种 EXE 的真实启动，再上传附件。界面验证覆盖 1280×720、1920×1080、3840×2160 和窄窗口；`*-fixture.png` 中的课程、成绩与对话为测试示例。没有使用真实账号执行成绩提交或付费模型请求。
+
+## Roadmap
+
+### Current
+
+- Course, assignment, and study workflows with local exports on Windows and Android.
+
+### Next
+
+- Normalize release-asset naming across desktop and Android channels.
+- Harden update and backup flows.
+
+### Future
+
+- Broader local-first integrations for study workflows.
+
+### Not planned
+
+- Positioning as a general AI assistant.
 
 ## 参与开发与反馈
 
