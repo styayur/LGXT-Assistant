@@ -12,7 +12,7 @@
 
 [![release](https://img.shields.io/github/v/release/styayur/LGXT-Assistant)](https://github.com/styayur/LGXT-Assistant/releases/latest)
 [![CI](https://github.com/styayur/LGXT-Assistant/actions/workflows/tests.yml/badge.svg)](https://github.com/styayur/LGXT-Assistant/actions/workflows/tests.yml)
-[![license: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
+[![license: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-blue)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)]()
 [![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white)]()
 [![Android](https://img.shields.io/badge/Android-3DDC84?logo=android&logoColor=white)]()
@@ -167,4 +167,4 @@ python scripts/check_package.py
 
 ## 许可
 
-GPL-3.0-or-later，详见 [LICENSE](LICENSE)。作者：StyAyur。
+AGPL-3.0-only，详见 [LICENSE](LICENSE)。作者：StyAyur。
