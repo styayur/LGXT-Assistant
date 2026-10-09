@@ -1,7 +1,3 @@
-<div align="center">
-
-<img src="docs/assets/brand/logo-mark.svg" width="84" alt="LGXT Assistant logo" />
-
 # LGXT Assistant · 理工学堂助手
 
 **A learning assistant for courses, assignments, AI study chat and local exports.**
@@ -13,13 +9,11 @@
 [![release](https://img.shields.io/github/v/release/styayur/LGXT-Assistant)](https://github.com/styayur/LGXT-Assistant/releases/latest)
 [![CI](https://github.com/styayur/LGXT-Assistant/actions/workflows/tests.yml/badge.svg)](https://github.com/styayur/LGXT-Assistant/actions/workflows/tests.yml)
 [![license: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-blue)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)]()
-[![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white)]()
-[![Android](https://img.shields.io/badge/Android-3DDC84?logo=android&logoColor=white)]()
 
-![LGXT Assistant modern Windows UI](docs/screenshots/modern-dark-1440.png)
+![LGXT Assistant 4.0.1 Windows desktop channel, dark interface](docs/screenshots/modern-dark-1440.png)
 
-</div>
+Existing desktop-channel screenshot; the v4.1.0 web channel is described separately below.
+
 
 [网页版发布说明](docs/releases/v4.1.0-web.md)。
 
@@ -38,7 +32,6 @@
 
 **[下载 Windows 4.0.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.0.1)** · **[中文 PDF 使用说明](https://github.com/styayur/LGXT-Assistant/releases/download/v4.0.1/LGXT-Assistant-4.0.1-User-Guide.pdf)** · [反馈问题](https://github.com/styayur/LGXT-Assistant/issues)
 
-![新版桌面深色界面](docs/screenshots/modern-dark-1440.png)
 
 ## 下载与打开
 
