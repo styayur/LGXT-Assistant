@@ -1,12 +1,19 @@
 # LGXT Assistant · 理工学堂助手
 
-## Windows 网页版 4.1.0
+**A learning assistant for courses, assignments, AI study chat and local exports.**
 
-**[从 Releases 选择 Windows 版本](https://github.com/styayur/LGXT-Assistant/releases)**：下载并双击 `LGXT-Assistant-Web.exe`，自动打开默认浏览器，无需安装 Python、Node.js 或 WebView2。请保留启动窗口，退出时按 Ctrl+C。
+**Status:** 🟡 Beta
 
-支持课程与作业、AI 流式对话、会话与工作区、Word / PDF 本地导出。导出设置中直接输入 Windows 文件夹路径，Markdown 会话从浏览器下载。资料与桌面版共用，请避免同时编辑；本机服务不面向公网或局域网。刷新标签页可继续使用，重新打开请用启动窗口中的链接。
+[Download](https://github.com/styayur/LGXT-Assistant/releases/latest) · [Documentation](docs/architecture.md) · [Releases](https://github.com/styayur/LGXT-Assistant/releases) · [Issues](https://github.com/styayur/LGXT-Assistant/issues)
 
-源码运行：先按下方步骤安装依赖并构建前端，然后运行 `py -3.13 web_app.py`。可选 `--port 8765` 固定端口、`--no-browser` 仅启动服务。打包运行 `powershell -ExecutionPolicy Bypass -File packaging/build_web.ps1`。
+[![release](https://img.shields.io/github/v/release/styayur/LGXT-Assistant)](https://github.com/styayur/LGXT-Assistant/releases/latest)
+[![CI](https://github.com/styayur/LGXT-Assistant/actions/workflows/tests.yml/badge.svg)](https://github.com/styayur/LGXT-Assistant/actions/workflows/tests.yml)
+[![license: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-blue)](LICENSE)
+
+![LGXT Assistant 4.0.1 Windows desktop channel, dark interface](docs/screenshots/modern-dark-1440.png)
+
+Existing desktop-channel screenshot; the v4.1.0 web channel is described separately below.
+
 
 [网页版发布说明](docs/releases/v4.1.0-web.md)。
 
@@ -25,7 +32,6 @@
 
 **[下载 Windows 4.0.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.0.1)** · **[中文 PDF 使用说明](https://github.com/styayur/LGXT-Assistant/releases/download/v4.0.1/LGXT-Assistant-4.0.1-User-Guide.pdf)** · [反馈问题](https://github.com/styayur/LGXT-Assistant/issues)
 
-![新版桌面深色界面](docs/screenshots/modern-dark-1440.png)
 
 ## 下载与打开
 
@@ -125,6 +131,25 @@ python scripts/check_package.py
 
 发布流程先测试、构建并验证两种 EXE 的真实启动，再上传附件。界面验证覆盖 1280×720、1920×1080、3840×2160 和窄窗口；`*-fixture.png` 中的课程、成绩与对话为测试示例。没有使用真实账号执行成绩提交或付费模型请求。
 
+## Roadmap
+
+### Current
+
+- Course, assignment, and study workflows with local exports on Windows and Android.
+
+### Next
+
+- Normalize release-asset naming across desktop and Android channels.
+- Harden update and backup flows.
+
+### Future
+
+- Broader local-first integrations for study workflows.
+
+### Not planned
+
+- Positioning as a general AI assistant.
+
 ## 参与开发与反馈
 
 - 共享领域、桌面 WebView、Android、legacy 与 release 边界见 [docs/architecture.md](docs/architecture.md)。
@@ -135,4 +160,4 @@ python scripts/check_package.py
 
 ## 许可
 
-GPL-3.0-or-later，详见 [LICENSE](LICENSE)。作者：StyAyur。
+AGPL-3.0-only，详见 [LICENSE](LICENSE)。作者：StyAyur。
