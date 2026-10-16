@@ -89,6 +89,10 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
+    # Frozen Windows executables ignore PYTHONIOENCODING. Keep the launch URL
+    # printable even when redirected output uses a non-Chinese code page.
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')
     parser = argparse.ArgumentParser(description='LGXT Assistant Windows 网页版')
     parser.add_argument('--port', type=int, default=0)
     parser.add_argument('--no-browser', action='store_true')
