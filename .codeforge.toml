@@ -1,0 +1,9 @@
+[commands.syntax]
+program = "python"
+args = ["-m", "compileall", "-q", "default.pyw", "theme.py", "api.py", "config.py", "exporter.py", "tasks.py", "ui", "desktop", "tests", "mobile/src/main.py"]
+timeout_secs = 300
+
+[commands.test]
+program = "python"
+args = ["-m", "pytest", "-q"]
+timeout_secs = 600
