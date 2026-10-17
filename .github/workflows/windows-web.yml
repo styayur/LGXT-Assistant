@@ -30,7 +30,7 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
       - uses: actions/setup-node@v4
@@ -48,7 +48,7 @@ jobs:
         run: ./packaging/build_web.ps1
       - name: Verify packaged app in Chromium
         run: python scripts/check_web.py --exe dist/LGXT-Assistant-Web.exe
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: LGXT-Assistant-Windows-Web
           path: |

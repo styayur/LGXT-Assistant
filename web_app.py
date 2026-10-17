@@ -64,8 +64,9 @@ class Handler(BaseHTTPRequestHandler):
         data = path.read_bytes()
         if name == 'index.html':
             data = data.replace(b'<html ', b'<html data-browser="true" ')
-        mime = {'.js': 'text/javascript', '.css': 'text/css', '.html': 'text/html'}.get(
-            path.suffix, mimetypes.guess_type(path.name)[0] or 'application/octet-stream')
+        mime = {'.js': 'text/javascript', '.css': 'text/css', '.html': 'text/html'}.get(path.suffix)
+        if mime is None:
+            mime = mimetypes.guess_type(path.name)[0] or 'application/octet-stream'
         self.send(200, data, mime)
 
     def do_POST(self):
@@ -89,6 +90,10 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
+    # Frozen Windows executables ignore PYTHONIOENCODING. Keep the launch URL
+    # printable even when redirected output uses a non-Chinese code page.
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')
     parser = argparse.ArgumentParser(description='LGXT Assistant Windows 网页版')
     parser.add_argument('--port', type=int, default=0)
     parser.add_argument('--no-browser', action='store_true')

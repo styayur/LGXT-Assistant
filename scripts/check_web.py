@@ -10,6 +10,8 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
+import re
 
 from playwright.sync_api import sync_playwright, expect
 
@@ -30,15 +32,24 @@ def main():
         def output():
             for raw in process.stdout:
                 lines.put(raw.decode('utf-8', errors='replace').strip())
+            lines.put(None)
         threading.Thread(target=output, daemon=True).start()
         try:
             url = ''
-            for _ in range(20):
-                line = lines.get(timeout=60)
+            transcript = []
+            deadline = time.monotonic() + 60
+            while time.monotonic() < deadline:
+                try:
+                    line = lines.get(timeout=max(0.01, deadline - time.monotonic()))
+                except queue.Empty:
+                    break
+                if line is None:
+                    break
+                transcript.append(re.sub(r'#token=\S+', '#token=[REDACTED]', line))
                 if line.startswith('http://127.0.0.1:'):
                     url = line
                     break
-            assert url, 'Application did not print its launch URL'
+            assert url, 'Application did not print its launch URL: ' + '\n'.join(transcript[-20:])
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=True)
                 page = browser.new_page(viewport={'width': 1440, 'height': 900})

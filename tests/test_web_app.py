@@ -6,6 +6,41 @@ import requests
 from web_app import BrowserServer
 
 
+def test_startup_prints_url_with_ascii_redirected_stdout(tmp_path, monkeypatch):
+    import io
+    import web_app
+
+    root = tmp_path / 'frontend' / 'dist'
+    root.mkdir(parents=True)
+    (root / 'index.html').write_text('<html></html>')
+    output = io.BytesIO()
+    stream = io.TextIOWrapper(output, encoding='ascii')
+    monkeypatch.setattr(web_app.sys, 'stdout', stream)
+    monkeypatch.setattr(web_app.sys, '_MEIPASS', str(tmp_path), raising=False)
+    monkeypatch.setattr(web_app.sys, 'argv', ['web_app', '--no-browser'])
+
+    class StartupServer:
+        launch_url = 'http://127.0.0.1:12345/#token=test'
+
+        def __init__(self, root, port):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def serve_forever(self):
+            pass
+
+    monkeypatch.setattr(web_app, 'BrowserServer', StartupServer)
+    web_app.main()
+    stream.flush()
+    assert StartupServer.launch_url in output.getvalue().decode('utf-8')
+    assert '网页版' in output.getvalue().decode('utf-8')
+
+
 class FakeBridge:
     def bootstrap(self):
         return {'username': '测试用户'}
