@@ -11,6 +11,7 @@ except ImportError:
 
 SCHEMA = 1
 MAX_TEXT = 200_000
+MAX_SOLUTION = 3 * 1024 * 1024
 
 
 def image_data_url(value):
@@ -41,7 +42,8 @@ def validate_document(value):
     result = {'schemaVersion': SCHEMA}
     for key in fields:
         item = value.get(key, '')
-        if not isinstance(item, (str, int)) or len(str(item)) > MAX_TEXT:
+        limit = MAX_SOLUTION if key == 'solutionMarkdown' else MAX_TEXT
+        if not isinstance(item, (str, int)) or len(str(item)) > limit:
             raise ValueError('文档字段无效或过长')
         result[key] = str(item)
     if not all(result[k] for k in ('courseId', 'workId', 'questionId')):
@@ -96,9 +98,11 @@ def parse_recognition(text):
 
 def context_messages(document, prompt, image=None):
     d = validate_document(document)
+    import re
+    solution_context = re.sub(r'!\[[^\]]*\]\(data:image/[^)]+\)', '[文档内图片保留在本机；当前 AI 图片来自单独选择的原题]', d['solutionMarkdown'])
     text = (f"来源：课程 {d['courseName']} / 作业 {d['workName']} / 题目 {d['questionId']}\n"
             f"原始文字：{d['sourceText']}\n用户校正题面（优先）：{d['correctedMarkdown']}\n"
-            f"识别 LaTeX（机器生成，可能有误）：{d['latex']}\n已有解答：{d['solutionMarkdown']}\n")
+            f"识别 LaTeX（机器生成，可能有误）：{d['latex']}\n已有解答：{solution_context}\n")
     for message in d['discussion']:
         text += f"\n先前题目对话（{message['role']}）：{message['content']}"
     attachments = [{'name': '题目上下文', 'text': text}]

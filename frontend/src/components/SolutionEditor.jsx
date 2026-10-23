@@ -60,7 +60,7 @@ export const documentExtensions = () => [
   Image.configure({ allowBase64: true }), TableKit, Markdown, mathNode(true), mathNode(false),
 ];
 export function safeImport(source) {
-  if (source.length > 200000) throw Error('文档超过 200000 字符');
+  if (source.length > 3*1024*1024) throw Error('解答文档超过 3 MB 字符限制');
   // Imported remote images could track students or reach the local network.
   if (/!\[[^\]]*\]\(\s*(?!data:image\/(?:png|jpeg|webp);base64,)/i.test(source)) throw Error('导入图片须为本地 PNG、JPEG 或 WebP 数据；远程图片链接未导入。请保留原 Markdown。');
   return source.replace(/</g, '&lt;').replace(/>/g, '&gt;');

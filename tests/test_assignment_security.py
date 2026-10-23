@@ -256,3 +256,15 @@ def test_exports_preserve_source_image_and_equations(tmp_path):
             word=Document(path);assert word.tables and len(word.inline_shapes)==2
             assert any('\\frac' in p.text for p in word.paragraphs)
     assert list((tmp_path/'question-documents').glob('*-original.png'))
+
+
+def test_editor_images_fit_document_limit_without_flooding_ai_context():
+    buffer=io.BytesIO()
+    Image.effect_noise((512,512),100).save(buffer,'PNG')
+    image='data:image/png;base64,'+base64.b64encode(buffer.getvalue()).decode()
+    solution='![local diagram]('+image+')'
+    assert len(solution)>200000
+    d=qd.validate_document(doc()|{'solutionMarkdown':solution})
+    assert d['solutionMarkdown']==solution
+    context=qd.context_messages(d,'Solve')[0]['attachments'][0]['text']
+    assert len(context)<2000 and image not in context
