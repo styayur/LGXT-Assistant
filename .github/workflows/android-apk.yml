@@ -12,6 +12,7 @@ permissions:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
 
@@ -39,7 +40,7 @@ jobs:
 
       - name: Build APK (Flet)
         working-directory: mobile
-        run: flet build apk --verbose
+        run: flet build apk --verbose --yes
 
       - name: Collect APK
         run: |

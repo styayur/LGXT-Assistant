@@ -14,7 +14,7 @@ Date: 24 October 2026 (Asia/Singapore). This record separates executed checks fr
 
 | Check | Evidence / limits |
 | --- | --- |
-| Python | 102 passed after shared transport/document, export, batch and Flet tests; later changes require rerun before release |
+| Python | 103 passed after shared transport/document, export, batch and Flet tests; later changes require rerun before release |
 | React production build | Passed with npm lockfile; assignment/editor chunk is lazy-loaded |
 | Existing browser checks | Passed themes, recovery, command palette, streaming/stop/regeneration, course pagination, confirmation and five viewport sizes |
 | Assignment browser checks | Passed all three batch scopes, no writes before confirmation, cancellation, original image, recognition correction, rich math/table/source round trips, safe HTML, saved document and question AI context; 390×844 and 390×480 layouts |
@@ -60,3 +60,5 @@ Flet migration verification: 1.0.5 (Apache-2.0), OAuthlib 4.0.0; mobile audit an
 Local interim desktop packaging was rejected: a frontend rebuild occurred during artifact collection, and the portable smoke check failed. Those interim files were not published. Exact-tag release jobs build without concurrent edits and must pass fresh ZIP extraction plus both EXE startup checks. The separate local Web EXE passed real Chromium launch, RPC/session, persistence, export and layout checks.
 
 Actual Flet 1.0 browser-renderer fixture flow passed: keyboard login, dashboard, course, assignment and question document at 390×844; reduced-height capture at 390×480. `android-flet-*-fixture.png` contain synthetic data from the isolated FixtureClient. These are genuine Flet browser renders, not native Android APK screenshots. The earlier loading-only capture documents the superseded 0.25 runtime failure.
+
+The historical Windows loopback test timeout was reproduced with Tk Variable destruction on a server worker. The legacy startup test now destroys and collects its Tk callback cycles on the owning thread and asserts the app is released, without increasing HTTP timeouts or removing origin checks. A candidate Android build was also attempted; the first attempt exposed an interactive Flutter installation prompt. The workflow now pins the Flet-matched Flutter 3.44.8 and uses its supported --yes option. Signing/device acceptance still gate publication.
