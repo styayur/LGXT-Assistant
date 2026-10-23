@@ -1,0 +1,89 @@
+name: Finalize verified Windows release
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing draft channel tag (immutable)
+        required: true
+        type: string
+      channel:
+        description: Channel to verify
+        required: true
+        type: choice
+        options: [desktop, web]
+permissions:
+  contents: write
+concurrency:
+  group: finalize-${{ inputs.tag }}
+  cancel-in-progress: false
+jobs:
+  finalize:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Install verification runtime
+        run: |
+          python -m pip install -r requirements.txt playwright
+          python -m playwright install chromium
+      - name: Download, verify and launch exact uploaded artifacts
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_CHANNEL: ${{ inputs.channel }}
+        run: |
+          $tag = $env:RELEASE_TAG
+          $channel = $env:RELEASE_CHANNEL
+          if ($channel -eq 'desktop' -and $tag -notmatch '^v\d+\.\d+\.\d+$') { throw 'Invalid desktop tag' }
+          if ($channel -eq 'web' -and $tag -notmatch '^v\d+\.\d+\.\d+-web$') { throw 'Invalid web tag' }
+          $source = git rev-parse "$tag^{commit}"
+          if ($LASTEXITCODE -ne 0) { throw 'Existing source tag required' }
+          $draft = gh release view $tag --json isDraft --jq .isDraft
+          if ($LASTEXITCODE -ne 0 -or $draft -ne 'true') { throw 'Only existing drafts can be finalized' }
+          $stage = Join-Path $env:RUNNER_TEMP ('release-' + $tag)
+          New-Item -ItemType Directory -Path $stage | Out-Null
+          New-Item -ItemType Directory -Path build -Force | Out-Null
+          gh release download $tag --dir $stage
+          if ($LASTEXITCODE -ne 0) { throw 'Draft asset download failed' }
+          python scripts/verify_release.py --tag $tag --directory $stage --allow-draft --expected-commit $source
+          if ($LASTEXITCODE -ne 0) { throw 'Uploaded bytes or source do not match' }
+          if ($channel -eq 'desktop') {
+            python scripts/check_package.py --single-file "$stage/LGXT-Assistant-Windows-Desktop-$tag.exe" --portable "$stage/LGXT-Assistant-Windows-Desktop-$tag-portable.zip"
+          } else {
+            $version = $tag -replace '-web$',''
+            python scripts/check_web.py --exe "$stage/LGXT-Assistant-Windows-Web-$version.exe"
+          }
+          if ($LASTEXITCODE -ne 0) { throw 'Actual uploaded application startup failed' }
+          "VERIFIED_ASSET_DIR=$stage" >> $env:GITHUB_ENV
+          "VERIFIED_SOURCE=$source" >> $env:GITHUB_ENV
+      - name: Publish and recheck the verified beta
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          $tag = $env:RELEASE_TAG
+          $notes = gh release view $tag --json body --jq .body
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot read draft notes' }
+          $run = "$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"
+          $notes += "`n`nUploaded assets were downloaded, compared with SHA256SUMS and GitHub digests, and launched successfully before publication. Source: $env:VERIFIED_SOURCE. Verification: $run.`n"
+          $notes += "`nAndroid remains unpublished: Flet's Android wheel index supplies Pillow 12.2/12.3 but no security-required Pillow 13 arm64 wheel. No downgrade or ignored advisory was used. Signing credentials and device acceptance are also unavailable.`n"
+          $notesPath = Join-Path $env:RUNNER_TEMP ('notes-' + $tag + '.md')
+          $notes | Set-Content -Encoding utf8NoBOM -LiteralPath $notesPath
+          gh release edit $tag --notes-file $notesPath --draft=false
+          if ($LASTEXITCODE -ne 0) { throw 'Publication failed' }
+          python scripts/verify_release.py --tag $tag --directory "$env:VERIFIED_ASSET_DIR" --expected-commit "$env:VERIFIED_SOURCE"
+          if ($LASTEXITCODE -ne 0) { throw 'Published release verification failed' }
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: final-release-verification-${{ inputs.channel }}
+          path: |
+            build/*-smoke.json
+            docs/screenshots/windows-web.png

@@ -33,13 +33,13 @@ AI calls are user-initiated and leave the local app. Confirm that the selected s
 
 ## Download by channel
 
-The release page and its assets are the source of truth; source archives are not runnable installers. New channel candidates are desktop **4.1.0**, web **4.2.0-web** and Android **3.3.0-android**. A candidate is available only after its channel gates and publication complete. See [channel policy](docs/release-channels.md) and [delivery evidence](docs/VERIFICATION.md).
+The release page and its assets are the source of truth; source archives are not runnable installers. The Windows beta tags for this upgrade are desktop **4.1.0** and web **4.2.0-web**. Download only from a published channel release after its gates complete; draft files are not a public release. Android **3.3.0** remains source-only. See [channel policy](docs/release-channels.md) and [delivery evidence](docs/VERIFICATION.md).
 
-| Channel | Previous published baseline | Installation |
+| Channel | Upgrade version / status | Installation |
 | --- | --- | --- |
-| Windows desktop | [v4.0.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.0.1) | Windows 10/11 x64, WebView2; run the EXE or fully extract the portable ZIP and keep `_internal` beside its EXE |
-| Windows web | [v4.1.0-web](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.1.0-web) | Windows 10/11 x64; launch the Web EXE, retain its console, use its private loopback link in Edge/Chrome; no WebView2 needed |
-| Android | [v3.2.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.2.1) | Historical APK; the new Android source is not a signed production APK. Signing credentials and device verification are unavailable |
+| Windows desktop | [v4.1.0 beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.1.0) | Windows 10/11 x64, WebView2; run the EXE or fully extract the portable ZIP and keep `_internal` beside its EXE |
+| Windows web | [v4.2.0-web beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.2.0-web) | Windows 10/11 x64; launch the Web EXE, retain its console, use its private loopback link in Edge/Chrome; no WebView2 needed |
+| Android | [v3.2.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.2.1) | No 3.3.0 APK: patched Pillow 13 has no Flet Android arm64 wheel, and signing/device acceptance are unavailable. Historical 3.2.1 lacks the new transport fixes |
 
 New Windows asset names identify channel, version and platform; check every download against that release's `SHA256SUMS.txt`. No MSI or signing trust is claimed. Historical tags/assets remain unchanged, including an old Android asset attached to a web release; use the Android baseline above for the historical Android channel.
 
