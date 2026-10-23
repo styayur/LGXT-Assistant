@@ -43,8 +43,12 @@ def walk(control):
 
 def controls(page):return list(walk(page.views[-1]))
 
+def matches(control,key,value):
+    actual=getattr(control,key,None)
+    return actual==value
+
 def find(page,typ,**attrs):
-    return next(c for c in controls(page) if isinstance(c,typ) and all(getattr(c,k,None)==v for k,v in attrs.items()))
+    return next(c for c in controls(page) if isinstance(c,typ) and all(matches(c,k,v) for k,v in attrs.items()))
 
 def wait_for(fn):
     for _ in range(200):

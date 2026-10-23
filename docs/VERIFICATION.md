@@ -29,7 +29,7 @@ Date: 24 October 2026 (Asia/Singapore). This record separates executed checks fr
 
 Windows local builds and exact-tag GitHub build/startup workflows are being verified. A build command alone is not acceptance; both actual desktop EXEs and the Web EXE must pass their smoke checks. No merge/tag/release is claimed by this interim record.
 
-Android signing secrets are absent (`gh secret list` returned no secrets). No new signed APK, physical-device check or production Android release is claimed. Flet browser preview has additional runtime/toolchain dependencies and must not be mislabeled as Android acceptance.
+Android signing secrets are absent (`gh secret list` returned no secrets). No new signed APK, physical-device check or production Android release is claimed. Flet browser preview required compatible flet-web/FastAPI versions and stalled at its loading screen in this environment. `flet-runtime-loading-390.png` records only that loading state, not the updated Android interface. No Android visual acceptance is claimed.
 
 No real platform login, grade submission, paid model generation, live OCR accuracy benchmark, handwriting/diagram study, LAN deployment or independent final-grade verification was executed. Fixture tests do not establish real-provider compatibility or platform permission.
 
@@ -52,3 +52,5 @@ py -3.13 scripts/check_web.py --exe dist/LGXT-Assistant-Web.exe
 ```
 
 See the GitHub PR and workflow links in the final delivery record for post-commit results. Published assets, if any, are independently checked by `scripts/verify_release.py` against SHA256SUMS and GitHub asset digests. Historical releases are unchanged.
+
+Android dependency blocker: the pinned Flet 0.25.2 runtime requires oauthlib <4, while PYSEC-2026-4114 is fixed in oauthlib 4.0.0. Flet 0.28.3 has the same cap; current Flet 1.0.5 changes the client API and needs a separately validated migration. The Android dependency audit remains a hard failing Android gate, with no ignored advisory or continue-on-error. Windows runtime requirements do not include Flet/oauthlib; its audit and publication are independent. No Android APK will be published from this state.

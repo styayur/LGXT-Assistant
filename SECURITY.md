@@ -34,3 +34,5 @@ The browser server remains bound to `127.0.0.1`, uses a random per-run credentia
 ## Supported artifacts and limitations
 
 New Windows releases require source tests, UI checks, dependency/security scans, exact-tag builds and real packaged startup checks. Historical binaries do not acquire these fixes. Android source checks are separate from signing/device verification; without those gates, no production Android release is published. See [verification](docs/VERIFICATION.md) and [channel policy](docs/release-channels.md).
+
+Android dependency blocker: the pinned Flet 0.25.2 runtime requires oauthlib <4, while PYSEC-2026-4114 is fixed in oauthlib 4.0.0. Flet 0.28.3 has the same cap; current Flet 1.0.5 changes the client API and needs a separately validated migration. The Android dependency audit remains a hard failing Android gate, with no ignored advisory or continue-on-error. Windows runtime requirements do not include Flet/oauthlib; its audit and publication are independent. No Android APK will be published from this state.

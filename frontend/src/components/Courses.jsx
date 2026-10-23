@@ -422,11 +422,11 @@ export default function Courses({
                     </small>
                   </div>
                   <Badge
-                    status={r.grade != null && r.grade !== "" ? "success" : ""}
+                    status={r.grade !== null && r.grade !== undefined && r.grade !== "" ? "success" : ""}
                   >
-                    {r.grade != null && r.grade !== ""
+                    {r.grade !== null && r.grade !== undefined && r.grade !== ""
                       ? `${r.grade} 分`
-                      : r.tryTimes != null && r.times != null ? `剩余 ${Math.max(0, Number(r.tryTimes) - Number(r.times))} 次` : "次数未知"}
+                      : r.tryTimes !== null && r.tryTimes !== undefined && r.times !== null && r.times !== undefined ? `剩余 ${Math.max(0, Number(r.tryTimes) - Number(r.times))} 次` : "次数未知"}
                   </Badge>
                   <ArrowRight size={17} />
                 </button>
@@ -504,7 +504,7 @@ function Confirm({ data, onClose, toast }) {
       }}
     >
       <p className="dialog-copy">{data.text}</p>
-      {data.works && <ul className="batch-preview">{data.works.map(w => <li key={w.workId}>{w.workName}（{w.tryTimes != null && w.times != null ? `剩余 ${Math.max(0, Number(w.tryTimes)-Number(w.times))} 次` : "次数未知"}）</li>)}</ul>}
+      {data.works && <ul className="batch-preview">{data.works.map(w => <li key={w.workId}>{w.workName}（{w.tryTimes !== null && w.tryTimes !== undefined && w.times !== null && w.times !== undefined ? `剩余 ${Math.max(0, Number(w.tryTimes)-Number(w.times))} 次` : "次数未知"}）</li>)}</ul>}
       <div className="dialog-actions">
         <Button disabled={busy} onClick={onClose}>
           取消

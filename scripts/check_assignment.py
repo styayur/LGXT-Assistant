@@ -4,6 +4,7 @@ import functools
 import http.server
 import io
 import json
+import sys
 import threading
 from pathlib import Path
 
@@ -104,5 +105,5 @@ try:
   assert page.evaluate('window.__test.writes.length')==1
   assert not errors,errors
   browser.close()
- print(json.dumps({'ok':True,'checks':['three batch scopes','confirmation','cancel','question image','OCR correction','safe math','rich text and table','document persistence','contextual AI','390x844 and keyboard-height layout'],'console_errors':errors}))
+ sys.stdout.write(json.dumps({'ok':True,'checks':['three batch scopes','confirmation','cancel','question image','OCR correction','safe math','rich text and table','document persistence','contextual AI','390x844 and keyboard-height layout'],'console_errors':errors}))
 finally:server.shutdown()

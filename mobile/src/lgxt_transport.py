@@ -47,7 +47,8 @@ class APIClient:
         if (parsed.scheme not in ('http', 'https') or not parsed.hostname or parsed.username
                 or parsed.password or parsed.query or parsed.fragment):
             raise ValueError('无效的平台 API 地址')
-        if parsed.port not in (None, 80 if parsed.scheme == 'http' else 443):
+        default_port = 80 if parsed.scheme == 'http' else 443
+        if parsed.port is not None and parsed.port != default_port:
             raise ValueError('不支持的平台端口')
         self.base_url = base_url.rstrip('/')
         self.allow_insecure = bool(allow_insecure)
@@ -171,8 +172,11 @@ class APIClient:
             parsed, origin = urlsplit(url), urlsplit(self.base_url)
             if (parsed.scheme not in ('http', 'https') or parsed.hostname != origin.hostname
                     or parsed.username or parsed.password or parsed.fragment
-                    or parsed.port not in (None, 443 if parsed.scheme == 'https' else 80)
+                    or (parsed.port is not None and parsed.port not in (80, 443))
                     or (parsed.scheme == 'http' and not self.allow_insecure)):
+                raise ValueError()
+            default_port = 443 if parsed.scheme == 'https' else 80
+            if parsed.port is not None and parsed.port != default_port:
                 raise ValueError()
             addresses = socket.getaddrinfo(parsed.hostname, parsed.port or (443 if parsed.scheme == 'https' else 80), type=socket.SOCK_STREAM)
             if not addresses or any(not ipaddress.ip_address(a[4][0]).is_global for a in addresses):

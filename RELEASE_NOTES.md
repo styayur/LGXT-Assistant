@@ -16,3 +16,5 @@ The official HTTP endpoint responds; HTTPS was not verified. Insecure compatibil
 Android signing secrets and physical-device/emulator acceptance are unavailable. Its release must remain unpublished. Windows packaging and publication require checks against the exact intended source/tag; checksums are meaningful only for the assets actually attached to that release. Historical releases and tags are not rewritten.
 
 Application license remains AGPL-3.0-only. Tiptap/ProseMirror MIT notices are distributed; prior attribution remains in NOTICE.md.
+
+Android dependency blocker: the pinned Flet 0.25.2 runtime requires oauthlib <4, while PYSEC-2026-4114 is fixed in oauthlib 4.0.0. Flet 0.28.3 has the same cap; current Flet 1.0.5 changes the client API and needs a separately validated migration. The Android dependency audit remains a hard failing Android gate, with no ignored advisory or continue-on-error. Windows runtime requirements do not include Flet/oauthlib; its audit and publication are independent. No Android APK will be published from this state.

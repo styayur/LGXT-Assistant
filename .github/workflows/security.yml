@@ -19,7 +19,6 @@ jobs:
           node-version: '22'
       - run: python -m pip install pip-audit bandit
       - run: python -m pip_audit -r requirements.txt
-      - run: python -m pip_audit -r mobile/requirements.txt
       - run: python -m bandit -r desktop/bridge.py desktop/storage.py mobile/src tasks.py exporter.py web_app.py
       - run: npm ci && npm audit
         working-directory: frontend

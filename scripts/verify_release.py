@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+import sys
 import subprocess
 from pathlib import Path
 
@@ -37,6 +38,6 @@ def main():
         if name in entries:assert entries[name]==digest
     if args.tag.endswith('-web'):
         assert not any(name.endswith('.apk') or 'Desktop' in name for name in assets)
-    print(json.dumps({'verified':True,'tag':args.tag,'url':release['html_url'],'assets':sorted(assets),'draft':release['draft']}))
+    sys.stdout.write(json.dumps({'verified':True,'tag':args.tag,'url':release['html_url'],'assets':sorted(assets),'draft':release['draft']}))
 
 if __name__=='__main__':main()
