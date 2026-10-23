@@ -51,3 +51,5 @@ React keeps its existing course/source navigation, workspace files and chat. `Qu
 Question files are keyed by SHA-256 of course/work/question IDs. Schema 1 records source image/text, recognition, corrections, solution Markdown, explicitly selected source excerpts, platform answer and timestamps. Saves are atomic with a previous-version copy. Unsupported versions are refused without overwriting. Existing workspace/conversation files are unchanged. Source references name only actual supplied context; no retrieval/citation service or vector database is implied.
 
 See SECURITY.md for HTTP compatibility and trust boundaries, docs/editor-decision.md for conversion/extension trade-offs, and docs/user-guide.md for user-facing operations. Platform success acknowledgment is distinct from independent final-grade verification, which is not available.
+
+Flet 1.0 migration uses current Button/BoxFit/dialog APIs and a bounded atomic `mobile/src/local_store.py` under the durable FLET_APP_STORAGE_DATA directory. Legacy SharedPreferences migration reads only the saved username and removes the old password; no credential is written there.

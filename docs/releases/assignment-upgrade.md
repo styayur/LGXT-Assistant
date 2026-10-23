@@ -17,4 +17,4 @@ Android signing secrets and physical-device/emulator acceptance are unavailable.
 
 Application license remains AGPL-3.0-only. Tiptap/ProseMirror MIT notices are distributed; prior attribution remains in NOTICE.md.
 
-Android dependency blocker: the pinned Flet 0.25.2 runtime requires oauthlib <4, while PYSEC-2026-4114 is fixed in oauthlib 4.0.0. Flet 0.28.3 has the same cap; current Flet 1.0.5 changes the client API and needs a separately validated migration. The Android dependency audit remains a hard failing Android gate, with no ignored advisory or continue-on-error. Windows runtime requirements do not include Flet/oauthlib; its audit and publication are independent. No Android APK will be published from this state.
+The Android OAuthlib audit blocker was resolved by migrating to Flet 1.0.5 and requiring OAuthlib >=4,<5. The mobile control flows and atomic local notes store are regression-tested; no advisory is ignored. Android signing and device acceptance remain unavailable, so no APK is published.

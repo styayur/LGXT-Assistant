@@ -152,6 +152,8 @@ def test_images_are_isolated_streamed_and_decoded(monkeypatch, public_dns):
     images = Session(Response())
     monkeypatch.setattr(api.requests, 'Session', lambda: images)
     assert c.fetch_image('https://lgxt.wutp.com.cn/img') == png()
+    assert c.fetch_image('https://lgxt.wutp.com.cn/img') == png()
+    assert len(images.calls) == 1
     assert not images.trust_env
     assert 'headers' not in images.calls[0][1] and images.calls[0][1]['stream']
     assert images.calls[0][1]['allow_redirects'] is False

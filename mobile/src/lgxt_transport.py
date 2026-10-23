@@ -1,5 +1,6 @@
 """LGXT transport: finite read retries, no automatic write replay."""
 import io
+from collections import OrderedDict
 import ipaddress
 import os
 import secrets
@@ -48,8 +49,9 @@ class APIClient:
                 or parsed.password or parsed.query or parsed.fragment):
             raise ValueError('无效的平台 API 地址')
         default_port = 80 if parsed.scheme == 'http' else 443
-        if parsed.port is not None and parsed.port != default_port:
-            raise ValueError('不支持的平台端口')
+        if parsed.port is not None:
+            if parsed.port != default_port:
+                raise ValueError('不支持的平台端口')
         self.base_url = base_url.rstrip('/')
         self.allow_insecure = bool(allow_insecure)
         self.insecure = parsed.scheme == 'http'
@@ -62,6 +64,7 @@ class APIClient:
         self.session.mount('https://', adapter)
         self._lock = threading.RLock()
         self._cache = {}
+        self._image_cache = OrderedDict()
 
     def logout(self):
         with self._lock:
@@ -69,6 +72,7 @@ class APIClient:
             self.session.headers.pop('Authorization', None)
             self.session.cookies.clear()
             self._cache.clear()
+            self._image_cache.clear()
 
     def _delay(self, attempt, response=None):
         from email.utils import parsedate_to_datetime
@@ -176,8 +180,9 @@ class APIClient:
                     or (parsed.scheme == 'http' and not self.allow_insecure)):
                 raise ValueError()
             default_port = 443 if parsed.scheme == 'https' else 80
-            if parsed.port is not None and parsed.port != default_port:
-                raise ValueError()
+            if parsed.port is not None:
+                if parsed.port != default_port:
+                    raise ValueError()
             addresses = socket.getaddrinfo(parsed.hostname, parsed.port or (443 if parsed.scheme == 'https' else 80), type=socket.SOCK_STREAM)
             if not addresses or any(not ipaddress.ip_address(a[4][0]).is_global for a in addresses):
                 raise ValueError()
@@ -185,6 +190,20 @@ class APIClient:
             raise ValueError('已阻止不受信任的图片地址（仅允许平台同源公共地址）') from None
 
     def fetch_image(self, url):
+        # Four verified images, max 32 MB, shared by simultaneous UI consumers.
+        with self._lock:
+            cached = self._image_cache.get(url)
+            if cached and cached[0] > time.monotonic():
+                self._image_cache.move_to_end(url)
+                return cached[1]
+            raw = self._fetch_image(url)
+            self._image_cache[url] = (time.monotonic() + 60, raw)
+            self._image_cache.move_to_end(url)
+            while len(self._image_cache) > 4:
+                self._image_cache.popitem(last=False)
+            return raw
+
+    def _fetch_image(self, url):
         self._image_url(url)
         # Isolated session: no Authorization, cookies, netrc or ambient proxy.
         with requests.Session() as images:

@@ -18,10 +18,12 @@ import uuid
 try:
     from .lgxt_transport import APIClient as ApiClient, BASE_URL, INSECURE_WARNING
     from . import model_transport, question_documents
+    from .local_store import LocalStore
 except ImportError:
     from lgxt_transport import APIClient as ApiClient, BASE_URL, INSECURE_WARNING
     import model_transport
     import question_documents
+    from local_store import LocalStore
 
 LOGIN_TIMEOUT = 20
 APP_VERSION = '3.3.0'
@@ -42,7 +44,8 @@ WARN = '#9C5600'
 ERR = '#B42336'
 
 
-def main(page, client_factory=ApiClient):
+def main(page, client_factory=ApiClient, storage=None):
+    local_store = storage if storage is not None else LocalStore()
     page.title = 'LGXT Assistant'
     page.bgcolor = BG
     page.theme_mode = ft.ThemeMode.LIGHT
@@ -56,10 +59,10 @@ def main(page, client_factory=ApiClient):
     last_back = {'at': 0.0}
 
     def snack(msg, color=CYAN):
-        page.snack_bar = ft.SnackBar(
+        notice = ft.SnackBar(
             content=ft.Text(msg, color=FG), bgcolor=SURFACE_2,
             behavior=ft.SnackBarBehavior.FLOATING, show_close_icon=True)
-        page.snack_bar.open = True
+        page.show_dialog(notice)
         page.update()
 
     def ui(fn, *args, **kwargs):
@@ -81,7 +84,7 @@ def main(page, client_factory=ApiClient):
     def card(content, padding=14, bg=SURFACE):
         return ft.Container(
             content=content, bgcolor=bg, padding=padding, border_radius=8,
-            border=ft.border.all(1, LINE), margin=ft.margin.only(bottom=10))
+            border=ft.Border.all(1, LINE), margin=ft.Margin.only(bottom=10))
 
     def loading(text='SYNCING ...'):
         return ft.Column([ft.ProgressRing(width=22, height=22, color=PRIMARY),
@@ -134,12 +137,12 @@ def main(page, client_factory=ApiClient):
             controls = [ft.Text(INSECURE_WARNING, color=ERR, size=12)] + list(controls)
         header = ft.Container(
             content=ft.Row(header_left, spacing=4, vertical_alignment=ft.CrossAxisAlignment.CENTER),
-            bgcolor=SURFACE, padding=ft.padding.only(left=8, right=16, top=10, bottom=12),
-            border=ft.border.only(bottom=ft.BorderSide(1, LINE)))
+            bgcolor=SURFACE, padding=ft.Padding.only(left=8, right=16, top=10, bottom=12),
+            border=ft.Border.only(bottom=ft.BorderSide(1, LINE)))
 
         column_controls = [header, ft.Container(ft.Column(controls, scroll=ft.ScrollMode.AUTO,
                                                           spacing=10, expand=True),
-                                                expand=True, padding=ft.padding.only(
+                                                expand=True, padding=ft.Padding.only(
                                                     left=16, right=16, top=14, bottom=14))]
         nav = None
         if show_nav:
@@ -194,13 +197,13 @@ def main(page, client_factory=ApiClient):
     remember = ft.Checkbox(label='记住账号密码（保存在本机 App 存储）', value=False,
                            label_style=ft.TextStyle(color=MUTED, size=12))
 
-    insecure_opt = ft.Checkbox(label='我理解风险，本次允许不安全明文 HTTP（不保存密码）', value=False)
+    insecure_opt = ft.Checkbox(label='理解风险，本次允许明文 HTTP', value=False)
 
     def show_login(err=''):
         try:
             if not user_field.value:
-                user_field.value = page.client_storage.get('lgxt.user') or ''
-            page.client_storage.remove('lgxt.pass')
+                user_field.value = local_store.get('lgxt.user') or ''
+            local_store.remove('lgxt.pass')
         except Exception:
             logging.warning('Local mobile storage unavailable')
         controls = [
@@ -208,7 +211,7 @@ def main(page, client_factory=ApiClient):
             ft.Text('输入理工学堂账号以建立会话', color=MUTED, size=13),
             ft.Text('平台 HTTPS 尚未验证。默认阻止明文登录；兼容模式会暴露账号、密码和成绩传输。', color=ERR, size=13),
             card(ft.Column([user_field, pass_field, insecure_opt,
-                            ft.ElevatedButton('LOGIN ▸ 登录', on_click=do_login,
+                            ft.Button('登录理工学堂', on_click=do_login,
                                               bgcolor=PRIMARY, color='#FFFFFF',
                                               height=52)], spacing=14)),
             ft.Text(err, color=ERR, size=12) if err else ft.Container(height=0),
@@ -230,9 +233,9 @@ def main(page, client_factory=ApiClient):
             loading('CONNECTING ...'),
             ft.Text('正在连接理工学堂服务器，请稍候', color=MUTED, size=12),
             ft.Row([
-                ft.ElevatedButton('取消', bgcolor=SURFACE_2, color=FG,
+                ft.Button('取消', bgcolor=SURFACE_2, color=FG,
                                   on_click=lambda e: cancel_login()),
-                ft.ElevatedButton('重试', bgcolor=PRIMARY, color='#FFFFFF',
+                ft.Button('重试', bgcolor=PRIMARY, color='#FFFFFF',
                                   on_click=lambda e: (cancel_login(), do_login())),
             ], alignment=ft.MainAxisAlignment.CENTER, spacing=12),
         ]
@@ -256,8 +259,8 @@ def main(page, client_factory=ApiClient):
                 api.headers.update(candidate.headers)
                 state['username'] = username
                 try:
-                    page.client_storage.set('lgxt.user', username)
-                    page.client_storage.remove('lgxt.pass')
+                    local_store.set('lgxt.user', username)
+                    local_store.remove('lgxt.pass')
                 except Exception:
                     logging.warning('Local mobile storage unavailable')
                 ui(show_dashboard)
@@ -319,12 +322,12 @@ def main(page, client_factory=ApiClient):
                                            weight=ft.FontWeight.BOLD, font_family='monospace')],
                                   spacing=4),
                 bgcolor=SURFACE, padding=14, border_radius=8, expand=True,
-                border=ft.border.all(1, LINE))
+                border=ft.Border.all(1, LINE))
         controls = [
             ft.Text(f'{courses} 门课程 · 数据来自服务器实时统计', color=MUTED, size=12),
             ft.Row([stat('待激活', pending, WARN), stat('已完成', done, CYAN),
                     stat('平均分', f'{avg:.1f}', PRIMARY)], spacing=10),
-            ft.ElevatedButton('刷新作业状态', on_click=lambda e: show_dashboard(),
+            ft.Button('刷新作业状态', on_click=lambda e: show_dashboard(),
                               bgcolor=SURFACE_2, color=FG, height=48),
             ft.Text('提示：底部「课程」可进入课程 → 作业 → 题目', color=DIM, size=11),
         ]
@@ -390,18 +393,18 @@ def main(page, client_factory=ApiClient):
             if work.get('tryTimes') is None or work.get('times') is None:
                 status, color = '提交次数未知', MUTED
             elif grade is not None:
-                status, color = f'DONE · {grade}', CYAN
+                status, color = f'已完成 · {grade}', CYAN
             elif remaining <= 0:
-                status, color = 'EXHAUSTED', ERR
+                status, color = '次数已用完', ERR
             elif remaining == 1:
-                status, color = 'LAST CHANCE', WARN
+                status, color = '最后一次', WARN
             else:
-                status, color = f'TRY {remaining}/{work.get("tryTimes", 0)}', PRIMARY
+                status, color = f'剩余 {remaining}/{work.get("tryTimes", 0)} 次', PRIMARY
             controls.append(card(ft.Column([
                 ft.Text(work.get('workName', ''), color=FG, size=15),
                 ft.Text(f"{status} · DUE {work.get('expireTime', 'N/A')}", color=color,
                         size=11, font_family='monospace'),
-                ft.ElevatedButton('查看题目', bgcolor=PRIMARY, color='#FFFFFF', height=46,
+                ft.Button('查看题目', bgcolor=PRIMARY, color='#FFFFFF', height=46,
                                   on_click=lambda e, w=work: open_questions(w)),
             ], spacing=8)))
         push(make_view('/works', state['course'].get('courseName', ''),
@@ -434,7 +437,7 @@ def main(page, client_factory=ApiClient):
                     raw = api.fetch_image(q.get('imgurl', ''))
                     encoded = base64.b64encode(raw).decode()
                     q['_image'] = 'data:' + question_documents.api.validate_image(raw) + ';base64,' + encoded
-                    holder.content = ft.Image(src_base64=encoded, height=200, fit=ft.ImageFit.CONTAIN)
+                    holder.content = ft.Image(src=base64.b64decode(encoded), height=200, fit=ft.BoxFit.CONTAIN)
                 except Exception:
                     holder.content = ft.Text('图片不可用，点击查看题面与错误处理', color=ERR)
                 ui(page.update)
@@ -462,14 +465,14 @@ def main(page, client_factory=ApiClient):
                 ui(snack, msg, PRIMARY if ok else ERR)
 
             def confirmed(_):
-                page.close(dialog)
+                page.pop_dialog()
                 threading.Thread(target=work, daemon=True).start()
             dialog = ft.AlertDialog(title=ft.Text('确认提交成绩'), content=ft.Text(f'本作业提交 {value} 分，会修改服务器记录并可能消耗提交次数。超时需到平台核实，不自动重试。'),
-                                    actions=[ft.TextButton('取消', on_click=lambda e: page.close(dialog)), ft.TextButton('确认提交', on_click=confirmed)])
-            page.open(dialog)
+                                    actions=[ft.TextButton('取消', on_click=lambda e: page.pop_dialog()), ft.TextButton('确认提交', on_click=confirmed)])
+            page.show_dialog(dialog)
 
         controls.append(card(ft.Row([grade_field,
-                                     ft.ElevatedButton('提交成绩', bgcolor=PRIMARY,
+                                     ft.Button('提交成绩', bgcolor=PRIMARY,
                                                        color='#FFFFFF', height=52,
                                                        on_click=submit)], spacing=12)))
         push(make_view('/questions', state['work'].get('workName', ''), 'QUESTIONS · 题目',
@@ -484,7 +487,7 @@ def main(page, client_factory=ApiClient):
 
     def open_question_document(q):
         key = 'question.' + question_documents.document_key(state['course']['courseId'], state['work']['workId'], q['id'])
-        d = page.client_storage.get(key) or {
+        d = local_store.get(key) or {
             'schemaVersion': 1, 'courseId': str(state['course']['courseId']), 'workId': str(state['work']['workId']),
             'questionId': str(q['id']), 'title': q.get('name', ''), 'courseName': state['course']['courseName'],
             'workName': state['work']['workName'], 'sourceText': q.get('text', q.get('name', '')),
@@ -498,10 +501,10 @@ def main(page, client_factory=ApiClient):
         def save(_=None):
             d.update(correctedMarkdown=corrected.value or '', solutionMarkdown=solution.value or '')
             value = question_documents.validate_document(d)
-            prior = page.client_storage.get(key)
+            prior = local_store.get(key)
             if prior:
-                page.client_storage.set(key + '.previous', prior)
-            page.client_storage.set(key, value)
+                local_store.set(key + '.previous', prior)
+            local_store.set(key, value)
             snack('已保存到本机')
         def run_ai(recognize):
             if state.get('ai_pending'):
@@ -552,15 +555,15 @@ def main(page, client_factory=ApiClient):
         controls = [ft.Text('来源：' + d['courseName'] + ' / ' + d['workName'], color=MUTED),
                     ft.Text('原图为来源；识别与解答可能有误。点击 AI 操作将题图、编辑内容发送到所配模型服务。', color=WARN, size=12)]
         if d.get('originalImage'):
-            controls.append(ft.Container(ft.InteractiveViewer(content=ft.Image(src_base64=d['originalImage'].split(',',1)[1], fit=ft.ImageFit.CONTAIN), min_scale=0.5, max_scale=5), height=260))
+            controls.append(ft.Container(ft.InteractiveViewer(content=ft.Image(src=base64.b64decode(d['originalImage'].split(',',1)[1]), fit=ft.BoxFit.CONTAIN), min_scale=0.5, max_scale=5), height=260))
         controls.extend([corrected, ft.Markdown(corrected.value or '', selectable=True), solution,
                          ft.ExpansionTile(title=ft.Text('模型设置（密钥仅本次会话）'), controls=[*ai_fields.values(),vision]),
-                         question_input, ft.ElevatedButton('使用 AI 分析此题', on_click=lambda e: run_ai(False)),
+                         question_input, ft.Button('使用 AI 分析此题', on_click=lambda e: run_ai(False)),
                          ft.TextButton('图片转 LaTeX', on_click=lambda e: run_ai(True)),
                          ft.TextButton('停止生成', on_click=lambda e: cancel.set()), output, latex,
                          ft.TextButton('应用校正结果到题面', on_click=apply_recognition),
                          ft.TextButton('将回复加入解答', on_click=lambda e: (setattr(solution,'value',(solution.value or '')+'\n'+output.value), page.update())),
-                         ft.ElevatedButton('保存学习材料', on_click=save)])
+                         ft.Button('保存学习材料', on_click=save)])
         push(make_view('/question-document', '题目与解答', '可缩放原图 · 校正 · 分析', controls, show_back=True))
 
     # ---------------- 设置 ----------------
@@ -573,7 +576,7 @@ def main(page, client_factory=ApiClient):
             insecure_opt.value = False
             state.update({'username': ''})
             try:
-                page.client_storage.remove('lgxt.pass')
+                local_store.remove('lgxt.pass')
             except Exception:
                 logging.warning('Mobile UI/storage operation unavailable')
             show_login()
@@ -596,7 +599,7 @@ def main(page, client_factory=ApiClient):
                 ft.Text('· 支持课程作业、题图查看、公式校正和用户发起的 AI 分析；'
                         'Word、PDF 导出请在桌面版使用。', color=MUTED, size=12),
             ], spacing=8)),
-            ft.ElevatedButton('LOGOUT', bgcolor=SURFACE_2, color=FG, height=48,
+            ft.Button('LOGOUT', bgcolor=SURFACE_2, color=FG, height=48,
                               on_click=logout),
         ]
         show(make_view('/settings', '设置', 'SETTINGS · 系统信息', controls,
@@ -604,6 +607,20 @@ def main(page, client_factory=ApiClient):
 
     # ---------------- 启动 ----------------
     show_login()
+    if storage is None:
+        async def migrate_legacy_login():
+            try:
+                preferences = ft.SharedPreferences()
+                username = await preferences.get('lgxt.user')
+                await preferences.remove('lgxt.pass')
+                if username and not local_store.get('lgxt.user'):
+                    local_store.set('lgxt.user', str(username))
+                    if not user_field.value:
+                        user_field.value = str(username)
+                        page.update()
+            except Exception:
+                logging.warning('Legacy preference cleanup unavailable; old passwords will never be read')
+        page.run_task(migrate_legacy_login)
 
 
 run = getattr(ft, 'run', None) or getattr(ft, 'app', None)

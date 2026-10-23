@@ -1,3 +1,5 @@
 pytest>=9.1.1
 
-flet==0.25.2
+flet==1.0.5
+
+oauthlib>=4.0.0,<5

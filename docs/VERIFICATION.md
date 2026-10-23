@@ -14,7 +14,7 @@ Date: 24 October 2026 (Asia/Singapore). This record separates executed checks fr
 
 | Check | Evidence / limits |
 | --- | --- |
-| Python | 101 passed after shared transport/document, export, batch and Flet tests; later changes require rerun before release |
+| Python | 102 passed after shared transport/document, export, batch and Flet tests; later changes require rerun before release |
 | React production build | Passed with npm lockfile; assignment/editor chunk is lazy-loaded |
 | Existing browser checks | Passed themes, recovery, command palette, streaming/stop/regeneration, course pagination, confirmation and five viewport sizes |
 | Assignment browser checks | Passed all three batch scopes, no writes before confirmation, cancellation, original image, recognition correction, rich math/table/source round trips, safe HTML, saved document and question AI context; 390×844 and 390×480 layouts |
@@ -53,4 +53,6 @@ py -3.13 scripts/check_web.py --exe dist/LGXT-Assistant-Web.exe
 
 See the GitHub PR and workflow links in the final delivery record for post-commit results. Published assets, if any, are independently checked by `scripts/verify_release.py` against SHA256SUMS and GitHub asset digests. Historical releases are unchanged.
 
-Android dependency blocker: the pinned Flet 0.25.2 runtime requires oauthlib <4, while PYSEC-2026-4114 is fixed in oauthlib 4.0.0. Flet 0.28.3 has the same cap; current Flet 1.0.5 changes the client API and needs a separately validated migration. The Android dependency audit remains a hard failing Android gate, with no ignored advisory or continue-on-error. Windows runtime requirements do not include Flet/oauthlib; its audit and publication are independent. No Android APK will be published from this state.
+The Android OAuthlib audit blocker was resolved by migrating to Flet 1.0.5 and requiring OAuthlib >=4,<5. The mobile control flows and atomic local notes store are regression-tested; no advisory is ignored. Android signing and device acceptance remain unavailable, so no APK is published.
+
+Flet migration verification: 1.0.5 (Apache-2.0), OAuthlib 4.0.0; mobile audit and control tests pass. Durable mobile notes use FLET_APP_STORAGE_DATA with atomic schema-1 writes, unsupported-version backups and no password persistence. Legacy username migration and password removal use the asynchronous SharedPreferences service. Flet 1.0.5 selects Flutter 3.44.8 for candidate builds. No signed APK/device result is implied.

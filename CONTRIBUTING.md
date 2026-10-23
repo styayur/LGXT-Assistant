@@ -48,4 +48,4 @@ Add tests for shared logic. UI pull requests need screenshots and window-size co
 
 Security issues must follow [SECURITY.md](SECURITY.md), not public issues.
 
-Mobile control-tree tests use Flet 0.25.2 fixtures at 390×844, 360×740 and reduced keyboard height. Optional Flet browser previews need a compatible flet-web runtime; these are not Android device acceptance. Do not publish APKs without signing provenance and device checks.
+Mobile control-tree tests use Flet 1.0.5 fixtures at 390×844, 360×740 and reduced keyboard height. Optional Flet browser previews need a compatible flet-web runtime; these are not Android device acceptance. Do not publish APKs without signing provenance and device checks.

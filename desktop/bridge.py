@@ -207,6 +207,9 @@ class Bridge:
         return True
 
     def logout(self):
+        with self._lock:
+            for job in self._jobs.values():
+                job['cancel'].set()
         self._login_attempt = None
         self._client.logout()
         self._client.allow_insecure = False
