@@ -26,7 +26,7 @@ python -m pytest -q
 python scripts/check_frontend.py
 python scripts/check_assignment.py
 python -m pip_audit -r requirements.txt
-cd frontend; npm audit; cd ..
+npm audit --prefix frontend
 powershell -ExecutionPolicy Bypass -File packaging/build_exe.ps1
 python scripts/check_package.py
 ```

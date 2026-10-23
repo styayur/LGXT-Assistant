@@ -37,6 +37,7 @@ class AppBase:
 
         self.api = api.client
         self._task_cancel = threading.Event()
+        self._task_running = threading.Event()
         self.username = ''
         self.password = ''
         self.courses = []
@@ -663,6 +664,10 @@ class AppBase:
 
     def run_task(self, title, target, on_result, mode='determinate', status='', start=False,
                  error_after=None):
+        if self._task_running.is_set():
+            self.msg_info('任务进行中', '请等待任务结束，或先停止后续请求')
+            return
+        self._task_running.set()
         self._task_cancel.clear()
         self.open_progress(title, mode=mode, status=status, start=start)
 
@@ -672,6 +677,8 @@ class AppBase:
             except Exception as exc:
                 self.queue.put(('task_error', exc))
                 return
+            finally:
+                self._task_running.clear()
             if result is not None:
                 self.queue.put(('run_ok', on_result, result))
             elif error_after is not None:
