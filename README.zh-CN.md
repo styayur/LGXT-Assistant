@@ -33,13 +33,13 @@ AI 仅在用户发起时发送，内容会离开本机。请在 AI 设置核实�
 
 ## 按渠道下载
 
-以发布页实际附件为准，源码压缩包不是可运行安装包。新候选版本为桌面 **4.1.0**、网页 **4.2.0-web**、Android **3.3.0-android**，只有对应渠道完成验证并发布后才可下载。见 [渠道规则](docs/release-channels.md) 和 [交付证据](docs/VERIFICATION.md)。
+以发布页实际附件为准，源码压缩包不是可运行安装包。此次 Windows Beta tag 为桌面 **4.1.0**、网页 **4.2.0-web**。只有对应渠道完成验证并公开发布后才可下载，草稿附件不等于公开发布。Android **3.3.0** 仅有源代码。见 [渠道规则](docs/release-channels.md) 和 [交付证据](docs/VERIFICATION.md)。
 
-| 渠道 | 此次之前已发布基线 | 安装方式 |
+| 渠道 | 升级版本 / 状态 | 安装方式 |
 | --- | --- | --- |
-| Windows 桌面 | [v4.0.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.0.1) | Windows 10/11 x64，需 WebView2；运行 EXE，或完整解压便携 ZIP，保留 `_internal` |
-| Windows 网页 | [v4.1.0-web](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.1.0-web) | Windows 10/11 x64；启动 Web EXE，保留控制台，用 Edge/Chrome 打开私有本机链接；无需 WebView2 |
-| Android | [v3.2.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.2.1) | 历史 APK；新源代码不等于生产签名 APK。缺少签名凭据与真机验证 |
+| Windows 桌面 | [v4.1.0 Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.1.0) | Windows 10/11 x64，需 WebView2；运行 EXE，或完整解压便携 ZIP，保留 `_internal` |
+| Windows 网页 | [v4.2.0-web Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.2.0-web) | Windows 10/11 x64；启动 Web EXE，保留控制台，用 Edge/Chrome 打开私有本机链接；无需 WebView2 |
+| Android | [v3.2.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.2.1) | 没有 3.3.0 APK：Flet Android arm64 尚无安全要求的 Pillow 13 wheel，且缺少签名与设备验收。历史 3.2.1 不包含此次连接安全修复 |
 
 新 Windows 附件名包含平台、渠道与版本；请对照该发布的 `SHA256SUMS.txt` 校验。未声明提供 MSI 或可信签名。历史 tag 与附件保持原样；曾有 Android 附件附在网页发布中，历史 Android 渠道请使用上表链接。
 

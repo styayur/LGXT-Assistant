@@ -36,3 +36,5 @@ The browser server remains bound to `127.0.0.1`, uses a random per-run credentia
 New Windows releases require source tests, UI checks, dependency/security scans, exact-tag builds and real packaged startup checks. Historical binaries do not acquire these fixes. Android source checks are separate from signing/device verification; without those gates, no production Android release is published. See [verification](docs/VERIFICATION.md) and [channel policy](docs/release-channels.md).
 
 The Android OAuthlib audit blocker was resolved by migrating to Flet 1.0.5 and requiring OAuthlib >=4,<5. The mobile control flows and atomic local notes store are regression-tested; no advisory is ignored. Android signing and device acceptance remain unavailable, so no APK is published.
+
+Android candidate build evidence: [run 40000566710](https://github.com/styayur/LGXT-Assistant/actions/runs/40000566710) reached arm64 dependency packaging, but Flet’s wheel index offers Pillow 12.2/12.3 and no security-required Pillow >=13 wheel. No insecure downgrade was used. This upstream binary dependency, signing identity and device acceptance block Android publication.

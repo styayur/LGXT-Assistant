@@ -1,5 +1,6 @@
 """Verify the single-file EXE and a fresh extraction of the actual portable ZIP."""
 import json
+import argparse
 import sys
 import subprocess
 import tempfile
@@ -8,16 +9,20 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / 'dist'
+parser = argparse.ArgumentParser()
+parser.add_argument('--single-file', type=Path, default=DIST / 'LGXT-Assistant.exe')
+parser.add_argument('--portable', type=Path, default=DIST / 'LGXT-Assistant-portable.zip')
+args = parser.parse_args()
 with tempfile.TemporaryDirectory(prefix='lgxt-portable-smoke-') as temporary:
     extracted = Path(temporary)
-    with zipfile.ZipFile(DIST / 'LGXT-Assistant-portable.zip') as archive:
+    with zipfile.ZipFile(args.portable) as archive:
         assert archive.testzip() is None, 'Portable archive CRC failure'
         archive.extractall(extracted)
     assert (extracted / '_internal/frontend/dist/desktop.html').is_file()
     assert (extracted / 'USER-GUIDE.md').is_file()
     assert (extracted / 'THIRD-PARTY.txt').is_file()
     for name, exe in (
-        ('single-file', DIST / 'LGXT-Assistant.exe'),
+        ('single-file', args.single_file),
         ('portable', extracted / 'LGXT-Assistant-portable.exe'),
     ):
         report = ROOT / 'build' / f'{name}-smoke.json'

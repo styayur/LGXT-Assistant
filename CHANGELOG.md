@@ -1,5 +1,11 @@
 # Changelog
 
+## Release verification follow-up
+
+- Resolve draft releases through the supported GitHub CLI lookup and verify source, bytes, checksums, metadata and channel before publication.
+- Add a maintainer finalizer that downloads and launches the immutable tagged assets, without overwriting tags or historical assets.
+- Record the Android patched-wheel/signing/device blockers and align bilingual channel links.
+
 ## 4.1.0 desktop / 4.2.0-web / 3.3.0-android source candidates
 
 - Add assignment-bound original-image, corrected LaTeX, rich solution and source-oriented AI workflows.

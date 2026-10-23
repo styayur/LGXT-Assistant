@@ -18,3 +18,5 @@ Android signing secrets and physical-device/emulator acceptance are unavailable.
 Application license remains AGPL-3.0-only. Tiptap/ProseMirror MIT notices are distributed; prior attribution remains in NOTICE.md.
 
 The Android OAuthlib audit blocker was resolved by migrating to Flet 1.0.5 and requiring OAuthlib >=4,<5. The mobile control flows and atomic local notes store are regression-tested; no advisory is ignored. Android signing and device acceptance remain unavailable, so no APK is published.
+
+Android candidate build evidence: [run 40000566710](https://github.com/styayur/LGXT-Assistant/actions/runs/40000566710) reached arm64 dependency packaging, but Flet’s wheel index offers Pillow 12.2/12.3 and no security-required Pillow >=13 wheel. No insecure downgrade was used. This upstream binary dependency, signing identity and device acceptance block Android publication.
