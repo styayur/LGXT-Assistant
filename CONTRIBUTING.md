@@ -24,6 +24,9 @@ python -m pip install -r requirements.txt -r requirements-dev.txt playwright pyi
 python -m playwright install chromium
 python -m pytest -q
 python scripts/check_frontend.py
+python scripts/check_assignment.py
+python -m pip_audit -r requirements.txt
+npm audit --prefix frontend
 powershell -ExecutionPolicy Bypass -File packaging/build_exe.ps1
 python scripts/check_package.py
 ```
@@ -44,3 +47,5 @@ Android work should at minimum compile, with device or emulator verification not
 Add tests for shared logic. UI pull requests need screenshots and window-size coverage. Persistence or provider changes need migration/compatibility notes. Maintainers perform releases and channel publication.
 
 Security issues must follow [SECURITY.md](SECURITY.md), not public issues.
+
+Mobile control-tree tests use Flet 1.0.5 fixtures at 390×844, 360×740 and reduced keyboard height. Optional Flet browser previews need a compatible flet-web runtime; these are not Android device acceptance. Do not publish APKs without signing provenance and device checks.

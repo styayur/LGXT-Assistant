@@ -13,6 +13,7 @@ export const defaults = {
   memoryEnabled: false,
   memory: "",
   debug: false,
+  visionEnabled: false,
   profiles: {},
 };
 export const providers = {
@@ -42,6 +43,7 @@ export function switchProvider(settings, provider) {
     ...settings,
     provider,
     profiles,
+    visionEnabled: false,
     ...(profiles[provider] || {
       endpoint: providers[provider].endpoint,
       model: "",

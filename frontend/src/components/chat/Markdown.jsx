@@ -41,7 +41,7 @@ export default memo(function Markdown({ text }) {
     <div className="markdown">
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[rehypeKatex, rehypeHighlight]}
+        rehypePlugins={[[rehypeKatex, {trust:false, maxExpand:1000, maxSize:20}], rehypeHighlight]}
         components={{
           pre: CodeBlock,
           table: ({ children }) => (
@@ -55,7 +55,7 @@ export default memo(function Markdown({ text }) {
             </a>
           ),
           img: ({ src, alt }) => (
-            <img loading="lazy" src={src} alt={alt || "消息图片"} />
+            /^data:image\/(png|jpeg|webp);base64,/.test(src || "") ? <img loading="lazy" src={src} alt={alt || "消息图片"} /> : <span>[外部图片未自动加载：{alt || "图片"}]</span>
           ),
         }}
       >

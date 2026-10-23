@@ -36,6 +36,8 @@ class AppBase:
         theme.apply_theme(self.style)
 
         self.api = api.client
+        self._task_cancel = threading.Event()
+        self._task_running = threading.Event()
         self.username = ''
         self.password = ''
         self.courses = []
@@ -611,6 +613,7 @@ class AppBase:
         self.progress_bar.pack(fill=X, padx=12, pady=(0, 10))
         if start:
             self.progress_bar.start()
+        self.btn(panel, '停止后续请求（已提交不可撤销）', self._task_cancel.set, 'warning').pack(anchor='w', padx=12, pady=8)
         self._task_panel = panel
         self.progress_window = None
         self.set_state('PROCESSING')
@@ -623,6 +626,9 @@ class AppBase:
 
     def msg_error(self, title, message):
         Messagebox.show_error(title=title, message=message)
+
+    def cancelled(self):
+        return self._task_cancel.is_set()
 
     def status(self, text):
         self.queue.put(('status', text))
@@ -658,6 +664,11 @@ class AppBase:
 
     def run_task(self, title, target, on_result, mode='determinate', status='', start=False,
                  error_after=None):
+        if self._task_running.is_set():
+            self.msg_info('任务进行中', '请等待任务结束，或先停止后续请求')
+            return
+        self._task_running.set()
+        self._task_cancel.clear()
         self.open_progress(title, mode=mode, status=status, start=start)
 
         def worker():
@@ -666,6 +677,8 @@ class AppBase:
             except Exception as exc:
                 self.queue.put(('task_error', exc))
                 return
+            finally:
+                self._task_running.clear()
             if result is not None:
                 self.queue.put(('run_ok', on_result, result))
             elif error_after is not None:

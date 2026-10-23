@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 from types import SimpleNamespace
+import gc
+import weakref
 
 import pytest
 
@@ -41,9 +43,18 @@ def test_app_can_start_headless(monkeypatch):
     except Exception as exc:                      # 无显示环境时跳过
         pytest.skip('no display: %s' % exc)
     root.withdraw()
-    app = ui.App(root)
-    assert app.username_entry is not None          # 登录页已构建
-    root.destroy()
+    app = None
+    try:
+        app = ui.App(root)
+        app_reference = weakref.ref(app)
+        assert app.username_entry is not None
+    finally:
+        root.destroy()
+        # Tk callbacks form cycles. Collect on their owning thread now, rather
+        # than letting a later local HTTP worker trigger Variable.__del__.
+        app = None
+        gc.collect()
+    assert app_reference() is None
 
 
 def test_dashboard_stats_collector():

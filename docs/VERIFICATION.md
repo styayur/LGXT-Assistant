@@ -1,38 +1,64 @@
-# 桌面重构验证记录
+# Assignment upgrade verification
 
-日期：2026-09-23。Windows 11，Python 3.13.15，Node 26.7.0。
+Date: 24 October 2026 (Asia/Singapore). This record separates executed checks from release gates still in progress. Earlier historical evidence follows below.
 
-| 检查 | 结果 |
-|---|---|
-| `npm run build` | 成功，所有前端资源本地打包 |
-| `py -3.13 -m pytest` | 42 passed；旧 Tk 主题有 1 条依赖弃用提示 |
-| `compileall` | 新桌面、脚本与入口编译通过 |
-| `scripts/check_frontend.py` | 通过，无捕获到的 JavaScript 运行异常 |
-| 深浅主题与设置持久化 | 通过 |
-| 命令面板 / Esc / Ctrl+N / Ctrl+Enter | 通过 |
-| 提示词创建和使用、文件引用 | 通过 |
-| Markdown、代码高亮、表格、LaTeX | 通过，使用明确的渲染测试内容 |
-| 消息编辑、流式停止与重新生成 | 通过，使用隔离的桥接测试夹具 |
-| 课程分页、学习概览、成绩确认 | 通过，使用测试账号与测试数据，无真实提交 |
-| 1280×720 / 1920×1080 / 3840×2160 | 截图和工作区尺寸断言通过 |
-| 860×600 / 390×844 | 主区可见、输入器可操作，无页面级横向溢出 |
-| 真实 WebView2 源码启动 | 通过；非预览模式；bootstrap 桥接成功 |
-| PyInstaller 单文件 EXE / 便携 ZIP 构建 | 两者成功 |
-| 单文件与 ZIP 实际解压后的 EXE `--smoke-test` | 两者通过；本地资源加载和 Python 桥接成功 |
+## Audit baseline
 
-4.0.1 本地构建产物为 `dist/LGXT-Assistant.exe` 和 `dist/LGXT-Assistant-portable.zip`；便携版必须完整解压并保留 `_internal`。构建产物由 `.gitignore` 排除。`scripts/check_package.py` 分别启动单文件 EXE 与实际从 ZIP 解压的 EXE，检查真实资源加载及 Python 桥接。
+- Clean original checkout on `codeforge/regression-ci-v0.2.1`; fetched current `origin/main` at `8d7be85` before creating `feat/assignment-workspace-security`. No pre-existing tracked changes were discarded.
+- Published releases: desktop v4.0.1, Windows web v4.1.0-web, Android historical v3.2.1. Open PR #20 is an unrelated dependency update and was not modified.
+- Baseline Python 3.13 suite: 51 passed. Baseline npm build passed; npm audit found four transitive KaTeX findings. Default shell Python 3.14 lacked pytest, so actual checks used installed Python 3.13.
+- Recent main workflows passed. Historical failures included a loopback test timeout on a dependency branch and CodeForge regression findings; they were inspected and are not attributed to this change. Main rules require PR+squash, CodeForge regression, python and frontend checks; zero approving reviews are required.
+- No credentials were sent to LGXT. HTTP HEAD responded, HTTPS handshake failed. This is an environment observation; secure API availability remains unverified.
 
-自动截图位于 `docs/screenshots/modern-*.png`。`*-fixture.png` 为测试数据示例；初始页面截图真实显示模型尚未配置。详情见 [重构说明](UI_MODERNIZATION.md)。
+## Executed during implementation
 
-未执行真实云端 AI 付费调用、真实理工学堂账号登录与成绩提交、真实平台全量导出、MSI 生成与安装、Android 构建。旧 API / 导出 / 批量任务逻辑由原有测试覆盖，实际远端可用性仍需配置凭据后验证。
+| Check | Evidence / limits |
+| --- | --- |
+| Python | 103 passed after shared transport/document, export, batch and Flet tests; later changes require rerun before release |
+| React production build | Passed with npm lockfile; assignment/editor chunk is lazy-loaded |
+| Existing browser checks | Passed themes, recovery, command palette, streaming/stop/regeneration, course pagination, confirmation and five viewport sizes |
+| Assignment browser checks | Passed all three batch scopes, no writes before confirmation, cancellation, original image, recognition correction, rich math/table/source round trips, safe HTML, saved document and question AI context; 390×844 and 390×480 layouts |
+| Flet controls | Synthetic login/course/assignment/document/save and confirmed single submission at 390×844, 360×740 and 390×480; no actual platform writes |
+| Dependencies | npm audit zero findings after KaTeX deduplication. pip-audit zero findings for updated desktop requirements. Mobile audit is separately recorded by CI |
+| Static security | Targeted Bandit on changed network/provider/document/bridge/storage/export/batch/local-server boundaries: zero findings after repairs; does not certify every historical line |
+| Export | Word reopened with two embedded images and a table, LaTeX source retained. PDF rendered with Poppler for visual review; native mathematical typesetting is not claimed |
 
-## 4.0.1 启动与登录回归
+`docs/screenshots/assignment-*-fixture.png` are captures of the actual built React UI with synthetic course/model responses. Existing `modern-*.png` are browser UI captures, not native Android images. Software-keyboard behavior is approximated by reduced height; it is not a real Android IME test.
 
-- 桌面入口生成独立 `desktop.html`，在 JavaScript 执行前标记桌面环境；测试延迟注入桥接后进入主界面，等待期间不会误用浏览器预览。
-- `bootstrap` 不访问系统凭据库；账户和密钥状态在主界面就绪后异步读取。测试凭据查询一直不返回、最近会话读取失败，主界面仍可使用。
-- 不完整偏好、非法 Provider / Theme、损坏会话索引会保留 `.recovery-*.bak` 副本并恢复可用值；旧配置非法布尔值及含 `%` 路径均有回归测试。
-- 登录超时恢复按钮、取消与 Esc 关闭由浏览器测试覆盖；网络请求或凭据保存延迟时取消，Python 回归测试确认不会随后建立登录态。
-- 缺少前端资源会显示可理解的错误，原生恢复入口可在界面资源未加载时提供兼容模式与官方下载链接。
-- 13 页使用者 PDF 已嵌入中文字体，通过 Poppler 渲染并检查全部页面，包含真实界面与明确标注的演示数据截图。
+## Packaging and external gates
 
-本地行为回归无法确认每位使用者的具体故障原因。未提供真实账号和错误日志，真实平台登录与账号状态未验证。
+Windows local builds and exact-tag GitHub build/startup workflows are being verified. A build command alone is not acceptance; both actual desktop EXEs and the Web EXE must pass their smoke checks. No merge/tag/release is claimed by this interim record.
+
+Android signing secrets are absent (`gh secret list` returned no secrets). No new signed APK, physical-device check or production Android release is claimed. Flet browser preview required compatible flet-web/FastAPI versions and stalled at its loading screen in this environment. `flet-runtime-loading-390.png` records only that loading state, not the updated Android interface. No Android visual acceptance is claimed.
+
+No real platform login, grade submission, paid model generation, live OCR accuracy benchmark, handwriting/diagram study, LAN deployment or independent final-grade verification was executed. Fixture tests do not establish real-provider compatibility or platform permission.
+
+## Repeatable commands
+
+```powershell
+py -3.13 -m pytest -q
+py -3.13 -m compileall -q api.py tasks.py question_documents.py exporter.py desktop ui mobile/src web_app.py
+npm ci --prefix frontend
+npm run build --prefix frontend
+py -3.13 scripts/check_frontend.py
+py -3.13 scripts/check_assignment.py
+py -3.13 scripts/check_web.py
+py -3.13 -m pip_audit -r requirements.txt
+py -3.13 -m pip_audit -r mobile/requirements.txt
+py -3.13 -m bandit -r desktop/bridge.py desktop/storage.py mobile/src tasks.py exporter.py web_app.py
+# After builds finish, without concurrent frontend rebuilds:
+py -3.13 scripts/check_package.py
+py -3.13 scripts/check_web.py --exe dist/LGXT-Assistant-Web.exe
+```
+
+See the GitHub PR and workflow links in the final delivery record for post-commit results. Published assets, if any, are independently checked by `scripts/verify_release.py` against SHA256SUMS and GitHub asset digests. Historical releases are unchanged.
+
+The Android OAuthlib audit blocker was resolved by migrating to Flet 1.0.5 and requiring OAuthlib >=4,<5. The mobile control flows and atomic local notes store are regression-tested; no advisory is ignored. Android signing and device acceptance remain unavailable, so no APK is published.
+
+Flet migration verification: 1.0.5 (Apache-2.0), OAuthlib 4.0.0; mobile audit and control tests pass. Durable mobile notes use FLET_APP_STORAGE_DATA with atomic schema-1 writes, unsupported-version backups and no password persistence. Legacy username migration and password removal use the asynchronous SharedPreferences service. Flet 1.0.5 selects Flutter 3.44.8 for candidate builds. No signed APK/device result is implied.
+
+Local interim desktop packaging was rejected: a frontend rebuild occurred during artifact collection, and the portable smoke check failed. Those interim files were not published. Exact-tag release jobs build without concurrent edits and must pass fresh ZIP extraction plus both EXE startup checks. The separate local Web EXE passed real Chromium launch, RPC/session, persistence, export and layout checks.
+
+Actual Flet 1.0 browser-renderer fixture flow passed: keyboard login, dashboard, course, assignment and question document at 390×844; reduced-height capture at 390×480. `android-flet-*-fixture.png` contain synthetic data from the isolated FixtureClient. These are genuine Flet browser renders, not native Android APK screenshots. The earlier loading-only capture documents the superseded 0.25 runtime failure.
+
+The historical Windows loopback test timeout was reproduced with Tk Variable destruction on a server worker. The legacy startup test now destroys and collects its Tk callback cycles on the owning thread and asserts the app is released, without increasing HTTP timeouts or removing origin checks. A candidate Android build was also attempted; the first attempt exposed an interactive Flutter installation prompt. The workflow now pins the Flet-matched Flutter 3.44.8 and uses its supported --yes option. Signing/device acceptance still gate publication.

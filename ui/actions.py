@@ -5,15 +5,29 @@ import tasks
 
 
 class TasksMixin:
+    def _preview_grade_batch(self, scope):
+        from tkinter import messagebox
+        def ready(plan):
+            names = '\n'.join(str(w.get('workName', w['workId'])) for w in plan['works'])
+            if not messagebox.askyesno('一键满分', f"范围：{scope}，共 {plan['count']} 个作业，目标 100 分。\n"
+                                      f"读取失败课程：{plan['fetchFailed']}。会修改服务器记录，可能消耗次数。\n"
+                                      "取消只停止后续请求；已提交更改不能撤销。超时结果需到平台核实。\n" + names):
+                return
+            from desktop.storage import Store
+            import config
+            from pathlib import Path
+            audit = Store(Path(config.default_config_path()).parent / 'desktop').audit_batch
+            self.run_task('一键满分', lambda ui: tasks.execute_batch(ui, self.api, plan['works'], audit=audit),
+                          on_result=lambda r: self.show_result(r['title'], r['text']))
+        course = {'courseId': self.selected_course_id} if scope != 'all' else None
+        work = {'workId': self.selected_work_id} if scope == 'assignment' else None
+        self.fetch(lambda: tasks.batch_plan(self.api, scope, course, work), ready)
+
     def submit_all_courses_100(self):
-        self.run_task('正在批量提交所有课程作业，请稍候...',
-                      lambda ui: tasks.submit_all_courses(ui, self.api, self.courses),
-                      on_result=lambda r: self.show_result(r['title'], r['text']))
+        self._preview_grade_batch('all')
 
     def submit_all_works_100(self):
-        self.run_task('正在批量提交所有作业，请稍候...',
-                      lambda ui: tasks.submit_all_works(ui, self.api, self.works),
-                      on_result=lambda r: self.show_result(r['title'], r['text']))
+        self._preview_grade_batch('course')
 
     def export_all_courses(self):
         opts = self.export_options()

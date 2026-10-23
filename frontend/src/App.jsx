@@ -51,6 +51,7 @@ export default function App() {
     [connected, setConnected] = useState(false),
     [username, setUsername] = useState(""),
     [savedUsername, setSavedUsername] = useState("");
+  const [insecureTransport, setInsecureTransport] = useState(false);
   const [conversations, setConversations] = useState([]),
     [conversation, setConversation] = useState(newConversation),
     [draft, setDraft] = useState(""),
@@ -137,6 +138,7 @@ export default function App() {
         setFiles(b.workspace?.files || []);
         setTask(b.workspace?.task || "");
         setUsername(b.username);
+        setInsecureTransport(Boolean(b.insecureTransport));
         setSavedUsername(b.savedUsername);
         setDesktop(isConnected());
         if (b.settings.startup === "last" && b.conversations.length) {
@@ -482,7 +484,7 @@ export default function App() {
     setBusy(true);
     let text = "";
     try {
-      const id = await call("start_task", action, course, work);
+      const id = action === "confirmed_batch" ? await call("confirm_batch", course) : await call("start_task", action, course, work);
       jobId.current = id;
       let offset = 0;
       while (mounted.current) {
@@ -712,6 +714,7 @@ export default function App() {
                 onSettings={modelSettings}
                 onPrompt={() => go("prompts")}
                 toast={toast}
+                files={files}
               />
             )}
             {page === "settings" && (
@@ -772,6 +775,7 @@ export default function App() {
                   try {
                     await call("logout");
                     setUsername("");
+                    setInsecureTransport(false);
                     toast("已退出理工学堂");
                   } catch (e) {
                     toast(e.message, true);
@@ -786,6 +790,7 @@ export default function App() {
                   go("chat");
                 }}
                 toast={toast}
+                files={files}
               />
             )}
           </Suspense>
@@ -795,9 +800,11 @@ export default function App() {
             <span className="status-dot" />
             {job.status}
             <progress max={job.maximum || 100} value={job.progress} />
+            <Button onClick={() => call("cancel_task", jobId.current)}>停止后续请求</Button>
           </div>
         )}
       </main>
+      {insecureTransport && <div role="alert" className="transport-warning">不安全兼容模式：账号、密码与成绩通过明文 HTTP 传输，可能被窃取或篡改。登录凭据不保存。</div>}
       <Context
         onClose={() => setContext(false)}
         settings={settings}
@@ -833,6 +840,7 @@ export default function App() {
           onClose={() => setModal(null)}
           onDone={(r) => {
             setUsername(r.username);
+            setInsecureTransport(Boolean(r.insecureTransport));
             setModal(null);
             toast(r.warning || "已连接理工学堂");
           }}
@@ -948,6 +956,7 @@ export default function App() {
 }
 function Login({ savedUsername, onClose, onDone, toast }) {
   const attempt = useRef(null);
+  const [insecure, setInsecure] = useState(false);
   const [username, setUsername] = useState(savedUsername),
     [password, setPassword] = useState(""),
     [remember, setRemember] = useState(false),
@@ -961,6 +970,8 @@ function Login({ savedUsername, onClose, onDone, toast }) {
   return (
     <Modal title="连接理工学堂" onClose={cancel}>
       <p className="dialog-copy">使用理工学堂账号同步你的课程与作业。</p>
+      <p className="inline-error">平台 HTTPS 尚未验证。默认阻止明文登录。兼容模式会暴露账号、密码和成绩传输，且不保存凭据。</p>
+      <label><input type="checkbox" checked={insecure} onChange={e => setInsecure(e.target.checked)} />我理解风险，本次明确允许不安全 HTTP 兼容模式</label>
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -971,7 +982,7 @@ function Login({ savedUsername, onClose, onDone, toast }) {
           setBusy(true);
           try {
             const result = await withTimeout(
-              call("login", username, password, remember, id),
+              call("login", username, password, remember && !insecure, id, insecure),
               20000,
               "登录超时。请检查网络后重试；也可以取消并继续使用其他功能。",
             );

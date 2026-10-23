@@ -1,10 +1,12 @@
 [project]
 name = "lgxt-assistant-mobile"
-version = "3.2.1"
+version = "3.3.0"
 description = "LGXT Assistant · 理工学堂助手（Android / Flet）"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
-  "flet==0.25.2",
+  "flet==1.0.5",
+  "oauthlib>=4.0.0,<5",
+  "Pillow>=13.0.0,<14",
   "requests>=2.32.5,<2.33; python_version < '3.10'",
   "requests>=2.34.2,<3; python_version >= '3.10'",
 ]
@@ -13,7 +15,7 @@ dependencies = [
 org = "io.github.styayur"
 product = "LGXT Assistant"
 company = "Styayur"
-copyright = "GPL-3.0-or-later (c) Styayur"
+copyright = "AGPL-3.0-only (c) Styayur"
 build_number = 3
 
 [tool.flet.app]

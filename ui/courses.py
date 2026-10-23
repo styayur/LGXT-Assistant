@@ -48,7 +48,7 @@ class CoursesMixin:
         right.pack(side=RIGHT)
         self.btn(right, 'REFRESH', self.show_courses, 'secondary').pack(side=LEFT, padx=(0, GAP))
         self.btn(right, 'EXPORT ALL', self.export_all_courses, 'info').pack(side=LEFT, padx=(0, GAP))
-        self.btn(right, 'SUBMIT ALL 100', self.submit_all_courses_100, 'warning').pack(side=LEFT)
+        self.btn(right, '一键满分', self.submit_all_courses_100, 'warning').pack(side=LEFT)
 
         self._galaxy = GalaxyView(self.content_frame, self._galaxy_open_course,
                                   self._galaxy_open_work)

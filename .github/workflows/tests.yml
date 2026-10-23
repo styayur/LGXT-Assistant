@@ -29,7 +29,7 @@ jobs:
       - name: Run pytest
         run: python -m pytest -q
       - name: Compile smoke test
-        run: python -m compileall -q default.pyw theme.py api.py config.py exporter.py tasks.py ui desktop tests mobile/src/main.py
+        run: python -m compileall -q default.pyw theme.py api.py config.py exporter.py tasks.py ui desktop tests mobile/src question_documents.py web_app.py
 
   frontend:
     runs-on: ubuntu-latest
@@ -48,11 +48,14 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
-      - run: python -m pip install playwright
+      - run: python -m pip install playwright Pillow
       - run: python -m playwright install --with-deps chromium
       - run: python scripts/check_frontend.py
+      - run: python scripts/check_assignment.py
       - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: desktop-ui-screenshots
-          path: docs/screenshots/modern-*.png
+          path: |
+            docs/screenshots/modern-*.png
+            docs/screenshots/assignment-*.png

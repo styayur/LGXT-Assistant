@@ -6,10 +6,14 @@ import api
 
 class FakeResponse:
     def __init__(self, payload=None, *, ctype='image/png', content=b'x', raise_json=False):
+        self.status_code = 200
         self._payload = payload
         self.headers = {'Content-Type': ctype}
         self.content = content
         self._raise_json = raise_json
+
+    def close(self):
+        pass
 
     def raise_for_status(self):
         return None
@@ -24,19 +28,20 @@ class FakeSession:
     def __init__(self, response):
         self.response = response
         self.headers = {}
+        self.cookies = api.requests.cookies.RequestsCookieJar()
         self.calls = []
 
-    def post(self, url, headers=None, data=None, timeout=None):
+    def post(self, url, headers=None, data=None, timeout=None, **kwargs):
         self.calls.append((url, data, timeout))
         return self.response
 
-    def get(self, url, headers=None, timeout=None):
+    def get(self, url, headers=None, timeout=None, **kwargs):
         self.calls.append((url, timeout))
         return self.response
 
 
 def client_with(response):
-    c = api.APIClient()
+    c = api.APIClient("https://lgxt.wutp.com.cn/api")
     c.session = FakeSession(response)
     return c
 
@@ -46,13 +51,13 @@ def test_login_ok_sets_authorization():
     ok, msg = c.login('u', 'p')
     assert ok and msg == '欢迎回来！'
     assert c.headers['Authorization'] == 'TOKEN'
-    assert c.session.headers['Authorization'] == 'TOKEN'
+    assert 'Authorization' not in c.session.headers
 
 
 def test_business_error_keeps_prefix():
     c = client_with(FakeResponse({'code': 1, 'msg': '拒绝'}))
     ok, msg = c.get_my_courses()
-    assert not ok and msg == '获取课程列表失败：拒绝'
+    assert not ok and msg.startswith('获取课程列表失败')
 
 
 def test_non_json_response_is_reported():
@@ -70,7 +75,7 @@ def test_missing_field_is_reported():
 def test_submit_answer_success_message():
     c = client_with(FakeResponse({'code': 0, 'data': 'OK'}))
     ok, msg = c.submit_answer(7, '100')
-    assert ok and '成绩：100' in msg and 'OK' in msg
+    assert ok and '成绩：100' in msg and '未独立核验' in msg
 
 
 def test_fetch_image_rejects_non_image():

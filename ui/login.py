@@ -35,6 +35,9 @@ class LoginMixin:
         self.password_entry = ttk.Entry(form, width=40, show='*')
         self.password_entry.grid(row=1, column=1, padx=(16, 0), pady=4)
 
+        self.insecure_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(panel, text='我理解风险：本次允许明文 HTTP，密码和成绩可能被窃取；不保存凭据',
+                        variable=self.insecure_var).pack(anchor='w', padx=32, pady=8)
         self.remember_var = tk.BooleanVar()
         ttk.Checkbutton(panel, text='记住密码（本地凭据库）', variable=self.remember_var,
                         bootstyle='round-toggle').pack(anchor='w', padx=32, pady=(4, 14))
@@ -53,6 +56,9 @@ class LoginMixin:
     def login(self):
         if not hasattr(self, 'username_entry'):
             return
+        self.api.allow_insecure = self.insecure_var.get()
+        if self.api.allow_insecure:
+            self.root.title('LGXT Assistant — 不安全 HTTP：密码与成绩明文传输')
         self.username = self.username_entry.get()
         self.password = self.password_entry.get()
         self.login_button.state(['disabled'])
@@ -63,7 +69,7 @@ class LoginMixin:
             self.login_button.state(['!disabled'])
             ok, msg = result
             if ok:
-                if self.remember_var.get():
+                if self.remember_var.get() and not self.api.insecure:
                     config.save_credentials(self.username, self.password)
                 else:
                     config.delete_saved_credentials()

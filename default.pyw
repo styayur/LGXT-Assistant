@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""LGXT Assistant 4.0.1 桌面入口，--legacy 保留旧版 Tk 界面。"""
+"""LGXT Assistant 4.1.0 桌面入口，--legacy 保留旧版 Tk 界面。"""
 import sys
 
 

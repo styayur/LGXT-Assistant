@@ -16,7 +16,9 @@ METHODS = frozenset('bootstrap credential_status save_settings remove_key test_m
                     'conversation save_conversation delete_conversation save_prompts '
                     'save_workspace login cancel_login logout courses dashboard works '
                     'questions question_image submit_grade user_info start_chat poll_job '
-                    'stop_chat start_task'.split())
+                    'stop_chat start_task preview_batch confirm_batch cancel_task question_document '
+                    'save_question_document start_question_ai parse_recognition export_question_document'.split())
+WEB_VERSION = '4.2.0'
 MAX_BODY = 24 * 1024 * 1024
 
 
