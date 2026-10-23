@@ -14,6 +14,7 @@ import api
 import config
 import exporter
 import tasks
+import question_documents as documents
 from . import models
 from .storage import Store
 
@@ -33,6 +34,9 @@ class TaskProgress:
     def maximum(self, value):
         with self.lock:
             self.job['maximum'] = value
+
+    def cancelled(self):
+        return self.job['cancel'].is_set()
 
     def stop_and_close(self, _delay):
         pass
@@ -55,7 +59,8 @@ def prepare_messages(settings, messages):
         for attachment in message.get('attachments', []):
             if attachment.get('text') is not None:
                 content += f"\n\n文件引用：{attachment['name']}\n{attachment['text']}"
-            elif attachment.get('data', '').startswith('data:image/'):
+            elif attachment.get('data'):
+                documents.image_data_url(attachment['data'])
                 images.append(attachment['data'])
         if images and role == 'user':
             blocks = [{'type': 'text', 'text': content or '请分析附件图片。'}]
@@ -83,6 +88,7 @@ class Bridge:
         self._lock = threading.RLock()
         self._login_attempt = None
         self._cancelled_logins = set()
+        self._batch_plans = {}
 
     def _key_id(self, settings):
         endpoint = settings['endpoint'].strip().rstrip('/')
@@ -100,7 +106,7 @@ class Bridge:
                 'conversations': self._store.conversations(), 'prompts': self._store.prompts(),
                 'workspace': self._store.workspace(),
                 'username': self._username, 'savedUsername': '',
-                'warnings': self._store.warnings,
+                'warnings': self._store.warnings, 'insecureTransport': self._client.insecure and self._client.allow_insecure,
                 'export': {k: getattr(self._legacy, k) for k in (
                     'export_path', 'export_word', 'export_pdf', 'export_word_include_answers',
                     'export_pdf_include_answers')}, 'api': self._client.base_url}
@@ -155,7 +161,7 @@ class Bridge:
     def toggle_fullscreen(self):
         self._window.toggle_fullscreen()
 
-    def login(self, username, password, remember=False, attempt_id=None):
+    def login(self, username, password, remember=False, attempt_id=None, allow_insecure=False):
         username = username.strip()
         attempt_id = attempt_id or str(uuid.uuid4())
         with self._lock:
@@ -166,6 +172,7 @@ class Bridge:
         if not username or not password:
             raise ValueError('请输入账号和密码')
         candidate = api.APIClient(self._client.base_url)
+        candidate.allow_insecure = bool(allow_insecure)
         ok, data = candidate.login(username, password)
         if not ok:
             candidate.session.close()
@@ -175,7 +182,7 @@ class Bridge:
                 candidate.session.close()
                 raise ValueError('本次登录已取消，请重新登录')
         warning = ''
-        if remember:
+        if remember and not (getattr(candidate, 'insecure', False) and allow_insecure):
             if not config.save_credentials(username, password):
                 warning = '已登录，但凭据保存失败'
         else:
@@ -187,7 +194,8 @@ class Bridge:
                 raise ValueError('本次登录已取消，请重新登录')
             self._client = candidate
             self._username = username
-        return {'username': username, 'warning': warning}
+        return {'username': username, 'warning': api.INSECURE_WARNING if allow_insecure else warning,
+                'insecureTransport': bool(allow_insecure)}
 
     def cancel_login(self, attempt_id):
         with self._lock:
@@ -200,8 +208,10 @@ class Bridge:
 
     def logout(self):
         self._login_attempt = None
-        self._client.headers.pop('Authorization', None)
-        self._client.session.headers.pop('Authorization', None)
+        self._client.logout()
+        self._client.allow_insecure = False
+        self._batch_plans.clear()
+        config.delete_saved_credentials()
         self._username = ''
 
     def _authenticated(self):
@@ -269,6 +279,7 @@ class Bridge:
         settings = self._store.settings()
         key = self._key(settings)
         prepared = prepare_messages(settings, messages)
+        models.require_vision(settings, prepared)
         models.request_config(settings, key, prepared)
         job = self._new_job('chat')
 
@@ -289,7 +300,7 @@ class Bridge:
             except Exception as exc:
                 with self._lock:
                     if not job['cancel'].is_set():
-                        job['error'] = str(exc)
+                        job['error'] = '模型请求失败；请检查网络、模型能力和服务配置' if isinstance(exc, models.requests.RequestException) else str(exc)
             finally:
                 with self._lock:
                     job['done'] = True
@@ -302,7 +313,8 @@ class Bridge:
         with self._lock:
             job = self._jobs[jid]
             return {k: job[k] for k in ('id', 'kind', 'status', 'done', 'error', 'progress', 'maximum')} | {
-                'delta': job['text'][int(offset):], 'offset': len(job['text'])}
+                'delta': job['text'][int(offset):], 'offset': len(job['text']),
+                'provider': job.get('provider', ''), 'model': job.get('model', '')}
 
     def stop_chat(self, jid):
         with self._lock:
@@ -317,7 +329,7 @@ class Bridge:
 
     def start_task(self, action, course=None, work=None):
         self._authenticated()
-        if action not in ('export_work', 'export_course', 'export_all', 'submit_course', 'submit_all'):
+        if action not in ('export_work', 'export_course', 'export_all'):
             raise ValueError('未知任务')
         s = self._legacy
         if action.startswith('export') and not (s.export_word or s.export_pdf):
@@ -359,6 +371,74 @@ class Bridge:
                     job['done'] = True
         threading.Thread(target=run, daemon=True).start()
         return job['id']
+
+    def preview_batch(self, scope, course=None, work=None):
+        self._authenticated()
+        plan = tasks.batch_plan(self._client, scope, course, work)
+        token = str(uuid.uuid4())
+        with self._lock:
+            self._batch_plans = {token: (time.monotonic(), plan)}
+        return plan | {'token': token}
+
+    def confirm_batch(self, token):
+        self._authenticated()
+        with self._lock:
+            entry = self._batch_plans.get(token)
+            if not entry or time.monotonic() - entry[0] > 300:
+                raise ValueError('预览已过期，请重新选择范围')
+            job = self._new_job('task')
+            del self._batch_plans[token]
+            client = self._client
+        def run():
+            try:
+                result = tasks.execute_batch(TaskProgress(job, self._lock), client, entry[1]['works'],
+                                             job['cancel'], self._store.audit_batch)
+                with self._lock:
+                    job['text'] = result['text']
+                    job['status'] = '已停止后续请求' if result['cancelled'] else '已完成，请核对逐项结果'
+            except Exception:
+                with self._lock:
+                    job['error'] = '任务中断，请核对平台记录与本地审计'
+            finally:
+                with self._lock:
+                    job['done'] = True
+        threading.Thread(target=run, daemon=True).start()
+        return job['id']
+
+    def cancel_task(self, jid):
+        with self._lock:
+            job = self._jobs.get(jid)
+            if not job or job['kind'] != 'task':
+                return False
+            job['cancel'].set()
+        return True
+
+    def question_document(self, course_id, work_id, question_id):
+        return self._store.question_document(course_id, work_id, question_id)
+
+    def save_question_document(self, document):
+        return self._store.save_question_document(document)
+
+    def start_question_ai(self, document, prompt, image=None, recognize=False):
+        d = documents.validate_document(document)
+        if recognize:
+            if not image:
+                raise ValueError('请选择题目原图或裁剪区域')
+            prompt = ('Recognize printed text and math from this image. Return only a JSON object '
+                      'with exactly two string fields: text (surrounding text) and latex (editable LaTeX). '
+                      'Do not solve. No HTML. Preserve fractions, matrices, integrals and Greek letters.')
+        jid = self.start_chat(documents.context_messages(d, prompt, image))
+        settings = self._store.settings()
+        with self._lock:
+            self._jobs[jid].update(provider=settings['provider'], model=settings['model'])
+        return jid
+
+    def parse_recognition(self, text):
+        return documents.parse_recognition(text)
+
+    def export_question_document(self, document, format='md'):
+        d = documents.validate_document(document)
+        return exporter.export_question_document(d, self._legacy.export_path, format)
 
     def choose_files(self):
         import webview

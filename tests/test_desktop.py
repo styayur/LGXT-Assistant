@@ -1,4 +1,7 @@
 import json
+import base64
+import io
+from PIL import Image
 import threading
 import time
 import uuid
@@ -125,11 +128,14 @@ def test_openai_reasoning_parameters():
 
 
 def test_provider_wire_formats_and_context():
+    image_buffer = io.BytesIO()
+    Image.new('RGB', (2,2)).save(image_buffer, 'PNG')
+    image_data = 'data:image/png;base64,' + base64.b64encode(image_buffer.getvalue()).decode()
     s = DEFAULTS | {'provider': 'Claude', 'endpoint': 'https://api.anthropic.com/v1',
                     'model': 'test-model', 'memoryEnabled': True, 'memory': 'Explain clearly'}
     messages = [{'role': 'assistant', 'content': 'old'}, {'role': 'user', 'content': 'look',
                  'attachments': [{'name': 'note.md', 'text': 'context'},
-                                 {'name': 'image.png', 'data': 'data:image/png;base64,aA=='}]}]
+                                 {'name': 'image.png', 'data': image_data}]}]
     prepared = prepare_messages(s, messages)
     assert prepared[0]['role'] == 'system'
     assert prepared[1]['content'][0]['text'].endswith('context')

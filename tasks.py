@@ -5,7 +5,6 @@
 适配器把事件写入 queue，由主线程轮询（after）消费后更新界面。
 """
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from exporter import save_collected
 
@@ -47,43 +46,29 @@ def collect_single(ui, client, work_id, work_name, course_name, course_id, opts,
         ui.stop_and_close(3000)
         return None
 
-    with ThreadPoolExecutor(max_workers=PARALLEL_WORKERS) as pool:
-        futures = [pool.submit(client.get_questions, work_id) for _ in range(max_iterations)]
-        total = len(futures)
-        processed = 0
-        for future in as_completed(futures):
-            processed += 1
-            ui.status(f'正在收集题目...({processed}/{total}) - {int(processed / total * 100)}% - 已找到 {len(collected)} 道题目')
-            ui.progress(int(processed / total * 100))
-            try:
-                ok, questions = future.result()
-                if ok:
-                    api_errors = 0
-                    if not _merge_questions(collected, questions):
-                        no_new += 1
-                        if processed >= MIN_ITERATIONS and no_new >= NO_NEW_THRESHOLD:
-                            _cancel_pending(futures)
-                            break
-                    else:
-                        no_new = 0
-                else:
-                    api_errors += 1
-                    err = f'API错误: {questions}'
-                    ui.status(f'获取题目时发生错误: {err}\n重试中... ({api_errors}/{MAX_API_ERRORS})')
-                    if api_errors >= MAX_API_ERRORS:
-                        _cancel_pending(futures)
-                        return fail('获取题目失败: 多次请求失败')
-            except Exception as exc:
-                _cancel_pending(futures)
-                return fail(f'处理题目时出现错误: {exc}')
-
-        if not collected:
-            return fail('没有找到任何题目，可能是API错误或作业中没有题目')
-
-        save_collected(client, collected, work_name, course_name, work_id, course_id, work_name, opts)
-        ui.status(f'收集完成，共收集到 {len(collected)} 道题目。用时: {time.time() - start_time:.2f}秒')
-        ui.stop_and_close(1000)
-        return collected
+    # showQuestions samples a question set; it is not a paginated endpoint.
+    # Sequential sampling avoids identical concurrent calls and speculative queues.
+    for processed in range(1, min(max_iterations, SEQUENTIAL_LIMIT) + 1):
+        if getattr(ui, 'cancelled', lambda: False)():
+            return fail('已取消收集；未宣称题库完整')
+        ok, questions = client.get_questions(work_id)
+        ui.progress(int(processed / max_iterations * 100))
+        if not ok:
+            api_errors += 1
+            if api_errors >= MAX_API_ERRORS:
+                return fail('获取题目失败；已有题目未标记为完整题库')
+            continue
+        api_errors = 0
+        no_new = 0 if _merge_questions(collected, questions) else no_new + 1
+        ui.status(f'抽样 {processed} 次，已收集 {len(collected)} 道；不保证题库完整')
+        if processed >= MIN_ITERATIONS and no_new >= NO_NEW_THRESHOLD:
+            break
+    if not collected:
+        return fail('没有找到任何题目')
+    save_collected(client, collected, work_name, course_name, work_id, course_id, work_name, opts)
+    ui.status(f'收集完成，共 {len(collected)} 道题；抽样结果不保证完整')
+    ui.stop_and_close(1000)
+    return collected
 
 
 def batch_collect(ui, client, work_id, course_name, work_name):
@@ -162,59 +147,78 @@ def export_all_courses(ui, client, courses, opts):
     return _export_summary(total_courses, total_works, messages)
 
 
+def batch_plan(client, scope, course=None, work=None):
+    """Read-only snapshot. A caller must present this exact scope before writing."""
+    messages = []
+    failed = 0
+    if scope == 'assignment':
+        if not course or not work:
+            raise ValueError('请选择课程与作业')
+        ok, rows = client.get_course_works(course['courseId'])
+        if not ok:
+            raise ValueError('无法核对当前作业')
+        works = [w for w in rows if str(w['workId']) == str(work['workId'])]
+    elif scope == 'course':
+        if not course:
+            raise ValueError('请选择课程')
+        ok, works = client.get_course_works(course['courseId'])
+        if not ok:
+            raise ValueError('无法读取课程作业')
+    elif scope == 'all':
+        ok, courses = client.get_my_courses()
+        if not ok:
+            raise ValueError('无法读取课程')
+        flat, failed = load_all_works(client, courses, messages)
+        works = [{'workId': wid, 'workName': name} for _, _, wid, name in flat]
+    else:
+        raise ValueError('未知范围')
+    seen = set()
+    unique = []
+    for item in works:
+        wid = str(item['workId'])
+        if wid not in seen:
+            seen.add(wid)
+            unique.append(item)
+    return {'scope': scope, 'grade': '100', 'works': unique, 'count': len(unique),
+            'fetchFailed': failed, 'warnings': messages}
+
+
+def execute_batch(ui, client, works, cancel=None, audit=None):
+    """One write at a time. Cancellation stops future writes, never rolls back."""
+    results = []
+    seen = set()
+    unique = [w for w in works if not (str(w['workId']) in seen or seen.add(str(w['workId'])))]
+    ui.maximum(len(unique))
+    for item in unique:
+        if (cancel and cancel.is_set()) or getattr(ui, 'cancelled', lambda: False)():
+            break
+        ui.status(f"一键满分：{item.get('workName', item['workId'])}")
+        try:
+            ok, message = client.submit_answer(item['workId'], '100')
+            status = 'succeeded' if ok else ('verification_required' if str(message).startswith('结果待核实') else 'failed')
+        except Exception:
+            status, message = 'verification_required', '结果待核实：请求异常，请先检查平台记录'
+        result = {'workId': item['workId'], 'status': status, 'message': str(message)}
+        results.append(result)
+        if audit:
+            audit(result)
+        ui.status(f"{item.get('workName', item['workId'])}：{status}")
+        ui.progress(len(results))
+    lines = [f"{r['workId']}：{r['status']} — {r['message']}" for r in results]
+    return {'title': '一键满分结果', 'results': results, 'cancelled': len(results) < len(unique),
+            'text': f'已处理 {len(results)}/{len(unique)}。已提交的更改不能撤销。成功表示平台确认接收，非独立核验。\n' + '\n'.join(lines)}
+
+
 def submit_all_courses(ui, client, courses):
     messages = []
-    works, fetch_fail = load_all_works(client, courses, messages)
-    total_courses = len(courses)
-    total_works = len(works)
-    success_count = fail_count = 0
-
-    ui.maximum(total_works)
-    for processed, (course_id, course_name, work_id, work_name) in enumerate(works, 1):
-        ui.status(f'正在提交课程：{course_name}\n作业：{work_name}')
-        ok, data = client.submit_answer(work_id, '100')
-        if ok:
-            success_count += 1
-            messages.append(f"课程 '{course_name}' 的作业 '{work_name}' 提交成功。")
-        else:
-            fail_count += 1
-            messages.append(f"课程 '{course_name}' 的作业 '{work_name}' 提交失败：{data}")
-        ui.progress(processed)
-
-    return {'title': '提交结果',
-            'text': (f'共处理 {total_courses} 门课程，{total_works} 个作业。\n'
-                     f'成功提交 {success_count} 个作业，提交失败 {fail_count} 个作业。\n'
-                     f'有 {fetch_fail} 门课程的作业获取失败。\n\n' + '\n'.join(messages))}
+    flat, failed = load_all_works(client, courses, messages)
+    result = execute_batch(ui, client, [{'workId': wid, 'workName': name} for _, _, wid, name in flat])
+    result['text'] += f'\n有 {failed} 门课程读取失败。'
+    return result
 
 
 def submit_all_works(ui, client, works):
-    total = len(works)
-    success_count = fail_count = 0
-    messages = []
-    ui.maximum(total)
-
-    with ThreadPoolExecutor(max_workers=PARALLEL_WORKERS) as executor:
-        futures = {executor.submit(client.submit_answer, work['workId'], '100'): work for work in works}
-        completed = 0
-        for future in as_completed(futures):
-            completed += 1
-            work_name = futures[future]['workName']
-            try:
-                ok, data = future.result()
-                if ok:
-                    success_count += 1
-                    messages.append(f"作业 '{work_name}' 提交成功。")
-                else:
-                    fail_count += 1
-                    messages.append(f"作业 '{work_name}' 提交失败：{data}")
-            except Exception as e:
-                fail_count += 1
-                messages.append(f"作业 '{work_name}' 提交时出现错误：{str(e)}")
-            ui.progress(int(completed / total * 100))
-            ui.status(f'正在提交作业 ({completed}/{total})...')
-
-    return {'title': '提交结果',
-            'text': f'成功提交 {success_count} 个作业，失败 {fail_count} 个作业。\n\n' + '\n'.join(messages)}
+    return execute_batch(ui, client, works)
 
 
 def export_all_works(ui, client, works, course_id, course_name, opts):

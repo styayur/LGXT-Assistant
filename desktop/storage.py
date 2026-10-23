@@ -11,7 +11,7 @@ DEFAULTS = {
     'theme': 'dark', 'language': 'zh', 'startup': 'last', 'reduceMotion': False,
     'provider': 'OpenAI', 'endpoint': 'https://api.openai.com/v1', 'model': '',
     'temperature': 0.7, 'contextMessages': 40, 'maxTokens': 4096,
-    'storeConversations': True, 'memoryEnabled': False, 'memory': '', 'debug': False, 'profiles': {},
+    'storeConversations': True, 'memoryEnabled': False, 'memory': '', 'debug': False, 'visionEnabled': False, 'profiles': {},
 }
 
 
@@ -169,3 +169,30 @@ class Store:
         if len(workspace.get('files', [])) > 80 or len(json.dumps(workspace).encode()) > 32 * 1024 * 1024:
             raise ValueError('工作区资料超过 32 MB 或 80 个文件，请移除不再使用的资料')
         self._write(self.directory / 'workspace.json', workspace)
+
+    def question_document(self, course_id, work_id, question_id):
+        from question_documents import document_key
+        return self._read(self.directory / ('question-' + document_key(course_id, work_id, question_id) + '.json'), None) if (self.directory / ('question-' + document_key(course_id, work_id, question_id) + '.json')).exists() else None
+
+    def save_question_document(self, document):
+        from question_documents import validate_document, document_key
+        value = validate_document(document)
+        path = self.directory / ('question-' + document_key(value['courseId'], value['workId'], value['questionId']) + '.json')
+        with self.lock:
+            if path.exists():
+                prior = self._read(path, None)
+                if not isinstance(prior, dict) or prior.get('schemaVersion') != 1:
+                    raise ValueError('已有文档版本不受支持，原文件已保留；请先导出转换')
+                shutil.copy2(path, path.with_suffix('.previous.json'))
+            self._write(path, value)
+        return value
+
+    def audit_batch(self, result):
+        import hashlib
+        import time
+        path = self.directory / 'batch-audit.json'
+        with self.lock:
+            records = self._read(path, [])
+            records.append({'at': time.time(), 'item': hashlib.sha256(str(result['workId']).encode()).hexdigest()[:16],
+                            'status': result['status'], 'grade': 100})
+            self._write(path, records[-500:])
