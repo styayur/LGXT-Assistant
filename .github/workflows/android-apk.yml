@@ -24,12 +24,18 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.8'
+          channel: stable
+          cache: true
+
       - name: Install audited Flet toolchain
         run: |
           python -m pip install --upgrade pip
           python -m pip install 'flet[cli]==1.0.5' 'oauthlib>=4.0.0,<5' pip-audit
           python -m pip_audit -r mobile/requirements.txt
-          # Flet CLI selects its compatible Flutter SDK. Never publish solely on build success.
+          # SDK version is pinned to flet.version.flutter_version in Flet 1.0.5.
 
       - name: Build APK (Flet)
         working-directory: mobile
