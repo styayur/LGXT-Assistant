@@ -210,6 +210,7 @@ class QuestionsMixin:
                  font=theme.ui(10)).pack(anchor='w', padx=14, pady=(6, 0))
         self.submit_grade_button = self.btn(self._inspector, 'SUBMIT', self.submit_grade, 'primary')
         self.submit_grade_button.pack(fill=X, padx=14, pady=(10, 14))
+        self.btn(self._inspector, '一键满分（当前作业）', lambda: self._preview_grade_batch('assignment'), 'warning').pack(fill=X, padx=14, pady=8)
 
     def _step_q(self, delta):
         if not self._qrows:

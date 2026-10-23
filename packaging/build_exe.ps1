@@ -20,6 +20,9 @@ try {
   --collect-all ttkbootstrap `
   --collect-all webview `
   --add-data "frontend/dist;frontend/dist" `
+  --add-data "LICENSE;." `
+  --add-data "NOTICE.md;." `
+  --add-data "docs/third-party-editor-notices.txt;docs" `
   default.pyw
 if ($LASTEXITCODE -ne 0) { throw 'Single-file build failed' }
 
@@ -30,10 +33,16 @@ if ($LASTEXITCODE -ne 0) { throw 'Single-file build failed' }
   --collect-all ttkbootstrap `
   --collect-all webview `
   --add-data "frontend/dist;frontend/dist" `
+  --add-data "LICENSE;." `
+  --add-data "NOTICE.md;." `
+  --add-data "docs/third-party-editor-notices.txt;docs" `
   default.pyw
 if ($LASTEXITCODE -ne 0) { throw 'Portable build failed' }
 
-Copy-Item output/pdf/LGXT-Assistant-4.0.1-User-Guide.pdf dist/LGXT-Assistant-portable/
+Copy-Item docs/user-guide.md dist/LGXT-Assistant-portable/USER-GUIDE.md
+Copy-Item LICENSE dist/LGXT-Assistant-portable/LICENSE.txt
+Copy-Item NOTICE.md dist/LGXT-Assistant-portable/NOTICE.md
+Copy-Item docs/third-party-editor-notices.txt dist/LGXT-Assistant-portable/THIRD-PARTY.txt
 if (Test-Path dist/LGXT-Assistant-portable.zip) { Remove-Item dist/LGXT-Assistant-portable.zip -Force }
 Compress-Archive -Path dist/LGXT-Assistant-portable/* -DestinationPath dist/LGXT-Assistant-portable.zip -CompressionLevel Optimal
 

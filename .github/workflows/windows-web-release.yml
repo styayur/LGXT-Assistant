@@ -1,0 +1,84 @@
+name: Release Windows web channel
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing Windows web tag (vX.Y.Z-web)
+        required: true
+        type: string
+permissions:
+  contents: write
+concurrency:
+  group: windows-web-release-${{ inputs.tag }}
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate channel tag
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          $tag = $env:RELEASE_TAG
+          if ($tag -notmatch '^v\d+\.\d+\.\d+-web$') { throw 'Invalid channel tag' }
+          if ((git rev-parse "$tag^{commit}") -ne (git rev-parse HEAD)) { throw 'Wrong source tag' }
+          $source = Get-Content web_app.py -Raw
+          if ($source -notmatch "WEB_VERSION = '([^']+)'") { throw 'Missing web version' }
+          if ($tag -ne ('v' + $Matches[1] + '-web')) { throw 'Version mismatch' }
+      - name: Install and test source
+        run: |
+          python -m pip install -r requirements.txt -r requirements-dev.txt pyinstaller playwright
+          python -m playwright install chromium
+          python -m pytest -q
+      - name: Build and launch packaged application
+        shell: pwsh
+        run: |
+          ./packaging/build_web.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Build failed' }
+          python scripts/check_web.py --exe dist/LGXT-Assistant-Web.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Packaged browser smoke test failed' }
+          python scripts/check_assignment.py
+          if ($LASTEXITCODE -ne 0) { throw 'Assignment UI failed' }
+      - name: Stage and publish verified beta
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          $tag = $env:RELEASE_TAG
+          $version = $tag -replace '-web$',''
+          $stage = Join-Path $env:RUNNER_TEMP ('LGXT-' + $tag)
+          New-Item -ItemType Directory -Path $stage | Out-Null
+          Copy-Item dist/LGXT-Assistant-Web.exe (Join-Path $stage "LGXT-Assistant-Windows-Web-$version.exe")
+          Copy-Item docs/user-guide.md (Join-Path $stage 'USER-GUIDE.md')
+          Copy-Item docs/third-party-editor-notices.txt (Join-Path $stage 'THIRD-PARTY.txt')
+          Get-ChildItem -LiteralPath $stage -File | ForEach-Object {
+            "$((Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLowerInvariant())  $($_.Name)"
+          } | Set-Content -Encoding utf8NoBOM (Join-Path $stage 'SHA256SUMS.txt')
+          gh release create $tag --draft --prerelease --target (git rev-parse HEAD) --title "LGXT Assistant $tag · Windows Web Beta" --notes-file "docs/releases/$tag.md"
+          if ($LASTEXITCODE -ne 0) { throw 'Draft creation failed; existing releases will not be overwritten' }
+          gh release upload $tag "$stage/*"
+          if ($LASTEXITCODE -ne 0) { throw 'Upload failed; release remains draft' }
+          python scripts/verify_release.py --tag $tag --directory $stage --allow-draft
+          if ($LASTEXITCODE -ne 0) { throw 'Uploaded checksum verification failed; release remains draft' }
+          gh release edit $tag --draft=false
+          if ($LASTEXITCODE -ne 0) { throw 'Publication failed' }
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: windows-web-release-verification
+          path: |
+            docs/screenshots/windows-web.png
+            docs/screenshots/assignment-*.png

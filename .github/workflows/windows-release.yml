@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing desktop release tag, for example v4.0.1
+        description: Existing desktop release tag, for example v4.1.0
         required: true
         type: string
 
@@ -37,7 +37,10 @@ jobs:
         run: |
           $tag = '${{ inputs.tag }}'
           if ($tag -notmatch '^v\d+\.\d+\.\d+$') { throw "Desktop tag must use vX.Y.Z: $tag" }
-          git describe --exact-match --tags HEAD
+          $commit = git rev-parse "$tag^{commit}"
+          if ($commit -ne (git rev-parse HEAD)) { throw 'Wrong tag checkout' }
+          $version = (Get-Content frontend/package.json -Raw | ConvertFrom-Json).version
+          if ($tag -ne "v$version") { throw 'Tag and package metadata differ' }
       - name: Install dependencies
         run: |
           python -m pip install -r requirements.txt -r requirements-dev.txt pyinstaller playwright
@@ -52,6 +55,8 @@ jobs:
         run: |
           python scripts/check_frontend.py
           if ($LASTEXITCODE -ne 0) { throw 'UI checks failed' }
+          python scripts/check_assignment.py
+          if ($LASTEXITCODE -ne 0) { throw 'UI checks failed' }
           python scripts/check_package.py
           if ($LASTEXITCODE -ne 0) { throw 'Packaged startup checks failed' }
       - name: Prepare channel-named release assets
@@ -62,10 +67,11 @@ jobs:
           New-Item -ItemType Directory -Force -Path $stage | Out-Null
           $desktop = Join-Path $stage "LGXT-Assistant-Windows-Desktop-$tag.exe"
           $portable = Join-Path $stage "LGXT-Assistant-Windows-Desktop-$tag-portable.zip"
-          $guide = Join-Path $stage "LGXT-Assistant-Windows-Desktop-$tag-User-Guide.pdf"
+          $guide = Join-Path $stage "LGXT-Assistant-Windows-Desktop-$tag-User-Guide.md"
           Copy-Item dist/LGXT-Assistant.exe $desktop
           Copy-Item dist/LGXT-Assistant-portable.zip $portable
-          Copy-Item output/pdf/LGXT-Assistant-4.0.1-User-Guide.pdf $guide
+          Copy-Item docs/user-guide.md $guide
+          Copy-Item docs/third-party-editor-notices.txt (Join-Path $stage 'THIRD-PARTY.txt')
           Get-ChildItem -LiteralPath $stage -File | ForEach-Object {
             "$((Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLowerInvariant())  $($_.Name)"
           } | Set-Content -Encoding utf8NoBOM (Join-Path $stage 'SHA256SUMS.txt')
@@ -77,10 +83,12 @@ jobs:
         run: |
           $tag = '${{ inputs.tag }}'
           $target = git rev-parse HEAD
-          gh release create $tag --draft --target $target --title "LGXT Assistant $tag · Windows Desktop" --notes-file docs/releases/v4.0.1.md
+          gh release create $tag --draft --target $target --title "LGXT Assistant $tag · Windows Desktop Beta" --prerelease --notes-file "docs/releases/$tag.md"
           if ($LASTEXITCODE -ne 0) { throw 'Release creation failed; existing releases are not overwritten' }
           gh release upload $tag "$env:ASSET_DIR/*"
           if ($LASTEXITCODE -ne 0) { throw 'Asset upload failed; release remains a draft' }
+          python scripts/verify_release.py --tag $tag --directory "$env:ASSET_DIR" --allow-draft
+          if ($LASTEXITCODE -ne 0) { throw 'Uploaded checksum verification failed; release remains draft' }
           gh release edit $tag --draft=false
           if ($LASTEXITCODE -ne 0) { throw 'Release publication failed' }
       - uses: actions/upload-artifact@v7

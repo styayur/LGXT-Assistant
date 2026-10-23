@@ -14,33 +14,8 @@ import {
   BarChart3,
 } from "lucide-react";
 import { Button, Empty, Skeleton, Badge, Modal } from "./ui";
+import QuestionDocument from "./QuestionDocument";
 import { call } from "../lib/bridge";
-function QuestionImage({ url }) {
-  const [image, setImage] = useState("");
-  const [error, setError] = useState("");
-  useEffect(() => {
-    let alive = true;
-    setImage("");
-    setError("");
-    call("question_image", url)
-      .then((x) => {
-        if (alive) setImage(x);
-      })
-      .catch((e) => {
-        if (alive) setError(e.message);
-      });
-    return () => {
-      alive = false;
-    };
-  }, [url]);
-  return error ? (
-    <p className="inline-error">图片加载失败：{error}</p>
-  ) : image ? (
-    <img className="question-image" src={image} alt="题目图片" />
-  ) : (
-    <Skeleton />
-  );
-}
 export default function Courses({
   username,
   onLogin,
@@ -49,6 +24,7 @@ export default function Courses({
   taskBusy,
   onReference,
   toast,
+  files,
 }) {
   const [course, setCourse] = useState(null);
   const [work, setWork] = useState(null);
@@ -152,13 +128,13 @@ export default function Courses({
   const currentPage = Math.min(page, pages);
   const visible = rows.slice((currentPage - 1) * 20, currentPage * 20);
   const batch = (action) => {
-    if (action.startsWith("submit"))
-      setConfirm({
-        title: "确认批量提交成绩",
-        text: `将为${course ? "“" + course.courseName + "”的所有作业" : "全部课程的所有作业"}提交 100 分。这会修改服务器成绩并消耗提交次数。`,
-        action: () => onTask(action, course),
-      });
-    else onTask(action, course, work);
+    if (action.startsWith("submit")) {
+      call("preview_batch", work ? "assignment" : course ? "course" : "all", course, work)
+        .then(plan => setConfirm({ title: "一键满分 · 核对范围", text: `范围：${plan.scope}。共 ${plan.count} 个作业，目标 100 分。读取失败课程：${plan.fetchFailed}。会修改服务器记录，可能消耗提交次数。取消只停止后续请求，已提交更改不能撤销。平台未提供可靠最终成绩核验接口；超时会标记待核实。`,
+          works: plan.works,
+          action: () => { onTask("confirmed_batch", plan.token); }, }))
+        .catch(e => toast(e.message, true));
+    } else onTask(action, course, work);
   };
   return (
     <div className="page-scroll">
@@ -356,11 +332,7 @@ export default function Courses({
               <section className="question-detail">
                 <span className="section-label">题目 {selected.id}</span>
                 <h2>{selected.name || "题目详情"}</h2>
-                {selected.imgurl && selected.imgurl !== "N/A" ? (
-                  <QuestionImage url={selected.imgurl} />
-                ) : (
-                  <p className="muted">该题目没有图片。</p>
-                )}
+                <QuestionDocument key={`${course.courseId}-${work.workId}-${selected.id}`} course={course} work={work} question={selected} files={files} toast={toast} />
                 <Button onClick={() => setAnswer(!answer)}>
                   {answer ? "收起答案" : "查看答案"}
                 </Button>
@@ -393,7 +365,7 @@ export default function Courses({
                       }
                     }}
                   >
-                    向 AI 请教这道题
+                    引用此题到独立对话
                   </Button>
                 </div>
                 <div className="grade-form">
@@ -454,7 +426,7 @@ export default function Courses({
                   >
                     {r.grade != null && r.grade !== ""
                       ? `${r.grade} 分`
-                      : `剩余 ${Math.max(0, Number(r.tryTimes || 0) - Number(r.times || 0))} 次`}
+                      : r.tryTimes != null && r.times != null ? `剩余 ${Math.max(0, Number(r.tryTimes) - Number(r.times))} 次` : "次数未知"}
                   </Badge>
                   <ArrowRight size={17} />
                 </button>
@@ -500,14 +472,14 @@ export default function Courses({
             />
           </div>
         )}
-        {!work && data.length > 0 && (
+        {data.length > 0 && (
           <div className="batch-footer">
             <span>批量操作会修改服务器数据。</span>
             <Button
               disabled={taskBusy}
               onClick={() => batch(course ? "submit_course" : "submit_all")}
             >
-              批量提交 100 分…
+              一键满分
             </Button>
           </div>
         )}
@@ -532,6 +504,7 @@ function Confirm({ data, onClose, toast }) {
       }}
     >
       <p className="dialog-copy">{data.text}</p>
+      {data.works && <ul className="batch-preview">{data.works.map(w => <li key={w.workId}>{w.workName}（{w.tryTimes != null && w.times != null ? `剩余 ${Math.max(0, Number(w.tryTimes)-Number(w.times))} 次` : "次数未知"}）</li>)}</ul>}
       <div className="dialog-actions">
         <Button disabled={busy} onClick={onClose}>
           取消

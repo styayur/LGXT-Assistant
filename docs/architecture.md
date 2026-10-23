@@ -40,3 +40,14 @@ The LGXT platform is accessed through the user's own account. AI requests go onl
 ## Release boundary
 
 Channel versions may differ. Release asset names must identify platform and channel, and release notes must state known limitations. No workflow may publish a build from an untagged or unverified source state.
+
+
+## Assignment document upgrade (schema 1)
+
+`mobile/src/lgxt_transport.py`, `model_transport.py` and `question_documents.py` are the canonical portable Python modules. Root `api.py` / `question_documents.py` and `desktop/models.py` re-export them, so Flet packaging contains the same transport, provider and document validation as Windows. They do not depend on desktop storage or Tk. `tasks.py` owns sampling, batch planning and the sequential executor; `desktop/bridge.py` owns one-use confirmations, job cancellation, provider serialization and atomic Store integration.
+
+React keeps its existing course/source navigation, workspace files and chat. `QuestionDocument.jsx` adds an original/corrected/solution/AI boundary inside the assignment page. `SolutionEditor.jsx` uses MIT Tiptap and local KaTeX math nodes; Markdown is the canonical recoverable representation. Flet keeps its own controls and mobile notes UI, using the shared modules rather than embedding a second HTTP implementation.
+
+Question files are keyed by SHA-256 of course/work/question IDs. Schema 1 records source image/text, recognition, corrections, solution Markdown, explicitly selected source excerpts, platform answer and timestamps. Saves are atomic with a previous-version copy. Unsupported versions are refused without overwriting. Existing workspace/conversation files are unchanged. Source references name only actual supplied context; no retrieval/citation service or vector database is implied.
+
+See SECURITY.md for HTTP compatibility and trust boundaries, docs/editor-decision.md for conversion/extension trade-offs, and docs/user-guide.md for user-facing operations. Platform success acknowledgment is distinct from independent final-grade verification, which is not available.

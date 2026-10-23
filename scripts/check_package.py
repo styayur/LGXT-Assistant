@@ -11,7 +11,7 @@ EXTRACTED.mkdir(parents=True, exist_ok=True)
 with zipfile.ZipFile(DIST / 'LGXT-Assistant-portable.zip') as archive:
     archive.extractall(EXTRACTED)
 assert (EXTRACTED / '_internal/frontend/dist/desktop.html').is_file()
-assert (EXTRACTED / 'LGXT-Assistant-4.0.1-User-Guide.pdf').is_file()
+assert (EXTRACTED / 'USER-GUIDE.md').is_file()
 for name, exe in (
     ('single-file', DIST / 'LGXT-Assistant.exe'),
     ('portable', EXTRACTED / 'LGXT-Assistant-portable.exe'),

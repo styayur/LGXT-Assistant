@@ -1,10 +1,9 @@
 # Licensing notice
 
-This notice preserves the LGXT Assistant project-specific attribution and the
-upstream MIT license notice that previously appeared before the standard GPL
-text in `LICENSE`. The standard `LICENSE` file is intentionally kept as the
-verbatim GNU GPL v3 text so GitHub and SPDX tooling can identify the project
-license. The project-level SPDX intention remains `GPL-3.0-or-later`.
+Current application license: **AGPL-3.0-only**, as recorded in LICENSE.
+The text below preserves historical notices and upstream MIT attribution; older GPL statements describe previous versions and do not relicense this version.
+
+New MIT editor/ProseMirror notices are in docs/third-party-editor-notices.txt and are distributed with the app. See docs/editor-decision.md for the dependency review.
 
 ---
 LGXT Assistant（理工学堂助手）

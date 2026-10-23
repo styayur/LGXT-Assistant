@@ -1,167 +1,63 @@
 # LGXT Assistant · 理工学堂助手
 
-用于课程、作业、AI 学习对话及本地导出的学习助手。
+以作业为中心的理工学堂助手：从提交管理、图片转 LaTeX，到 AI 辅助解题与学习资料导出。
 
-**状态：** Beta。各发布渠道独立版本，不代表所有渠道已完成相同验收。
+**Beta。** Windows 桌面、Windows 网页与 Android 独立版本、独立验证。
 
-[English](README.md) · [Download](https://github.com/styayur/LGXT-Assistant/releases/latest) · [Documentation](docs/architecture.md) · [Releases](https://github.com/styayur/LGXT-Assistant/releases) · [Issues](https://github.com/styayur/LGXT-Assistant/issues)
+[English](README.md) · [发布](https://github.com/styayur/LGXT-Assistant/releases) · [使用说明](docs/user-guide.md) · [安全](SECURITY.md) · [验证记录](docs/VERIFICATION.md)
 
-[![release](https://img.shields.io/github/v/release/styayur/LGXT-Assistant)](https://github.com/styayur/LGXT-Assistant/releases/latest)
-[![CI](https://github.com/styayur/LGXT-Assistant/actions/workflows/tests.yml/badge.svg)](https://github.com/styayur/LGXT-Assistant/actions/workflows/tests.yml)
-[![license: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-blue)](LICENSE)
+[![Verify](https://github.com/styayur/LGXT-Assistant/actions/workflows/tests.yml/badge.svg)](https://github.com/styayur/LGXT-Assistant/actions/workflows/tests.yml)
+[![AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-blue)](LICENSE)
 
-![LGXT Assistant 4.0.1 桌面渠道深色界面的浏览器预览](docs/screenshots/modern-dark-1440.png)
+![Assignment workspace fixture](docs/screenshots/assignment-desktop-fixture.png)
 
-现有截图展示桌面渠道界面的浏览器预览，不是原生 Windows 捕获或 v4.1.0 网页渠道。原生启动有独立[验证记录](docs/VERIFICATION.md)。
+更新后的 React 作业工作区，题目与模型回复为明确的合成夹具；浏览器截图，不是 Android 原生截图。
 
-[网页版发布说明](docs/releases/v4.1.0-web.md)。
+## 从当前作业开始
 
-## 发布渠道
+进入课程与作业后选择题目，在同一工作区查看原图、校正题面、编辑 LaTeX、整理解答并追问 AI。支持资料须手动勾选，来源名称和引用文字可见；模型解释与平台答案分开显示，不编造引用或页码。
 
-| 渠道 | 当前状态 | 入口 / 说明 |
+- **作业操作：** 浏览课程、截止时间、平台实际返回的次数与参考答案，导出抽样题目。「一键满分」支持当前作业、当前课程、全部课程，先显示数量和目标分数，再确认一次；提供逐项结果，取消只停止后续请求。
+- **图片转 LaTeX：** 使用已配置的视觉模型识别完整原图或按百分比裁剪的区域，核对文字与公式源码后再应用。以印刷数学为目标，不保证手写、图形或识别准确率。
+- **围绕题目的 AI：**「使用 AI 分析此题」发送所选题图、校正题面、已有解答和勾选文字资料。可在当前题目中追问，把检查过的回复加入解答。可关闭图片使用纯文字分析。
+- **文档：** Tiptap 富文本，行内/独立公式源码编辑、表格、代码、图片、标题、列表及撤销重做。本地保存并保留上一版。导出 Markdown、Word、PDF；Word/PDF 中公式保留为 **LaTeX 源码**，不是 Word 原生公式或已排版的 PDF 数学。
+- **Android：** 独立 Flet 界面，改进作业状态、原图缩放、题面/解答笔记与显式 AI/识别操作。目前使用 OpenAI 兼容视觉接口，密钥仅存内存；不包含桌面富文本编辑器、裁剪工具或 Word/PDF 导出。
+
+## 平台连接限制
+
+**2026 年 10 月 24 日，无凭据检查确认官方 HTTP 有响应，但无法验证 HTTPS。** 默认阻止明文登录及认证请求，不自动降级，不关闭证书验证。如明确选择本次不安全兼容模式，账号密码、令牌和成绩传输可能被窃取或篡改；界面持续显示警告，不保存平台凭据。有经过验证的 HTTPS API 时，可通过 `LGXT_API_BASE` 配置。证据与规则见 [安全说明](SECURITY.md)。
+
+题图仅允许配置的平台主机、公共网络地址及受支持的位图格式；拒绝外部主机、重定向、私有 IP、无效图片、超限响应和不安全数据 URL。因此部分合法外部图床也可能无法加载，须单独审核后再支持。
+
+AI 仅在用户发起时发送，内容会离开本机。请在 AI 设置核实当前服务/模型支持图片后勾选视觉能力；不根据自定义模型名猜测支持情况，服务仍可能拒绝。软件不附带模型密钥或真实平台账号。
+
+## 按渠道下载
+
+以发布页实际附件为准，源码压缩包不是可运行安装包。新候选版本为桌面 **4.1.0**、网页 **4.2.0-web**、Android **3.3.0-android**，只有对应渠道完成验证并发布后才可下载。见 [渠道规则](docs/release-channels.md) 和 [交付证据](docs/VERIFICATION.md)。
+
+| 渠道 | 此次之前已发布基线 | 安装方式 |
 | --- | --- | --- |
-| Windows 网页版 | 当前 Windows 主要渠道 | `web_app.py` 启动本机服务；启动步骤见下方网页渠道入口 |
-| Windows 桌面版 | 仍受支持的桌面渠道 | 使用 WebView2 的现代 `desktop/` + `frontend/` 实现；下方 4.0.1 说明保留 |
-| Android | 独立版本渠道 | `mobile/` Flet 客户端；请按 Android 发布说明下载，不与 Windows 版本号同步 |
-| Legacy Tk | 兼容渠道 | `py -3.13 default.pyw --legacy`；仅修复兼容问题，不作为新功能主入口 |
+| Windows 桌面 | [v4.0.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.0.1) | Windows 10/11 x64，需 WebView2；运行 EXE，或完整解压便携 ZIP，保留 `_internal` |
+| Windows 网页 | [v4.1.0-web](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.1.0-web) | Windows 10/11 x64；启动 Web EXE，保留控制台，用 Edge/Chrome 打开私有本机链接；无需 WebView2 |
+| Android | [v3.2.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.2.1) | 历史 APK；新源代码不等于生产签名 APK。缺少签名凭据与真机验证 |
 
-详细边界见 [架构文档](docs/architecture.md)，各渠道 tag/asset 规则见 [发布渠道说明](docs/release-channels.md)。以下为仍可下载的 4.0.1 桌面版说明。
+新 Windows 附件名包含平台、渠道与版本；请对照该发布的 `SHA256SUMS.txt` 校验。未声明提供 MSI 或可信签名。历史 tag 与附件保持原样；曾有 Android 附件附在网页发布中，历史 Android 渠道请使用上表链接。
 
-### Windows 网页渠道 v4.1.0
+## 本地资料与开发
 
-从 [v4.1.0-web](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.1.0-web) 下载 Windows Web EXE，核对同页校验和后运行；本机服务打开默认浏览器，无需 Python、Node.js 或 WebView2。保留启动窗口，结束后 Ctrl+C。仅监听 loopback，每次启动使用独立连接凭证并检查来源；不要分享启动链接，不支持公网多人访问。它与桌面版共享本地资料和凭据库，不要同时编辑。不是纯静态网站，详见[网页渠道说明](docs/releases/v4.1.0-web.md)。
+Windows 文档、会话与设置位于 `%APPDATA%\LGXT-Assistant\desktop`。退出后备份 `%APPDATA%\LGXT-Assistant`，导出文件另行备份。AI 密钥存系统凭据库。Android 笔记存本地应用存储，密钥仅存内存，并清理历史明文密码。退出登录清除当前平台令牌。
 
-面向学习的 Windows 桌面助手：查看理工学堂课程与作业、整理题目、导出 Word / PDF，并通过 AI 对话理解知识、分析资料。
-
-**[下载 Windows 4.0.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.0.1)** · **[中文 PDF 使用说明](https://github.com/styayur/LGXT-Assistant/releases/download/v4.0.1/LGXT-Assistant-4.0.1-User-Guide.pdf)** · [反馈问题](https://github.com/styayur/LGXT-Assistant/issues)
-
-## 下载与打开
-
-适用于 **Windows 10 / 11 x64**。普通使用者无需安装 Python 或 Node.js。
-
-| Release 中的文件 | 用法 |
-|---|---|
-| `LGXT-Assistant.exe` | 单文件版，下载后双击。首次启动准备文件需要一点时间。 |
-| `LGXT-Assistant-portable.zip` | 便携版，完整解压后运行 `LGXT-Assistant-portable.exe`，附 PDF 使用说明。 |
-| `LGXT-Assistant-4.0.1-User-Guide.pdf` | 13 页中文图文说明，可离线查阅。 |
-| `SHA256SUMS.txt` | 发布文件的 SHA-256 校验值。 |
-
-**便携版请保留 EXE 同目录下的 `_internal` 文件夹，不要只拖出 EXE，也不要直接从压缩包内运行。** GitHub 自动提供的 Source code 是开发源码，不能双击使用。
-
-新版界面需要 [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)。缺少运行时或界面资源时，软件会显示启动帮助，可下载安装运行时、重新下载完整包，或进入兼容界面。4.0.1 提供 EXE 与便携 ZIP，不提供新的 MSI。
-
-Android 用户请在 [v3.2.1 历史版本](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.2.1) 下载对应 APK。本次 4.0.1 为 Windows 更新，本文及新版 PDF 介绍 Windows 界面。
-
-## 第一次使用
-
-1. **查看课程**：打开「我的课程 → 登录理工学堂」，输入平台账号和密码。课程登录与 AI 配置相互独立，未配置 AI 也能浏览和导出课程。
-2. **整理题目**：进入课程和作业，查看题目、图片与参考答案；在「设置 → 导出」选择目录与格式后导出 Word / PDF。成绩操作需要再次确认，请先核对目标与分数。
-3. **使用 AI**：打开「设置 → AI 模型」，填写模型服务、接口地址、模型 ID 和 API Key，点击「保存并测试连接」。显示 Connected 表示服务已返回结果。测试会发送一次简短请求，可能产生服务费用。
-4. **加入资料**：在工作区添加文本、代码或图片，点击「引用到对话」再发送。PDF / Word 目前不能直接作为聊天附件，可先复制所需文字或使用截图。
-
-操作步骤、参数解释、错误处理和备份方法见 [PDF 使用说明](output/pdf/LGXT-Assistant-4.0.1-User-Guide.pdf)。
-
-## 4.0.1 更新
-
-- **修复无法进入**：处理桌面连接延迟、凭据库阻塞、损坏的本地偏好与会话索引、旧配置异常；先备份异常资料，再允许继续使用。某条历史会话损坏不再阻塞整个界面。
-- **登录可恢复**：等待超过 20 秒显示错误并恢复操作，可取消和重试；已取消的请求不会稍后自动把用户登录进去。
-- **启动帮助**：缺失界面资源、依赖或 WebView2 时给出明确说明，并提供兼容界面入口。
-- **全新桌面**：深色、浅色和跟随系统主题，可折叠三栏布局，课程与学习工作区，轻量动画和状态反馈。
-- **AI 阅读与编辑**：流式回复、停止、重新生成、编辑、复制和 Markdown 导出，支持 Markdown、代码高亮、LaTeX、表格与图片。
-- **日常效率**：历史会话搜索、重命名和删除；提示词库、工作区文件和当前任务；命令面板与模型服务切换。
-
-支持 OpenAI、Claude 原生 Messages API、Gemini 的 OpenAI 兼容接口，以及 Ollama 等本地兼容服务。请填写自己账户实际可用的模型 ID。长期学习偏好由用户手动维护，知识资料通过显式文件引用加入，当前不包含自动向量检索。主导航和聊天支持中英文切换，设置及课程管理仍以中文为主。
-
-![浅色设置界面](docs/screenshots/modern-settings-light.png)
-
-## 快捷键
-
-| 快捷键 | 操作 |
-|---|---|
-| Ctrl + K / Ctrl + Shift + P | 搜索功能、模型服务、会话和工作区文件 |
-| Ctrl + N | 新建会话 |
-| Ctrl + Enter | 发送消息；Enter 保留换行 |
-| Esc | 关闭当前弹窗；无弹窗时停止 AI 生成 |
-| F11 | 全屏 / 还原 |
-
-## 打不开或登录失败
-
-| 现象 | 处理方法 |
-|---|---|
-| 双击后没有新版界面 | 查看启动帮助。便携版重新完整解压；缺少 WebView2 时从微软官方安装。 |
-| 一直显示正在连接桌面 | 关闭后从完整包中的主程序重新打开；不要将网页预览当作桌面应用。 |
-| 提示资料恢复或备份 | 软件保留了异常文件的 `.bak` 副本。可继续新建会话；需要恢复旧资料时保留备份并反馈问题。 |
-| 课程登录超时 | 取消后核对账号和网络，再重试；同时检查平台官网能否登录。 |
-| 模型连接失败 | 检查 Endpoint、模型 ID、API Key、服务额度和本地模型是否已启动。 |
-| 导出后找不到文件 | 检查设置中已保存的导出目录、格式与写入权限，阅读任务结果。 |
-
-反馈时请提供版本、Windows 版本、下载的文件名、操作步骤和提示截图，并隐去密码、密钥及个人信息。启动错误日志位于 `%APPDATA%\LGXT-Assistant\logs\startup-error.log`（能够写入时）。
-
-## 更新与资料备份
-
-更新前关闭软件，将新版放入新文件夹。会话、工作区与偏好存放在 `%APPDATA%\LGXT-Assistant\desktop`，旧导出配置仍使用 `%APPDATA%\LGXT-Assistant\config.ini`。关闭软件后可复制整个 `%APPDATA%\LGXT-Assistant` 文件夹进行备份；导出的 Word / PDF 也应单独保留。
-
-账号密码和模型密钥存储在系统凭据库，不在上述备份文件夹内。发送 AI 消息时，消息及所引用的资料会发送到你选择的模型服务；会话导出是 Markdown 文本，不是所有资料的完整备份。
-
-## 源码运行与开发
-
-推荐 Python 3.13、Node.js 22 与 WebView2。前端资源本地打包，运行时不依赖 CDN。
+推荐 Python 3.13、Node.js 22 或 Vite 支持的更新版本：
 
 ```powershell
-git clone https://github.com/styayur/LGXT-Assistant.git
-cd LGXT-Assistant
-py -3.13 -m pip install -r requirements.txt
-cd frontend
-npm ci
-npm run build
-cd ..
-py -3.13 default.pyw
-
-# 原 Tk 兼容界面
+py -3.13 -m pip install -r requirements.txt -r requirements-dev.txt
+npm ci --prefix frontend
+npm run build --prefix frontend
+py -3.13 default.pyw        # WebView2 桌面
+py -3.13 web_app.py         # 本机浏览器渠道
 py -3.13 default.pyw --legacy
 ```
 
-```powershell
-# 测试与打包（确保 python 指向装有依赖的 Python 3.13）
-python -m pip install -r requirements-dev.txt playwright pyinstaller
-python -m playwright install chromium
-python -m pytest -q
-powershell -ExecutionPolicy Bypass -File packaging/build_exe.ps1
-python scripts/check_frontend.py
-python scripts/check_package.py
-```
+[架构](docs/architecture.md) · [编辑器选择与许可](docs/editor-decision.md) · [验证命令](CONTRIBUTING.md) · [更新记录](CHANGELOG.md)
 
-[重构设计与架构](docs/UI_MODERNIZATION.md) · [验证记录与测试边界](docs/VERIFICATION.md) · [4.0.1 发布说明](docs/releases/v4.0.1.md)
-
-发布流程先测试、构建并验证两种 EXE 的真实启动，再上传附件。界面验证覆盖 1280×720、1920×1080、3840×2160 和窄窗口；`*-fixture.png` 中的课程、成绩与对话为测试示例。没有使用真实账号执行成绩提交或付费模型请求。
-
-## Roadmap
-
-### Current
-
-- Course, assignment, and study workflows with local exports on Windows and Android.
-
-### Next
-
-- Normalize release-asset naming across desktop and Android channels.
-- Harden update and backup flows.
-
-### Future
-
-- Broader local-first integrations for study workflows.
-
-### Not planned
-
-- Positioning as a general AI assistant.
-
-## 参与开发与反馈
-
-- 共享领域、桌面 WebView、Android、legacy 与 release 边界见 [docs/architecture.md](docs/architecture.md)。
-- 开发环境、测试与架构规则见 [CONTRIBUTING.md](CONTRIBUTING.md)。
-- Security：不要公开平台密码、AI Key、学生数据或私密课程内容，按 [SECURITY.md](SECURITY.md) 私下报告。
-- Discord：[加入社区](https://discord.gg/wA2xy6VPK)，用于快速交流、设计讨论和早期反馈；不是 SLA 支持渠道。
-- Release：Windows desktop、Windows web、Android 使用独立渠道与 SemVer tag；维护者负责发布，贡献者不需要创建 tag。
-
-## 许可
-
-AGPL-3.0-only，详见 [LICENSE](LICENSE)。作者：styayur。
+应用源代码采用 [AGPL-3.0-only](LICENSE)，作者 StyAyur。[历史署名与第三方声明](NOTICE.md) 保留。漏洞请通过 [GitHub 私密安全报告](https://github.com/styayur/LGXT-Assistant/security/advisories/new) 提交；普通问题可使用 [Issues](https://github.com/styayur/LGXT-Assistant/issues)。

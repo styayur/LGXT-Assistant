@@ -34,7 +34,7 @@ export default function Settings({
   const [busy, setBusy] = useState("");
   const [connected, setConnected] = useState(false);
   const change = (k, v) => {
-    setForm((f) => ({ ...f, [k]: v }));
+    setForm((f) => ({ ...f, ...(["model", "endpoint", "provider"].includes(k) ? {visionEnabled:false} : {}), [k]: v }));
     setConnected(false);
   };
   async function save(test = false) {
@@ -271,6 +271,7 @@ export default function Settings({
                       移除密钥
                     </Button>
                   </div>
+                  <label className="field"><span>模型视觉能力</span><label><input type="checkbox" checked={form.visionEnabled || false} onChange={e => change("visionEnabled", e.target.checked)} />我已核实当前服务和模型支持图片输入</label><small>切换模型后请重新核实；服务仍可能拒绝不支持的图片。</small></label>
                   <p className="field-note">
                     连接测试会发送一次简短请求，可能产生少量服务费用。图片附件需要模型支持视觉输入。
                   </p>
@@ -427,7 +428,7 @@ export default function Settings({
                   <p>
                     理工学堂助手 · 桌面界面 4.0
                     <br />
-                    StyAyur · GPL-3.0-or-later
+                    StyAyur · AGPL-3.0-only
                   </p>
                 </section>
               </>

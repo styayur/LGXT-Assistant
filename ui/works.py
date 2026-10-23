@@ -44,7 +44,7 @@ class WorksMixin:
         right.pack(side=RIGHT)
         self.btn(right, 'REFRESH', self.refresh_works, 'secondary').pack(side=LEFT, padx=(0, GAP))
         self.btn(right, 'EXPORT ALL', self.export_all_works, 'info').pack(side=LEFT, padx=(0, GAP))
-        self.btn(right, 'SUBMIT ALL 100', self.submit_all_works_100, 'warning').pack(side=LEFT)
+        self.btn(right, '一键满分', self.submit_all_works_100, 'warning').pack(side=LEFT)
         self._w_search.trace_add('write', lambda *_: self._debounce(self._draw_works))
         self._w_status.trace_add('write', lambda *_: self._debounce(self._draw_works, 60))
         self._w_sort.trace_add('write', lambda *_: self._debounce(self._draw_works, 60))
