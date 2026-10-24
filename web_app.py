@@ -71,12 +71,25 @@ class Handler(BaseHTTPRequestHandler):
             mime = mimetypes.guess_type(path.name)[0] or 'application/octet-stream'
         self.send(200, data, mime)
 
+    def reject_post(self, status, body):
+        # Closing a Windows socket with an unread POST body can reset the
+        # connection before the client receives its rejection. Drain only a
+        # small declared body, with a strict time budget; never dispatch it.
+        try:
+            size = int(self.headers.get('Content-Length', '0'))
+            if 0 < size <= 64 * 1024:
+                self.connection.settimeout(1)
+                self.rfile.read(size)
+        except (ValueError, OSError):
+            self.close_connection = True
+        return self.send(status, body)
+
     def do_POST(self):
         if (not self.valid_host() or self.headers.get('Origin') != self.server.origin
                 or not secrets.compare_digest(self.headers.get('X-LGXT-Token', ''), self.server.token)):
-            return self.send(403, b'{"error":"Unauthorized"}')
+            return self.reject_post(403, b'{"error":"Unauthorized"}')
         if self.path != '/api/call':
-            return self.send(404, b'{}')
+            return self.reject_post(404, b'{}')
         try:
             size = int(self.headers.get('Content-Length', '0'))
             if size <= 0 or size > MAX_BODY:

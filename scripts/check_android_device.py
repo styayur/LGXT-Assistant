@@ -17,6 +17,7 @@ def main():
     parser.add_argument('--apk',required=True)
     parser.add_argument('--output',default='build/android/device')
     parser.add_argument('--fixture',action='store_true')
+    parser.add_argument('--historical-apk')
     args=parser.parse_args()
     out=Path(args.output);out.mkdir(parents=True,exist_ok=True)
     def adb(*args):
@@ -50,6 +51,14 @@ def main():
             shell('input','swipe','500','1500','500','450','350')
         screen('scroll-failure');raise AssertionError('Cannot find '+text)
     package='io.github.styayur.lgxt_assistant_mobile'
+    upgrade_incompatible=None
+    if args.historical_apk:
+        if 'Success' not in adb('install',args.historical_apk).decode():raise ValueError('Historical install failed')
+        upgrade=subprocess.run(['adb','install','-r',args.apk],capture_output=True,timeout=90)
+        if upgrade.returncode==0 or b'INSTALL_FAILED_UPDATE_INCOMPATIBLE' not in upgrade.stdout+upgrade.stderr:
+            raise AssertionError('Historical signing incompatibility not established')
+        upgrade_incompatible=True
+        adb('uninstall',package)
     if 'Success' not in adb('install','-r',args.apk).decode():raise ValueError('APK installation failed')
     shell('logcat','-c')
     def launch():shell('am','start','-W','-n',package+'/.MainActivity')
@@ -93,6 +102,7 @@ def main():
     report={'package':package,'abi':shell('getprop','ro.product.cpu.abi').strip(),
             'android':shell('getprop','ro.build.version.release').strip(),
             'fixture':args.fixture,'passed':passed+['background resume','force-stop restart'],
+            'historicalUpgradeIncompatible':upgrade_incompatible,
             'not_covered':['real platform','paid provider','physical ARM64 device','signing continuity']}
     (out/'acceptance.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     sys.stdout.write(json.dumps(report,ensure_ascii=False)+'\n')

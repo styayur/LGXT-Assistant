@@ -98,3 +98,22 @@ def test_oversize_request_rejected(server):
         'Origin': server.origin, 'X-LGXT-Token': server.token,
         'Content-Length': str(25 * 1024 * 1024)}, timeout=5)
     assert response.status_code == 413
+
+
+def test_unauthorized_split_body_receives_rejection(server):
+    import socket
+    import time
+    from urllib.parse import urlsplit
+    address=urlsplit(server.origin)
+    with socket.create_connection((address.hostname,address.port),timeout=3) as connection:
+        request=(f'POST /api/call HTTP/1.0\r\nHost: {address.netloc}\r\n'
+                 'Origin: https://invalid.example\r\nContent-Length: 2\r\n\r\n')
+        connection.sendall(request.encode('ascii'))
+        time.sleep(.03)
+        connection.sendall(b'{}')
+        response=b''
+        while True:
+            block=connection.recv(4096)
+            if not block:break
+            response+=block
+        assert response.startswith(b'HTTP/1.0 403') and b'Unauthorized' in response

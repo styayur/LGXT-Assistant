@@ -2,15 +2,21 @@ name: Android APK
 
 on:
   workflow_dispatch:
+    inputs:
+      candidate_run_id:
+        description: 'Optional existing candidate run: rerun native acceptance only (app/dependency source must match)'
+        default: ''
   push:
     tags:
       - 'v*-android'
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   build-apk:
+    if: inputs.candidate_run_id == ''
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -95,10 +101,22 @@ jobs:
 
   emulator:
     needs: build-apk
+    if: always() && (needs.build-apk.result == 'success' || inputs.candidate_run_id != '')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify reused candidate source
+        if: inputs.candidate_run_id != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CANDIDATE_RUN: ${{ inputs.candidate_run_id }}
+        run: |
+          source=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN" --jq .head_sha)
+          git fetch origin "$source"
+          git diff --exit-code "$source" HEAD -- mobile/src mobile/pyproject.toml mobile/requirements.txt packaging/android scripts/build_android_wheels.sh scripts/android_fixture_entry.py scripts/android_image_checks.py
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
@@ -110,10 +128,20 @@ jobs:
         with:
           name: lgxt-android-apk
           path: build/android/apk
+          run-id: ${{ inputs.candidate_run_id || github.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/download-artifact@v7
         with:
           name: lgxt-fixture-only-apk
           path: build/android/fixture
+          run-id: ${{ inputs.candidate_run_id || github.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Obtain immutable historical APK for upgrade rejection test
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download v3.2.1 -p LGXT-Assistant-3.2.1-android.apk -D build/android/history
+          echo '6a9ec5a4113a1a24a4bfad29068158544aa526f892ffa972b590d53a7e29487d  build/android/history/LGXT-Assistant-3.2.1-android.apk' | sha256sum --check
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -126,7 +154,7 @@ jobs:
           profile: pixel_2
           disable-animations: true
           script: |
-            python scripts/check_android_device.py --apk build/android/apk/LGXT-Assistant-Android-v3.3.0.apk
+            python scripts/check_android_device.py --apk build/android/apk/LGXT-Assistant-Android-v3.3.0.apk --historical-apk build/android/history/LGXT-Assistant-3.2.1-android.apk
             adb uninstall io.github.styayur.lgxt_assistant_mobile
             python scripts/check_android_device.py --apk build/android/fixture/LGXT-fixture-only.apk --fixture --output build/android/device-fixture
       - uses: actions/upload-artifact@v7
