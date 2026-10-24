@@ -93,7 +93,7 @@ def main():
     shell('am','force-stop',package);launch();wait_text('登录理工学堂');screen('restart-native')
     if args.fixture:
         tap_text('离线打开本地资料');tap_text('打开本地笔记')
-        wait_text('native-fixture-note');screen('restored-native-fixture')
+        scroll_to('native-fixture-note');screen('restored-native-fixture')
         passed.append('note survives process termination')
     log=shell('logcat','-d');(out/'logcat.txt').write_text(log,encoding='utf-8')
     if 'FATAL EXCEPTION' in log or 'Traceback (most recent call last)' in log:

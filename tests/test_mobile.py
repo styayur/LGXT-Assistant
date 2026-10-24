@@ -24,6 +24,7 @@ class Page:
     def pop_dialog(self):self.dialog=None
 
 class FixtureClient:
+    fixture=True
     insecure=False
     allow_insecure=False
     calls=[]
@@ -84,8 +85,11 @@ def test_mobile_login_assignment_document_confirmation(size):
     page.dialog.actions[0].on_click(None)
     assert not FixtureClient.calls
     find(page,ft.Button,text='提交成绩').on_click(None)
-    page.dialog.actions[1].on_click(None)
+    confirm = page.dialog.actions[1].on_click
+    confirm(None)
     wait_for(lambda: len(FixtureClient.calls)==1)
+    confirm(None)  # A replayed callback must not consume another attempt.
+    assert len(FixtureClient.calls)==1
     find(page,ft.TextButton,text='查看原图 / 识别公式 / AI 分析').on_click(None)
     assert page.views[-1].route=='/question-document'
     find(page,ft.TextField,label='校正题面 / LaTeX 源码').value=r'Corrected $\int_0^1 x^2 dx$'

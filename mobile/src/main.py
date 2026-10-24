@@ -505,6 +505,8 @@ def main(page, client_factory=ApiClient, storage=None):
                                    bgcolor=SURFACE, border_color='#243040', color=FG)
 
         submitting = threading.Event()
+        confirmation_lock = threading.Lock()
+        active_confirmation = {'token': None}
         work_id = state['work']['workId']
         def submit(_e):
             if submitting.is_set():
@@ -522,15 +524,28 @@ def main(page, client_factory=ApiClient, storage=None):
                     submitting.clear()
 
             def confirmed(_):
-                if state['epoch'] != confirmation_epoch or state['view_epoch'] != confirmation_view:
-                    page.pop_dialog();snack('页面或会话已改变，请重新预览提交', WARN); return
-                if submitting.is_set(): return
-                submitting.set()
+                with confirmation_lock:
+                    if active_confirmation['token'] != confirmation_token or submitting.is_set(): return
+                    active_confirmation['token'] = None
+                    if (state['epoch'] != confirmation_epoch or state['view_epoch'] != confirmation_view
+                            or time.monotonic() > confirmation_expires):
+                        page.pop_dialog();snack('预览已失效，请重新预览提交', WARN); return
+                    submitting.set()
                 page.pop_dialog()
                 start_work(work)
+            def cancelled(_):
+                with confirmation_lock:
+                    if active_confirmation['token'] == confirmation_token:
+                        active_confirmation['token'] = None
+                page.pop_dialog()
             confirmation_epoch, confirmation_view = state['epoch'], state['view_epoch']
+            confirmation_token = uuid.uuid4().hex
+            confirmation_expires = time.monotonic() + 300
+            with confirmation_lock:
+                if submitting.is_set(): return
+                active_confirmation['token'] = confirmation_token
             dialog = ft.AlertDialog(title=ft.Text('确认提交成绩'), content=ft.Text(f'本作业提交 {value} 分，会修改服务器记录并可能消耗提交次数。超时需到平台核实，不自动重试。'),
-                                    actions=[ft.TextButton('取消', on_click=lambda e: page.pop_dialog()), ft.TextButton('确认提交', on_click=confirmed)])
+                                    actions=[ft.TextButton('取消', on_click=cancelled), ft.TextButton('确认提交', on_click=confirmed)])
             page.show_dialog(dialog)
 
         controls.append(card(ft.Row([grade_field,
