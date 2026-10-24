@@ -73,7 +73,7 @@ jobs:
           mkdir -p out
           version=$(python -c "import tomllib; print(tomllib.load(open('mobile/pyproject.toml','rb'))['project']['version'])")
           cp mobile/build/apk/lgxt-assistant-mobile.apk "out/LGXT-Assistant-Android-v${version}.apk"
-          python scripts/check_android_metadata.py --apk "out/LGXT-Assistant-Android-v${version}.apk" --allow-debug-for-testing --output out/APK-IDENTITY-TEST-ONLY.json
+          python scripts/check_android_metadata.py --apk "out/LGXT-Assistant-Android-v${version}.apk" --allow-debug-for-testing --source-commit "$GITHUB_SHA" --output out/APK-IDENTITY-TEST-ONLY.json
           python scripts/collect_android_notices.py --apk "out/LGXT-Assistant-Android-v${version}.apk" --output out/THIRD-PARTY.txt
           cp LICENSE NOTICE.md out/
           cp docs/android-beta.md out/ANDROID-GUIDE.md

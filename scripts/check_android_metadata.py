@@ -25,6 +25,7 @@ def main():
     parser.add_argument('--expected-certificate')
     parser.add_argument('--allow-debug-for-testing',action='store_true')
     parser.add_argument('--output',required=True)
+    parser.add_argument('--source-commit')
     args=parser.parse_args()
     sdk=Path(os.environ['ANDROID_HOME'])/'build-tools'
     tools=sorted(sdk.iterdir(),key=lambda p:tuple(map(int,re.findall(r'\d+',p.name))))[-1]
@@ -45,10 +46,14 @@ def main():
         abis=sorted({name.split('/')[1] for name in names if name.startswith('lib/')})
         if abis!=['arm64-v8a','x86_64']:raise ValueError('Unexpected APK architectures: '+str(abis))
         if archive.testzip():raise ValueError('APK ZIP integrity failure')
-    result={'apk':Path(args.apk).name,'sha256':hashlib.file_digest(open(args.apk,'rb'),'sha256').hexdigest(),
+    with open(args.apk,'rb') as source:apk_digest=hashlib.file_digest(source,'sha256').hexdigest()
+    result={'apk':Path(args.apk).name,'sha256':apk_digest,
             'certificateSha256':fingerprint,'debugTestOnly':args.allow_debug_for_testing,
             'package':'io.github.styayur.lgxt_assistant_mobile','version':'3.3.0','versionCode':4,'abis':abis,
             'signatureVerified':True,'sdk':[line for line in info.splitlines() if line.startswith(('sdkVersion:','targetSdkVersion:'))]}
+    if args.source_commit:
+        if not re.fullmatch('[a-fA-F0-9]{40}',args.source_commit):raise ValueError('Invalid source commit')
+        result['sourceCommit']=args.source_commit.lower()
     Path(args.output).write_text(json.dumps(result,indent=2),encoding='utf-8')
     sys.stdout.write(json.dumps(result)+'\n')
 

@@ -94,8 +94,10 @@ def main():
         shell('input','text','native-fixture-note');shell('input','keyevent','4')
         tap_node(scroll_to('保存学习材料'));wait_text('已保存到本机')
         screen('saved-native-fixture')
+        tap_node(scroll_to('使用 AI 分析此题'));wait_text('视觉')
+        screen('vision-rejected-native-fixture')
         passed+=['fixture course/assignment/question','submission cancel and confirm (no server)',
-                 'note edit and save']
+                 'note edit and save','unconfirmed vision rejected before provider request']
     else:
         wait_text('已阻止明文 HTTP');screen('http-blocked-native')
         tap_text('离线打开本地资料');wait_text('本地资料');screen('library-native')
