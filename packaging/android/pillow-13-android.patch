@@ -1,0 +1,42 @@
+--- a/setup.py
++++ b/setup.py
+@@ -371,9 +371,7 @@
+         return True if value in configuration.get(option, []) else None
+ 
+     def initialize_options(self) -> None:
+-        self.disable_platform_guessing = self.check_configuration(
+-            "platform-guessing", "disable"
+-        )
++        self.disable_platform_guessing = True
+         build_ext.initialize_options(self)
+         for x in self.feature:
+             setattr(self, f"disable_{x}", self.check_configuration(x, "disable"))
+@@ -572,16 +570,7 @@
+                 for d in os.environ[k].split(os.path.pathsep):
+                     _add_directory(library_dirs, d)
+ 
+-        _add_directory(
+-            library_dirs,
+-            (sys.prefix == sys.base_prefix and sysconfig.get_config_var("LIBDIR"))
+-            or os.path.join(sys.prefix, "lib"),
+-        )
+-        _add_directory(
+-            include_dirs,
+-            (sys.prefix == sys.base_prefix and sysconfig.get_config_var("INCLUDEDIR"))
+-            or os.path.join(sys.prefix, "include"),
+-        )
++        # Cross-build: never search the build interpreter prefix.
+ 
+         #
+         # add platform directories
+@@ -722,6 +711,10 @@
+ 
+         self.compiler.library_dirs = library_dirs + self.compiler.library_dirs
+         self.compiler.include_dirs = include_dirs + self.compiler.include_dirs
++        host_paths = {"/usr/include", "/usr/local/include", "/usr/lib", "/usr/local/lib",
++                      "/usr/include/x86_64-linux-gnu", "/usr/lib/x86_64-linux-gnu"}
++        self.compiler.include_dirs = [p for p in self.compiler.include_dirs if p not in host_paths]
++        self.compiler.library_dirs = [p for p in self.compiler.library_dirs if p not in host_paths]
+ 
+         #
+         # look for available libraries

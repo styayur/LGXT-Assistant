@@ -19,11 +19,12 @@ curl --fail --location --retry 3 -o downloads/Pillow-13.0.0.tar.gz \
 echo 'cdcd1ba258178f7356d74170c9a81ba4eab6a5d55748bc402a5a2a6fe6be3510  downloads/Pillow-13.0.0.tar.gz' | sha256sum --check
 # Pin the cross compiler helper rather than following its branch at build time.
 sed -i 's/crossenv@flet/crossenv@e5e615651f794d060d9484eab463861fef2a2019/' pyproject.toml
+cp "$repo_root/packaging/android/pillow-13-android.patch" recipes/pillow/patches/setup-12.x.patch
 source ./setup.sh 3.14.7 android
 forge android pillow:13.0.0
 mkdir -p "$repo_root/build/android/wheels" "$repo_root/build/android/wheel-evidence"
 cp dist/pillow-13.0.0-*.whl "$repo_root/build/android/wheels/"
-cp logs/*pillow* "$repo_root/build/android/wheel-evidence/"
+cp logs/*[Pp]illow* "$repo_root/build/android/wheel-evidence/"
 python -m pip freeze > "$repo_root/build/android/wheel-evidence/build-environment.txt"
 git diff > "$repo_root/build/android/wheel-evidence/forge.patch"
 cp recipes/pillow/meta.yaml "$repo_root/build/android/wheel-evidence/recipe.yaml"
