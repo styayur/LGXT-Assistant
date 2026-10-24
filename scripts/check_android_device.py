@@ -83,6 +83,7 @@ def main():
         tap_node(scroll_to('查看原图 / 识别公式 / AI 分析'))
         wait_text('题目与解答');screen('document-native-fixture')
         tap_node(scroll_to('解答笔记'))
+        time.sleep(.3);screen('keyboard-native-fixture')
         shell('input','text','native-fixture-note');shell('input','keyevent','4')
         tap_node(scroll_to('保存学习材料'));wait_text('已保存到本机')
         screen('saved-native-fixture')
@@ -99,6 +100,13 @@ def main():
         tap_text('离线打开本地资料');tap_text('打开本地笔记')
         scroll_to('native-fixture-note');screen('restored-native-fixture')
         passed.append('note survives process termination')
+        shell('input','keyevent','4');wait_text('本地资料')
+        screen('back-native-fixture')
+        tap_text('导出备份');tap_text('SAVE');wait_text('本地资料')
+        tap_text('导入备份 / 恢复');tap_text('LGXT-study-notes.json')
+        wait_text('导入本地备份');tap_text('确认导入');wait_text('已恢复 1 份资料')
+        screen('backup-restored-native-fixture')
+        passed+=['system back navigation','native file-picker backup export/import']
     log=shell('logcat','-d');(out/'logcat.txt').write_text(log,encoding='utf-8')
     if 'FATAL EXCEPTION' in log or 'Traceback (most recent call last)' in log:
         raise AssertionError('Native/Python crash in logcat')

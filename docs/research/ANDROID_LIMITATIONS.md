@@ -68,6 +68,8 @@ Historical package `io.github.styayur.lgxt_assistant_mobile`, versionName 3.2.1,
 
 **Status / next step.** Corpus and parser/render regression executed locally. No provider benchmark, handwriting assessment, independent labels or confidence intervals exist. Before an accuracy claim, collect a larger licensed corpus with independent ground truth, fix a model/version and cost budget, compare exact/semantic/render results separately, and review every engineering diagram manually. No model key is required for this release's mock regression.
 
+Tracked acceptance: [OCR benchmark issue #25](https://github.com/styayur/LGXT-Assistant/issues/25).
+
 ## 5. Provider formats, privacy and cancellation (medium/high)
 
 **Sources.** [OpenAI image input](https://developers.openai.com/api/docs/guides/images-vision), [OpenAI data controls](https://developers.openai.com/api/docs/guides/your-data), [Claude vision](https://platform.claude.com/docs/en/build-with-claude/vision), [Gemini OpenAI compatibility](https://ai.google.dev/gemini-api/docs/openai), [Gemini terms](https://ai.google.dev/gemini-api/terms). These are current, mostly undated documentation pages, retrieved 2026-10-24; their service policies can change. They document formats and provider-specific handling, not LGXT app certification.
@@ -91,6 +93,8 @@ Historical package `io.github.styayur.lgxt_assistant_mobile`, versionName 3.2.1,
 | Dedicated TeX PDF engine | Full mathematical typesetting | External engine/distribution, sandboxing, macro/file-access restrictions, font licensing and substantial packaging cost |
 
 **Status / recommendation.** Do not add a new renderer/converter in a release whose critical path is Android packaging. First implement optional, bounded offline equation images with source retained; evaluate OMML separately against matrix/fraction/multiline fixtures and existing text/image/table/code exports. No new conversion dependency or license has been introduced in this round.
+
+Tracked acceptance: [equation export issue #26](https://github.com/styayur/LGXT-Assistant/issues/26).
 
 ## 7. Offline storage and recovery (high data integrity)
 

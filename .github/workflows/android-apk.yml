@@ -36,7 +36,9 @@ jobs:
           version: '0.13.5'
 
       - name: Build security-patched Android Pillow wheels
-        run: bash scripts/build_android_wheels.sh
+        run: |
+          bash scripts/build_android_wheels.sh
+          python scripts/check_android_wheels.py --directory build/android/wheels
 
       - uses: actions/upload-artifact@v7
         if: always()
