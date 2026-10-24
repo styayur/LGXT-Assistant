@@ -1,5 +1,6 @@
 """Provider adapters. HTTP streams stay in Python; no secrets enter the web UI."""
 import json
+import codecs
 from urllib.parse import urlparse
 
 import requests
@@ -57,6 +58,21 @@ def request_config(settings, key, messages):
     return endpoint_url(settings, '/chat/completions'), headers, body
 
 
+def bounded_lines(response, cancel):
+    decoder = codecs.getincrementaldecoder('utf-8')('strict')
+    pending = ''
+    for block in response.iter_content(chunk_size=4096):
+        if cancel.is_set(): return
+        pending += decoder.decode(block)
+        while '\n' in pending:
+            line, pending = pending.split('\n', 1)
+            if len(line)>256*1024:raise ValueError('模型流事件超过限制')
+            yield line.rstrip('\r')
+        if len(pending)>256*1024:raise ValueError('模型流事件超过限制')
+    pending += decoder.decode(b'', final=True)
+    if pending:yield pending.rstrip('\r')
+
+
 def stream(settings, key, messages, cancel, on_response=None):
     if cancel.is_set():
         return
@@ -70,7 +86,7 @@ def stream(settings, key, messages, cancel, on_response=None):
         if not 200 <= response.status_code < 300:
             raise ValueError(f'模型服务返回 HTTP {response.status_code}，请检查模型 ID、密钥与额度')
         response.encoding = 'utf-8'
-        for line in response.iter_lines(chunk_size=1, decode_unicode=True):
+        for line in bounded_lines(response, cancel):
             if cancel.is_set():
                 return
             if not line or not line.startswith('data:'):

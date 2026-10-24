@@ -89,3 +89,7 @@ def test_provider_cancel_redirect_and_unconfirmed_vision(monkeypatch):
     monkeypatch.setattr(models.requests,'post',lambda *a,**k:response)
     with pytest.raises(ValueError,match='302'):list(models.stream(settings,'fixture',[],threading.Event()))
     assert response.closed
+    response=Response(['data: '+'x'*(256*1024+1)])
+    monkeypatch.setattr(models.requests,'post',lambda *a,**k:response)
+    with pytest.raises(ValueError,match='超过限制'):list(models.stream(settings,'fixture',[],threading.Event()))
+    assert response.closed

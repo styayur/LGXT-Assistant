@@ -168,6 +168,8 @@ class Response:
     def __enter__(self): return self
     def __exit__(self, *args): self.closed = True
     def iter_lines(self, **kwargs): yield from self.lines
+    def iter_content(self, **kwargs):
+        for line in self.lines:yield (line+'\n').encode('utf-8')
 
 
 def test_stream_sse_unicode_error_and_close(monkeypatch):
