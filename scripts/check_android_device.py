@@ -65,10 +65,14 @@ def main():
     launch();root=wait_text('登录理工学堂');screen('login-native')
     edits=[node for node in root.iter('node') if node.get('class')=='android.widget.EditText']
     if len(edits)!=2:raise AssertionError('Expected two native editable login fields')
-    for node,value in zip(edits,['fixture-user','fixture-password']):
-        tap_node(node);shell('input','text',value)
+    for index,value in enumerate(['fixture-user','fixture-password']):
+        # The Android keyboard changes the scroll viewport. Re-query bounds
+        # for each field instead of reusing positions from before it opened.
+        current=[node for node in tree().iter('node') if node.get('class')=='android.widget.EditText']
+        tap_node(current[index]);shell('input','text',value)
         time.sleep(.5)
-    shell('input','keyevent','4')
+        shell('input','keyevent','4')
+        time.sleep(.3)
     tap_text('登录理工学堂')
     passed=['install','first launch']
     if args.fixture:
