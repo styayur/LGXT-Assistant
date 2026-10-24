@@ -18,6 +18,15 @@ def test_decoder_acceptance():
     assert result['pillow']=='13.0.0' and result['count']>=18
 
 
+def test_android_certificate_output_requires_one_complete_identity():
+    from scripts.check_android_metadata import certificate_fingerprint
+    digest='ab'*32
+    assert certificate_fingerprint('Signer #1 certificate SHA-256 digest: '+digest)==digest
+    assert certificate_fingerprint('Signer (minSdkVersion=24) #1 certificate SHA-256 digest: '+digest.upper())==digest
+    with pytest.raises(ValueError):certificate_fingerprint('Signer #1 certificate SHA-256 digest: abcd')
+    with pytest.raises(ValueError):certificate_fingerprint('Signer #1 certificate SHA-256 digest: '+digest+'\nSigner #2 certificate SHA-256 digest: '+'cd'*32)
+
+
 def doc():
     return {'schemaVersion':1,'courseId':'1','workId':'2','questionId':'3',
             'solutionMarkdown':'original','sources':[]}
@@ -44,6 +53,9 @@ def test_store_copy_atomic_revision_and_recovery(tmp_path,monkeypatch):
     assert list(tmp_path.glob('*.recovery-*.bak'))
     with pytest.raises(ValueError):recovery.import_backup(json.dumps({'schemaVersion':99,'documents':{}}).encode())
     with pytest.raises(ValueError):recovery.import_backup(json.dumps({'schemaVersion':1,'documents':{'wrong':doc()}}).encode())
+    recovery.set('question.corrupt','invalid document')
+    assert key in recovery.documents() and 'question.corrupt' not in recovery.documents()
+    assert recovery.warning and recovery.get('question.corrupt')=='invalid document'
 
 
 def test_cancelled_login_cannot_navigate_back_or_persist_password():

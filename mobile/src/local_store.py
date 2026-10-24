@@ -71,9 +71,22 @@ class LocalStore:
             self._commit(values)
 
     def documents(self):
+        try:
+            from .question_documents import validate_document,document_key
+        except ImportError:
+            from question_documents import validate_document,document_key
         with self.lock:
-            return copy.deepcopy({k:v for k,v in self.values.items()
-                                  if k.startswith('question.') and not k.endswith('.previous')})
+            documents={}
+            for key,value in self.values.items():
+                if not key.startswith('question.') or key.endswith('.previous'):continue
+                try:
+                    item=validate_document(value)
+                    expected='question.'+document_key(item['courseId'],item['workId'],item['questionId'])
+                    if key!=expected:raise ValueError('题目编号不匹配')
+                    documents[key]=item
+                except ValueError:
+                    self.warning='部分本地题目无效，原数据保留在存储中；请保留原始文件并导入有效备份。'
+            return copy.deepcopy(documents)
 
     def export_backup(self):
         with self.lock:

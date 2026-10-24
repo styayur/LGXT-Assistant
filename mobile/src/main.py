@@ -613,6 +613,11 @@ def main(page, client_factory=ApiClient, storage=None):
             'questionId': str(q['id']), 'title': q.get('name', ''), 'courseName': state['course']['courseName'],
             'workName': state['work']['workName'], 'sourceText': q.get('text', q.get('name', '')),
             'correctedMarkdown': '', 'solutionMarkdown': '', 'originalImage': q.get('_image', ''), 'sources': []}
+        try:
+            d = question_documents.validate_document(d)
+        except ValueError:
+            snack('本地题目无效，原数据已保留；请从本地资料导入有效备份', ERR)
+            return
         corrected = ft.TextField(label='校正题面 / LaTeX 源码', value=d.get('correctedMarkdown', ''), multiline=True, min_lines=3, max_lines=8)
         solution = ft.TextField(label='解答笔记（Markdown）', value=d.get('solutionMarkdown', ''), multiline=True, min_lines=4, max_lines=10)
         question_input = ft.TextField(label='围绕此题追问', value='请逐步推导并说明公式适用条件', multiline=True)

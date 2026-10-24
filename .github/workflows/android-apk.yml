@@ -73,9 +73,10 @@ jobs:
           cp LICENSE NOTICE.md docs/user-guide.md out/
           cd out
           sha256sum *.apk LICENSE NOTICE.md user-guide.md APK-IDENTITY-TEST-ONLY.json > SHA256SUMS.txt
-          ls -l out
+          ls -l .
 
       - uses: actions/upload-artifact@v7
+        if: always()
         with:
           name: lgxt-android-apk
           path: out/*
