@@ -2,6 +2,8 @@
 # Candidate-only, reproducible source build; no upload to a package index.
 set -eo pipefail
 repo_root="$PWD"
+export UV_CONSTRAINT="$repo_root/packaging/android/build-tools.constraints.txt"
+export PIP_CONSTRAINT="$repo_root/packaging/android/native-build.constraints.txt"
 forge_root="${RUNNER_TEMP:?}/lgxt-mobile-forge"
 git clone https://github.com/flet-dev/mobile-forge.git "$forge_root"
 git -C "$forge_root" checkout --detach b38989fa3954c8a491347bdce4196dedeacae399

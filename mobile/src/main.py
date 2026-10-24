@@ -563,12 +563,15 @@ def main(page, client_factory=ApiClient, storage=None):
 
     async def import_backup(_=None):
         try:
-            files = await ft.FilePicker().pick_files(allow_multiple=False, with_data=True)
+            files = await ft.FilePicker().pick_files(allow_multiple=False, with_data=False)
             if not files: return
             file = files[0]
             if file.size > 32 * 1024 * 1024: raise ValueError('备份超过 32 MB')
-            raw = file.bytes
-            if raw is None: raise ValueError('文件不可读取')
+            if not file.path: raise ValueError('请选择设备上的本地备份文件')
+            from pathlib import Path
+            with Path(file.path).open('rb') as source:
+                raw = source.read(32 * 1024 * 1024 + 1)
+            if len(raw)>32*1024*1024: raise ValueError('备份超过 32 MB')
             # A confirmation is necessary because matching document IDs replace
             # current content (the prior revision is retained atomically).
             def confirmed(_):
