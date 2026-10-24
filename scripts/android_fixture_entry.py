@@ -2,6 +2,7 @@
 import base64
 import io
 import json
+import logging
 
 import flet as ft
 from PIL import Image
@@ -28,7 +29,7 @@ class FixtureClient:
 
 def target(page):
     result=run()
-    print('LGXT_NATIVE_CHECKS='+json.dumps(result),flush=True)
+    logging.getLogger('lgxt.acceptance').warning('LGXT_NATIVE_CHECKS=%s',json.dumps(result))
     main(page,FixtureClient)
 
 

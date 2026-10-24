@@ -160,7 +160,7 @@ def test_images_are_isolated_streamed_and_decoded(monkeypatch, public_dns):
 
 
 @pytest.mark.parametrize('response', [Response(302), Response(data=b'<svg onload="attack()"/>'),
-    Response(headers={'Content-Type':'text/html'}), Response(headers={'Content-Type':'image/png','Content-Length':str(api.MAX_IMAGE_BYTES+1)}),
+    Response(headers={'Content-Type':'text/html'}), Response(headers={'Content-Type':'image/jpeg'}), Response(headers={'Content-Type':'image/png','Content-Length':str(api.MAX_IMAGE_BYTES+1)}),
     Response(data=b'x'*(api.MAX_IMAGE_BYTES+1))])
 def test_image_rejects_redirect_content_and_sizes(monkeypatch, public_dns, response):
     c=api.APIClient('https://lgxt.wutp.com.cn/api')

@@ -61,15 +61,18 @@ jobs:
       - name: Collect APK
         run: |
           mkdir -p out
-          find mobile/build -name '*.apk' -print
           version=$(python -c "import tomllib; print(tomllib.load(open('mobile/pyproject.toml','rb'))['project']['version'])")
-          cp $(find mobile/build -name '*.apk' | head -n 1) "out/LGXT-Assistant-Android-v${version}.apk"
+          cp mobile/build/apk/lgxt-assistant-mobile.apk "out/LGXT-Assistant-Android-v${version}.apk"
+          python scripts/check_android_metadata.py --apk "out/LGXT-Assistant-Android-v${version}.apk" --allow-debug-for-testing --output out/APK-IDENTITY-TEST-ONLY.json
+          cp LICENSE NOTICE.md docs/user-guide.md out/
+          cd out
+          sha256sum *.apk LICENSE NOTICE.md user-guide.md APK-IDENTITY-TEST-ONLY.json > SHA256SUMS.txt
           ls -l out
 
       - uses: actions/upload-artifact@v7
         with:
           name: lgxt-android-apk
-          path: out/*.apk
+          path: out/*
 
       - name: Build separate synthetic acceptance APK
         env:

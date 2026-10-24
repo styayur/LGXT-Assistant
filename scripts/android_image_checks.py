@@ -1,6 +1,7 @@
 """Small on-device decoder acceptance suite. Synthetic inputs; no network."""
 import io
 import json
+import sys
 import struct
 import tempfile
 import zlib
@@ -64,4 +65,4 @@ def run():
 
 
 if __name__=='__main__':
-    print(json.dumps(run(),ensure_ascii=False))
+    sys.stdout.write(json.dumps(run(),ensure_ascii=False)+'\n')

@@ -7,6 +7,7 @@ import json
 import re
 import subprocess
 import time
+import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -49,7 +50,7 @@ def main():
             shell('input','swipe','500','1500','500','450','350')
         screen('scroll-failure');raise AssertionError('Cannot find '+text)
     package='io.github.styayur.lgxt_assistant_mobile'
-    print(adb('install','-r',args.apk).decode())
+    if 'Success' not in adb('install','-r',args.apk).decode():raise ValueError('APK installation failed')
     shell('logcat','-c')
     def launch():shell('am','start','-W','-n',package+'/.MainActivity')
     launch();root=wait_text('登录理工学堂');screen('login-native')
@@ -94,7 +95,14 @@ def main():
             'fixture':args.fixture,'passed':passed+['background resume','force-stop restart'],
             'not_covered':['real platform','paid provider','physical ARM64 device','signing continuity']}
     (out/'acceptance.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
-    print(json.dumps(report,ensure_ascii=False))
+    sys.stdout.write(json.dumps(report,ensure_ascii=False)+'\n')
 
 
-if __name__=='__main__':main()
+if __name__=='__main__':
+    try:main()
+    except Exception:
+        output=Path(sys.argv[sys.argv.index('--output')+1] if '--output' in sys.argv else 'build/android/device')
+        output.mkdir(parents=True,exist_ok=True)
+        with (output/'failure-logcat.txt').open('wb') as target:
+            subprocess.run(['adb','logcat','-d'],stdout=target,timeout=30,check=False)
+        raise

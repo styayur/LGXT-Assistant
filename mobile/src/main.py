@@ -79,7 +79,7 @@ def main(page, client_factory=ApiClient, storage=None):
         state['view_epoch'] += 1
 
     def lifecycle(event):
-        if event.state in (ft.AppLifecycleState.PAUSED, ft.AppLifecycleState.HIDDEN, ft.AppLifecycleState.DETACHED):
+        if event.state in (ft.AppLifecycleState.PAUSE, ft.AppLifecycleState.HIDE, ft.AppLifecycleState.DETACH):
             stop_ai()
     page.on_app_lifecycle_state_change = lifecycle
 
@@ -617,6 +617,7 @@ def main(page, client_factory=ApiClient, storage=None):
         latex = ft.TextField(label='识别 LaTeX（机器生成，请核对后应用）', multiline=True, min_lines=2)
         cancel = threading.Event()
         save_status = ft.Text('本地内容已载入；编辑后请保存', color=MUTED, size=12)
+        preview = ft.Text(corrected.value or '', selectable=True, color=FG)
         def save(_=None):
             try:
                 d.update(correctedMarkdown=corrected.value or '', solutionMarkdown=solution.value or '')
@@ -632,6 +633,7 @@ def main(page, client_factory=ApiClient, storage=None):
                 return False
         def edited(_):
             save_status.value = '有未保存的修改'
+            preview.value = corrected.value or ''
             page.update()
         corrected.on_change = solution.on_change = edited
         def run_ai(recognize):
@@ -691,12 +693,15 @@ def main(page, client_factory=ApiClient, storage=None):
             d['latex'] = latex.value or ''
             d['recognizedText'] = output.value
             corrected.value = output.value + '\n\n$$\n' + (latex.value or '') + '\n$$'
+            preview.value = corrected.value
             page.update()
         controls = [ft.Text('来源：' + d['courseName'] + ' / ' + d['workName'], color=MUTED),
                     ft.Text('原图为来源；识别与解答可能有误。点击 AI 操作将题图、编辑内容发送到所配模型服务。', color=WARN, size=12)]
         if d.get('originalImage'):
             controls.append(ft.Container(ft.InteractiveViewer(content=ft.Image(src=base64.b64decode(d['originalImage'].split(',',1)[1]), fit=ft.BoxFit.CONTAIN), min_scale=0.5, max_scale=5), height=260))
-        controls.extend([corrected, ft.Markdown(corrected.value or '', selectable=True), solution,
+        # Plain-text preview deliberately never fetches Markdown image URLs or
+        # interprets HTML/model-generated markup. Equations retain their source.
+        controls.extend([corrected, ft.Text('校正预览 · LaTeX 源码', size=12, color=MUTED), preview, solution,
                          ft.ExpansionTile(title=ft.Text('模型设置（密钥仅本次会话）'), controls=[*ai_fields.values(),vision,attach_image]),
                          question_input, ft.Button('使用 AI 分析此题', on_click=lambda e: run_ai(False)),
                          ft.TextButton('图片转 LaTeX', on_click=lambda e: run_ai(True)),

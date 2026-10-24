@@ -69,6 +69,8 @@ def test_offline_library_survives_restart_without_login(tmp_path):
     find(page,ft.TextButton,text='离线打开本地资料').on_click(None)
     find(page,ft.TextButton,text='打开本地笔记').on_click(None)
     assert find(page,ft.TextField,label='解答笔记（Markdown）').value=='original'
+    for lifecycle in ft.AppLifecycleState:
+        page.on_app_lifecycle_state_change(SimpleNamespace(state=lifecycle))
 
 
 def test_provider_cancel_redirect_and_unconfirmed_vision(monkeypatch):
