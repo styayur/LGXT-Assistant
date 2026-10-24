@@ -17,6 +17,24 @@ def endpoint_url(settings, suffix):
 
 
 def request_config(settings, key, messages):
+    require_vision(settings, messages)
+    # Every public request path validates the encoded bytes, including callers
+    # which already serialized provider-specific blocks.
+    try:
+        from .question_documents import image_data_url
+    except ImportError:
+        from question_documents import image_data_url
+    for message in messages:
+        if not isinstance(message.get('content'), list):
+            continue
+        for block in message['content']:
+            if block.get('type') == 'image_url':
+                image_data_url(block['image_url']['url'])
+            elif block.get('type') == 'image':
+                source = block.get('source', {})
+                if source.get('type') != 'base64':
+                    raise ValueError('仅支持经过验证的本地图片')
+                image_data_url('data:' + source.get('media_type', '') + ';base64,' + source.get('data', ''))
     if not settings['model'].strip():
         raise ValueError('请先在设置中填写模型 ID')
     if not key and settings['provider'] != 'Local':
@@ -40,6 +58,8 @@ def request_config(settings, key, messages):
 
 
 def stream(settings, key, messages, cancel, on_response=None):
+    if cancel.is_set():
+        return
     url, headers, body = request_config(settings, key, messages)
     # No retries on generation: retries can duplicate paid requests.
     with requests.post(url, headers=headers, json=body, stream=True, timeout=(10, 60), allow_redirects=False) as response:
@@ -47,7 +67,7 @@ def stream(settings, key, messages, cancel, on_response=None):
             on_response(response)
         if cancel.is_set():
             return
-        if not response.ok:
+        if not 200 <= response.status_code < 300:
             raise ValueError(f'模型服务返回 HTTP {response.status_code}，请检查模型 ID、密钥与额度')
         response.encoding = 'utf-8'
         for line in response.iter_lines(chunk_size=1, decode_unicode=True):

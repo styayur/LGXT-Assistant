@@ -12,6 +12,7 @@ with sync_playwright() as p:
     page=browser.new_page(viewport={'width':390,'height':844})
     errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
     page.goto('http://127.0.0.1:8554')
+    page.wait_for_load_state('networkidle')
     page.locator('flt-semantics-placeholder').dispatch_event('click')
     expect(page.get_by_role('textbox')).to_have_count(2)
     page.screenshot(path=str(ROOT/'docs/screenshots/android-flet-login-fixture.png'))
@@ -22,7 +23,7 @@ with sync_playwright() as p:
     expect(page.get_by_role('button',name='刷新作业状态',exact=True)).to_be_visible()
     page.screenshot(path=str(ROOT/'docs/screenshots/android-flet-dashboard-fixture.png'))
     # Navigation position is inspected in the genuine 390x844 renderer screenshot.
-    page.mouse.click(195,798)
+    page.mouse.click(146,798)
     expect(page.get_by_text('Synthetic physics course',exact=True)).to_be_visible()
     page.screenshot(path=str(ROOT/'docs/screenshots/android-flet-courses-fixture.png'))
     page.get_by_role('button').first.click()

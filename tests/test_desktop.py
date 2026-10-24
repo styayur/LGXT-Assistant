@@ -132,7 +132,7 @@ def test_provider_wire_formats_and_context():
     Image.new('RGB', (2,2)).save(image_buffer, 'PNG')
     image_data = 'data:image/png;base64,' + base64.b64encode(image_buffer.getvalue()).decode()
     s = DEFAULTS | {'provider': 'Claude', 'endpoint': 'https://api.anthropic.com/v1',
-                    'model': 'test-model', 'memoryEnabled': True, 'memory': 'Explain clearly'}
+                    'model': 'test-model', 'memoryEnabled': True, 'memory': 'Explain clearly', 'visionEnabled': True}
     messages = [{'role': 'assistant', 'content': 'old'}, {'role': 'user', 'content': 'look',
                  'attachments': [{'name': 'note.md', 'text': 'context'},
                                  {'name': 'image.png', 'data': image_data}]}]

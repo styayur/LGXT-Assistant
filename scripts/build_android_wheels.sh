@@ -19,8 +19,14 @@ curl --fail --location --retry 3 -o downloads/Pillow-13.0.0.tar.gz \
 echo 'cdcd1ba258178f7356d74170c9a81ba4eab6a5d55748bc402a5a2a6fe6be3510  downloads/Pillow-13.0.0.tar.gz' | sha256sum --check
 # Pin the cross compiler helper rather than following its branch at build time.
 sed -i 's/crossenv@flet/crossenv@e5e615651f794d060d9484eab463861fef2a2019/' pyproject.toml
+sed -i 's/Jinja2 == 3.1.3/Jinja2 == 3.1.6/; s/wheel==0.43.0/wheel==0.48.0/' pyproject.toml
+# No font rendering or TIFF decoding is used by the mobile image validator.
+# Avoid shipping these unnecessary native libraries in the Android wheel.
+sed -i '/flet-libfreetype/d; /flet-libtiff/d; s/version: "12.3.0"/version: "13.0.0"/' recipes/pillow/meta.yaml
 cp "$repo_root/packaging/android/pillow-13-android.patch" recipes/pillow/patches/setup-12.x.patch
 source ./setup.sh 3.14.7 android
+uv pip install pip-audit==2.10.1
+python -m pip_audit
 forge android pillow:13.0.0
 mkdir -p "$repo_root/build/android/wheels" "$repo_root/build/android/wheel-evidence"
 cp dist/pillow-13.0.0-*.whl "$repo_root/build/android/wheels/"

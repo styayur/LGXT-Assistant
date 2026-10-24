@@ -1,6 +1,6 @@
 --- a/setup.py
 +++ b/setup.py
-@@ -371,9 +371,7 @@
+@@ -371,9 +371,9 @@
          return True if value in configuration.get(option, []) else None
  
      def initialize_options(self) -> None:
@@ -8,6 +8,8 @@
 -            "platform-guessing", "disable"
 -        )
 +        self.disable_platform_guessing = True
++        self.disable_tiff = True
++        self.disable_freetype = True
          build_ext.initialize_options(self)
          for x in self.feature:
              setattr(self, f"disable_{x}", self.check_configuration(x, "disable"))
