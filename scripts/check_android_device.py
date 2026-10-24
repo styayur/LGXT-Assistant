@@ -3,6 +3,7 @@
 No real credentials, grades or model requests. Screenshots contain dummy inputs.
 """
 import argparse
+import hashlib
 import json
 import re
 import subprocess
@@ -18,7 +19,9 @@ def main():
     parser.add_argument('--output',default='build/android/device')
     parser.add_argument('--fixture',action='store_true')
     parser.add_argument('--historical-apk')
+    parser.add_argument('--backup-roundtrip',action='store_true',help='Import synthetic notes through the ordinary release APK picker')
     args=parser.parse_args()
+    expected_note='native-fixture-note' if args.fixture else 'native-fixture-note-saved'
     out=Path(args.output);out.mkdir(parents=True,exist_ok=True)
     def adb(*args):
         return subprocess.check_output(['adb',*args],timeout=90)
@@ -110,10 +113,33 @@ def main():
         wait_text('已阻止明文 HTTP');screen('http-blocked-native')
         tap_text('离线打开本地资料');wait_text('本地资料');screen('library-native')
         passed+=['HTTP blocked with dummy credentials','offline library']
+        if args.backup_roundtrip:
+            # Export through Android first so the picker indexes a real document.
+            # Replace only that disposable emulator test file with synthetic notes.
+            tap_text('导出备份');tap_text('SAVE');wait_text('本地资料')
+            key='question.'+hashlib.sha256(json.dumps(['native-test','backup-test','1']).encode()).hexdigest()
+            document={'schemaVersion':1,'courseId':'native-test','workId':'backup-test','questionId':'1',
+                      'title':'Native acceptance — synthetic','courseName':'Synthetic offline test',
+                      'workName':'Synthetic backup test','sourceText':'No real platform data',
+                      'correctedMarkdown':'','solutionMarkdown':'native-fixture-note','originalImage':'','sources':[]}
+            seed=out/'synthetic-note-backup.json'
+            seed.write_text(json.dumps({'schemaVersion':1,'documents':{key:document}}),encoding='utf-8')
+            device_backup='/sdcard/Download/LGXT-study-notes.json'
+            adb('push',str(seed),device_backup)
+            tap_text('导入备份 / 恢复');tap_text('LGXT-study-notes.json');tap_text('确认导入')
+            tap_text('打开本地笔记');tap_node(scroll_to('native-fixture-note'))
+            shell('input','text','-saved');shell('input','keyevent','4')
+            tap_node(scroll_to('保存学习材料'));wait_text('已保存到本机')
+            shell('rm',device_backup)
+            passed.append('ordinary release APK imports a synthetic document through native picker')
     shell('input','keyevent','3');launch()
-    wait_text('题目与解答' if args.fixture else '本地资料')
+    wait_text('题目与解答' if args.fixture or args.backup_roundtrip else '本地资料')
+    if args.backup_roundtrip:
+        if 'Success' not in adb('install','-r',args.apk).decode():
+            raise AssertionError('Same-certificate reinstall failed')
+        passed.append('same-certificate reinstall (notes checked after restart)')
     shell('am','force-stop',package);launch();wait_text('登录理工学堂');screen('restart-native')
-    if args.fixture:
+    if args.fixture or args.backup_roundtrip:
         tap_text('离线打开本地资料');tap_text('打开本地笔记')
         scroll_to('native-fixture-note');screen('restored-native-fixture')
         passed.append('note survives process termination')
@@ -131,7 +157,7 @@ def main():
         wait_text('导入本地备份');tap_text('确认导入')
         wait_text('打开本地笔记');tap_text('打开本地笔记')
         restored=scroll_to('native-fixture-note')
-        if restored.get('text')!='native-fixture-note':
+        if restored.get('text')!=expected_note:
             raise AssertionError('Native backup import did not restore exported note: '+str(restored.attrib))
         screen('backup-restored-native-fixture')
         passed+=['system back navigation','native file-picker backup export/import']
@@ -141,9 +167,9 @@ def main():
     if args.fixture and 'LGXT_NATIVE_CHECKS=' not in log:raise AssertionError('Native decoder checks not reported')
     report={'package':package,'abi':shell('getprop','ro.product.cpu.abi').strip(),
             'android':shell('getprop','ro.build.version.release').strip(),
-            'fixture':args.fixture,'passed':passed+['background resume','force-stop restart'],
+            'fixture':args.fixture,'syntheticDocuments':args.fixture or args.backup_roundtrip,'passed':passed+['background resume','force-stop restart'],
             'historicalUpgradeIncompatible':upgrade_incompatible,
-            'not_covered':['real platform','paid provider','physical ARM64 device','signing continuity']}
+            'not_covered':['real platform','paid provider','physical ARM64 device','historical in-place signing continuity']}
     (out/'acceptance.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     sys.stdout.write(json.dumps(report,ensure_ascii=False)+'\n')
 
