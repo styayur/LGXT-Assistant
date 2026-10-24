@@ -30,7 +30,7 @@ def main():
         (out/'latest-ui.xml').write_text(raw,encoding='utf-8')
         return ET.fromstring(raw)
     def nodes_containing(root,text):
-        return [node for node in root.iter('node') if text in (node.get('text','')+' '+node.get('content-desc',''))]
+        return [node for node in root.iter('node') if text.casefold() in (node.get('text','')+' '+node.get('content-desc','')).casefold()]
     def wait_text(text):
         deadline=time.monotonic()+75
         while time.monotonic()<deadline:
@@ -44,11 +44,11 @@ def main():
         shell('input','tap',str((x1+x2)//2),str((y1+y2)//2))
     def tap_text(text):tap_node(nodes_containing(wait_text(text),text)[-1])
     def scroll_to(text):
-        for _ in range(12):
+        for _ in range(20):
             root=tree()
             nodes=nodes_containing(root,text)
             if nodes:return nodes[-1]
-            shell('input','swipe','500','1500','500','450','350')
+            shell('input','swipe','500','1500','500','1000','1000')
         screen('scroll-failure');raise AssertionError('Cannot find '+text)
     package='io.github.styayur.lgxt_assistant_mobile'
     upgrade_incompatible=None
@@ -82,7 +82,14 @@ def main():
         tap_text('提交成绩');tap_text('确认提交');wait_text('Fixture accepted')
         tap_node(scroll_to('查看原图 / 识别公式 / AI 分析'))
         wait_text('题目与解答');screen('document-native-fixture')
-        tap_node(scroll_to('解答笔记'))
+        # UIAutomator omits Flutter TextField hint/label text. Locate the note
+        # field immediately before the visible model-settings section instead.
+        anchor=scroll_to('模型设置')
+        anchor_top=int(re.findall(r'\d+',anchor.get('bounds'))[1])
+        fields=[node for node in tree().iter('node') if node.get('class')=='android.widget.EditText'
+                and int(re.findall(r'\d+',node.get('bounds'))[3])<=anchor_top]
+        if not fields:raise AssertionError('Solution note field not visible before model settings')
+        tap_node(fields[-1])
         time.sleep(.3);screen('keyboard-native-fixture')
         shell('input','text','native-fixture-note');shell('input','keyevent','4')
         tap_node(scroll_to('保存学习材料'));wait_text('已保存到本机')
