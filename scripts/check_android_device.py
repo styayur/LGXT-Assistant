@@ -44,6 +44,8 @@ def main():
         raise AssertionError('Android UI not ready: '+text)
     def tap_node(node):
         x1,y1,x2,y2=map(int,re.findall(r'\d+',node.get('bounds')))
+        # UIAutomator teardown can briefly retain input focus after its dump.
+        time.sleep(.5)
         shell('input','tap',str((x1+x2)//2),str((y1+y2)//2))
     def tap_text(text):
         # File-picker return and Flutter dialogs can expose semantics while the
@@ -54,6 +56,19 @@ def main():
         with (out/'actions.txt').open('a',encoding='utf-8') as actions:
             actions.write(f"tap {text}: {node.get('bounds')}\n")
         tap_node(node)
+    def confirm_import():
+        # Retry only while the same explicit confirmation is still open. This
+        # neither retries a network write nor accepts a failed restore: the
+        # document's exact exported content is asserted after the dialog closes.
+        for attempt in range(3):
+            tap_text('确认导入')
+            time.sleep(1)
+            if not nodes_containing(tree(),'导入本地备份'):return
+            with (out/'actions.txt').open('a',encoding='utf-8') as actions:
+                actions.write(f'Import confirmation still open after tap {attempt+1}\n')
+        screen('confirmation-failure')
+        raise AssertionError('Import confirmation did not activate')
+
     def scroll_to(text):
         for _ in range(20):
             root=tree()
@@ -62,6 +77,8 @@ def main():
             shell('input','swipe','500','1500','500','1000','1000')
         screen('scroll-failure');raise AssertionError('Cannot find '+text)
     package='io.github.styayur.lgxt_assistant_mobile'
+    if args.backup_roundtrip and shell('getprop','ro.kernel.qemu').strip()!='1':
+        raise ValueError('Synthetic backup injection requires a disposable Android emulator')
     upgrade_incompatible=None
     if args.historical_apk:
         if 'Success' not in adb('install',args.historical_apk).decode():raise ValueError('Historical install failed')
@@ -126,7 +143,7 @@ def main():
             seed.write_text(json.dumps({'schemaVersion':1,'documents':{key:document}}),encoding='utf-8')
             device_backup='/sdcard/Download/LGXT-study-notes.json'
             adb('push',str(seed),device_backup)
-            tap_text('导入备份 / 恢复');tap_text('LGXT-study-notes.json');tap_text('确认导入')
+            tap_text('导入备份 / 恢复');tap_text('LGXT-study-notes.json');confirm_import()
             tap_text('打开本地笔记');tap_node(scroll_to('native-fixture-note'))
             shell('input','text','-saved');shell('input','keyevent','4')
             tap_node(scroll_to('保存学习材料'));wait_text('已保存到本机')
@@ -154,7 +171,7 @@ def main():
         tap_node(scroll_to('保存学习材料'));wait_text('已保存到本机')
         shell('input','keyevent','4');wait_text('本地资料')
         tap_text('导入备份 / 恢复');tap_text('LGXT-study-notes.json')
-        wait_text('导入本地备份');tap_text('确认导入')
+        wait_text('导入本地备份');confirm_import()
         wait_text('打开本地笔记');tap_text('打开本地笔记')
         restored=scroll_to('native-fixture-note')
         if restored.get('text')!=expected_note:
