@@ -1,0 +1,104 @@
+name: Android signed artifact acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: 'Android APK workflow run with successful build/sign jobs; application source must match'
+        required: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Verify protected build provenance and unchanged application source
+        id: origin
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BUILD_RUN: ${{ inputs.build_run_id }}
+        run: |
+          test "$GITHUB_REF" = refs/heads/main
+          [[ "$BUILD_RUN" =~ ^[0-9]+$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN" > build-run.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN/jobs?filter=all&per_page=100" > build-jobs.json
+          python - <<'PY'
+          import json,os,re
+          run=json.load(open('build-run.json'));jobs=json.load(open('build-jobs.json'))['jobs']
+          assert run['head_repository']['full_name']==os.environ['GITHUB_REPOSITORY']
+          assert run['head_branch']=='main' and run['path']=='.github/workflows/android-apk.yml'
+          assert re.fullmatch('[a-f0-9]{40}',run['head_sha'])
+          assert all(any(j['name']==name and j['conclusion']=='success' for j in jobs) for name in ['build-apk','sign-apk'])
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:f.write('source='+run['head_sha']+'\n')
+          PY
+          source=$(python -c "import json; print(json.load(open('build-run.json'))['head_sha'])")
+          git fetch origin "$source"
+          git diff --exit-code "$source" HEAD -- mobile/src mobile/pyproject.toml mobile/requirements.txt packaging/android scripts/build_android_wheels.sh scripts/android_fixture_entry.py scripts/android_image_checks.py .github/workflows/android-apk.yml
+      - uses: actions/download-artifact@v7
+        with:
+          name: lgxt-android-release-signed
+          path: build/android/apk
+          run-id: ${{ inputs.build_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/download-artifact@v7
+        with:
+          name: lgxt-fixture-only-apk
+          path: build/android/fixture
+          run-id: ${{ inputs.build_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Independently verify signed bytes and source identity
+        env:
+          BUILD_SOURCE: ${{ steps.origin.outputs.source }}
+        run: |
+          test -x "$ANDROID_HOME/build-tools/36.0.0/apksigner" || "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'build-tools;36.0.0'
+          (cd build/android/apk && sha256sum --check SHA256SUMS.txt)
+          certificate=$(python -c "import json; print(json.load(open('packaging/android/signing-identity.json'))['certificateSha256'])")
+          python scripts/check_android_metadata.py --apk build/android/apk/LGXT-Assistant-Android-v3.3.0.apk --expected-certificate "$certificate" --source-commit "$BUILD_SOURCE" --output build/android/ACCEPTANCE-IDENTITY.json
+          python - <<'PY'
+          import json
+          assert json.load(open('build/android/apk/APK-IDENTITY.json'))==json.load(open('build/android/ACCEPTANCE-IDENTITY.json'))
+          PY
+      - name: Obtain immutable historical APK
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p build/android/history
+          gh release download v3.2.1 -p LGXT-Assistant-3.2.1-android.apk -D build/android/history
+          echo '6a9ec5a4113a1a24a4bfad29068158544aa526f892ffa972b590d53a7e29487d  build/android/history/LGXT-Assistant-3.2.1-android.apk' | sha256sum --check
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: |
+            python scripts/check_android_device.py --apk build/android/apk/LGXT-Assistant-Android-v3.3.0.apk --historical-apk build/android/history/LGXT-Assistant-3.2.1-android.apk --backup-roundtrip
+            adb uninstall io.github.styayur.lgxt_assistant_mobile
+            python scripts/check_android_device.py --apk build/android/fixture/LGXT-fixture-only.apk --fixture --output build/android/device-fixture
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: android-native-acceptance
+          path: |
+            build/android/device
+            build/android/device-fixture
+            build/android/ACCEPTANCE-IDENTITY.json
