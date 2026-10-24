@@ -46,6 +46,9 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Ensure pinned Android SDK tools
+        run: test -x "$ANDROID_HOME/build-tools/36.0.0/apksigner" || "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'build-tools;36.0.0'
+
       - uses: astral-sh/setup-uv@v7
         with:
           version: '0.13.5'
@@ -197,6 +200,8 @@ jobs:
           path: build/android/fixture
           run-id: ${{ inputs.candidate_run_id || github.run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Ensure pinned Android SDK tools
+        run: test -x "$ANDROID_HOME/build-tools/36.0.0/apksigner" || "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'build-tools;36.0.0'
       - name: Independently verify release APK before native acceptance
         if: inputs.release_signing
         run: |

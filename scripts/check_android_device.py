@@ -131,6 +131,10 @@ def main():
             passed.append('ordinary release APK imports a synthetic document through native picker')
     shell('input','keyevent','3');launch()
     wait_text('题目与解答' if args.fixture or args.backup_roundtrip else '本地资料')
+    if args.backup_roundtrip:
+        if 'Success' not in adb('install','-r',args.apk).decode():
+            raise AssertionError('Same-certificate reinstall failed')
+        passed.append('same-certificate reinstall (notes checked after restart)')
     shell('am','force-stop',package);launch();wait_text('登录理工学堂');screen('restart-native')
     if args.fixture or args.backup_roundtrip:
         tap_text('离线打开本地资料');tap_text('打开本地笔记')
@@ -162,7 +166,7 @@ def main():
             'android':shell('getprop','ro.build.version.release').strip(),
             'fixture':args.fixture,'syntheticDocuments':args.fixture or args.backup_roundtrip,'passed':passed+['background resume','force-stop restart'],
             'historicalUpgradeIncompatible':upgrade_incompatible,
-            'not_covered':['real platform','paid provider','physical ARM64 device','signing continuity']}
+            'not_covered':['real platform','paid provider','physical ARM64 device','historical in-place signing continuity']}
     (out/'acceptance.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     sys.stdout.write(json.dumps(report,ensure_ascii=False)+'\n')
 
