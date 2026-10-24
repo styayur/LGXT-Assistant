@@ -7,12 +7,12 @@ on:
       - 'v*-android'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build-apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -24,6 +24,20 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+
+      - uses: astral-sh/setup-uv@v7
+
+      - name: Build security-patched Android Pillow wheels
+        run: bash scripts/build_android_wheels.sh
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: android-wheel-evidence
+          path: |
+            build/android/wheels
+            build/android/wheel-evidence
+            ${{ runner.temp }}/lgxt-mobile-forge/errors
 
       - uses: subosito/flutter-action@v2
         with:
@@ -40,7 +54,9 @@ jobs:
 
       - name: Build APK (Flet)
         working-directory: mobile
-        run: flet build apk --verbose --yes
+        env:
+          PIP_FIND_LINKS: ${{ github.workspace }}/build/android/wheels
+        run: flet build apk --verbose --yes --arch arm64-v8a x86_64
 
       - name: Collect APK
         run: |

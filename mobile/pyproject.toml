@@ -16,7 +16,8 @@ org = "io.github.styayur"
 product = "LGXT Assistant"
 company = "Styayur"
 copyright = "AGPL-3.0-only (c) Styayur"
-build_number = 3
+build_number = 4
+bundle_id = "io.github.styayur.lgxt_assistant_mobile"
 
 [tool.flet.app]
 path = "src"
