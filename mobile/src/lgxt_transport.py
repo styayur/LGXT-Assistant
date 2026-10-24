@@ -37,6 +37,10 @@ def validate_image(data):
                     raise ValueError('图片像素或帧数超过限制')
                 mime = Image.MIME[image.format]
                 image.verify()
+            # JPEG verify() does not decode its scanlines. Reopen after verify
+            # and actually decode within the already checked size/frame limits.
+            with Image.open(io.BytesIO(data), formats=('PNG', 'JPEG', 'WEBP')) as image:
+                image.load()
         return mime
     except Exception as exc:
         raise ValueError('图片格式无效或超过解码限制') from exc
@@ -225,7 +229,8 @@ class APIClient:
                             data.extend(block)
                             if len(data) > MAX_IMAGE_BYTES:
                                 raise ValueError('图片超过 8 MB')
-                        validate_image(data)
+                        if validate_image(data) != response.headers.get('Content-Type', '').split(';')[0].lower():
+                            raise ValueError('图片 MIME 与实际内容不一致')
                         return bytes(data)
                 except requests.exceptions.RequestException:
                     if attempt == self.retries:
