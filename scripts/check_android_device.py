@@ -21,6 +21,7 @@ def main():
     parser.add_argument('--historical-apk')
     parser.add_argument('--backup-roundtrip',action='store_true',help='Import synthetic notes through the ordinary release APK picker')
     args=parser.parse_args()
+    expected_note='native-fixture-note' if args.fixture else 'native-fixture-note-saved'
     out=Path(args.output);out.mkdir(parents=True,exist_ok=True)
     def adb(*args):
         return subprocess.check_output(['adb',*args],timeout=90)
@@ -126,7 +127,9 @@ def main():
             device_backup='/sdcard/Download/LGXT-study-notes.json'
             adb('push',str(seed),device_backup)
             tap_text('导入备份 / 恢复');tap_text('LGXT-study-notes.json');tap_text('确认导入')
-            tap_text('打开本地笔记');scroll_to('native-fixture-note')
+            tap_text('打开本地笔记');tap_node(scroll_to('native-fixture-note'))
+            shell('input','text','-saved');shell('input','keyevent','4')
+            tap_node(scroll_to('保存学习材料'));wait_text('已保存到本机')
             shell('rm',device_backup)
             passed.append('ordinary release APK imports a synthetic document through native picker')
     shell('input','keyevent','3');launch()
@@ -154,7 +157,7 @@ def main():
         wait_text('导入本地备份');tap_text('确认导入')
         wait_text('打开本地笔记');tap_text('打开本地笔记')
         restored=scroll_to('native-fixture-note')
-        if restored.get('text')!='native-fixture-note':
+        if restored.get('text')!=expected_note:
             raise AssertionError('Native backup import did not restore exported note: '+str(restored.attrib))
         screen('backup-restored-native-fixture')
         passed+=['system back navigation','native file-picker backup export/import']
