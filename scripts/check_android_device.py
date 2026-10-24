@@ -1,0 +1,71 @@
+"""Install and exercise the actual candidate APK with adb/UIAutomator.
+
+No real credentials, grades or model requests. Screenshots contain dummy inputs.
+"""
+import argparse
+import json
+import re
+import subprocess
+import time
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+
+def main():
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--apk',required=True)
+    parser.add_argument('--output',default='build/android/device')
+    args=parser.parse_args()
+    out=Path(args.output);out.mkdir(parents=True,exist_ok=True)
+    def adb(*args):
+        return subprocess.check_output(['adb',*args],timeout=90)
+    def shell(*args):return adb('shell',*args).decode('utf-8',errors='replace')
+    def screen(name): (out/(name+'.png')).write_bytes(adb('exec-out','screencap','-p'))
+    def tree():
+        shell('uiautomator','dump','/sdcard/lgxt-acceptance.xml')
+        raw=shell('cat','/sdcard/lgxt-acceptance.xml')
+        (out/'latest-ui.xml').write_text(raw,encoding='utf-8')
+        return ET.fromstring(raw)
+    def nodes_containing(root,text):
+        return [node for node in root.iter('node') if text in (node.get('text','')+' '+node.get('content-desc',''))]
+    def wait_text(text):
+        deadline=time.monotonic()+75
+        while time.monotonic()<deadline:
+            root=tree()
+            if nodes_containing(root,text):return root
+            time.sleep(1)
+        screen('failure')
+        raise AssertionError('Android UI not ready: '+text)
+    def tap_node(node):
+        x1,y1,x2,y2=map(int,re.findall(r'\d+',node.get('bounds')))
+        shell('input','tap',str((x1+x2)//2),str((y1+y2)//2))
+    def tap_text(text):tap_node(nodes_containing(wait_text(text),text)[-1])
+    package='io.github.styayur.lgxt_assistant_mobile'
+    print(adb('install','-r',args.apk).decode())
+    shell('logcat','-c')
+    def launch():shell('am','start','-W','-n',package+'/.MainActivity')
+    launch();root=wait_text('登录理工学堂');screen('login-native')
+    edits=[node for node in root.iter('node') if node.get('class')=='android.widget.EditText']
+    if len(edits)!=2:raise AssertionError('Expected two native editable login fields')
+    for node,value in zip(edits,['fixture-user','fixture-password']):
+        tap_node(node);shell('input','text',value)
+        time.sleep(.5)
+    shell('input','keyevent','4')
+    tap_text('登录理工学堂')
+    wait_text('已阻止明文 HTTP');screen('http-blocked-native')
+    tap_text('离线打开本地资料');wait_text('本地资料');screen('library-native')
+    shell('input','keyevent','3');launch();wait_text('本地资料')
+    shell('am','force-stop',package);launch();wait_text('登录理工学堂');screen('restart-native')
+    log=shell('logcat','-d');(out/'logcat.txt').write_text(log,encoding='utf-8')
+    if 'FATAL EXCEPTION' in log or 'Traceback (most recent call last)' in log:
+        raise AssertionError('Native/Python crash in logcat')
+    report={'package':package,'abi':shell('getprop','ro.product.cpu.abi').strip(),
+            'android':shell('getprop','ro.build.version.release').strip(),
+            'passed':['install','first launch','HTTP blocked with dummy credentials',
+                      'offline library','background resume','force-stop restart'],
+            'not_covered':['real platform','paid provider','physical ARM64 device','signing continuity']}
+    (out/'acceptance.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+    print(json.dumps(report,ensure_ascii=False))
+
+
+if __name__=='__main__':main()

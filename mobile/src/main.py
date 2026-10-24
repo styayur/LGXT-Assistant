@@ -229,7 +229,7 @@ def main(page, client_factory=ApiClient, storage=None):
         pop_view()
 
     # ---------------- 登录 ----------------
-    user_field = ft.TextField(label='用户名', bgcolor=SURFACE, border_color='#243040',
+    user_field = ft.TextField(label='账号', bgcolor=SURFACE, border_color='#243040',
                               text_size=15, color=FG, height=56)
     pass_field = ft.TextField(label='密码', password=True, can_reveal_password=True,
                               bgcolor=SURFACE, border_color='#243040', text_size=15,

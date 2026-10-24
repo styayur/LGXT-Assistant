@@ -1,6 +1,6 @@
 --- a/setup.py
 +++ b/setup.py
-@@ -371,9 +371,9 @@
+@@ -371,12 +371,12 @@
          return True if value in configuration.get(option, []) else None
  
      def initialize_options(self) -> None:
@@ -8,11 +8,14 @@
 -            "platform-guessing", "disable"
 -        )
 +        self.disable_platform_guessing = True
-+        self.disable_tiff = True
-+        self.disable_freetype = True
          build_ext.initialize_options(self)
          for x in self.feature:
              setattr(self, f"disable_{x}", self.check_configuration(x, "disable"))
+             setattr(self, f"enable_{x}", self.check_configuration(x, "enable"))
++        self.disable_tiff = True
++        self.disable_freetype = True
+         for x in ("raqm", "fribidi"):
+             setattr(self, f"vendor_{x}", self.check_configuration(x, "vendor"))
 @@ -572,16 +570,7 @@
                  for d in os.environ[k].split(os.path.pathsep):
                      _add_directory(library_dirs, d)

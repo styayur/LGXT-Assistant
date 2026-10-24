@@ -72,7 +72,7 @@ def test_mobile_login_assignment_document_confirmation(size):
     FixtureClient.calls=[]
     page=Page(*size);main(page,FixtureClient,page.client_storage)
     assert 'lgxt.pass' not in page.client_storage.data
-    find(page,ft.TextField,label='用户名').value='fixture'
+    find(page,ft.TextField,label='账号').value='fixture'
     find(page,ft.TextField,label='密码').value='not-a-real-password'
     find(page,ft.Button,text='登录理工学堂').on_click(None)
     wait_for(lambda: page.views[-1].route=='/dashboard')
