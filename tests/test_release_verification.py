@@ -37,7 +37,7 @@ def test_uploaded_release_guards(tmp_path,change):
     with pytest.raises(ValueError):verification.verify_assets(r,tmp_path,'v4.2.0-web',True,'verified-source')
 
 
-@pytest.mark.parametrize('change',['valid','debug','certificate','source','mixed'])
+@pytest.mark.parametrize('change',['valid','debug','certificate','source','mixed','fixture','sdk','abi'])
 def test_android_publication_identity_and_channel(tmp_path,change):
     import json
     apk='LGXT-Assistant-Android-v3.3.0.apk'
@@ -45,9 +45,12 @@ def test_android_publication_identity_and_channel(tmp_path,change):
     for name in ('ANDROID-GUIDE.md','THIRD-PARTY.txt','LICENSE','NOTICE.md'):(tmp_path/name).write_text('fixture')
     identity={'debugTestOnly':change=='debug','signatureVerified':True,'sourceCommit':'a'*40,
               'certificateSha256':'b'*64,'version':'3.3.0','versionCode':4,
+              'fixture':change=='fixture','abis':['arm64-v8a','x86_64'], 'sdk':["sdkVersion:'24'","targetSdkVersion:'36'"],
               'package':'io.github.styayur.lgxt_assistant_mobile','sha256':hashlib.sha256((tmp_path/apk).read_bytes()).hexdigest()}
     if change=='source':identity['sourceCommit']='c'*40
     if change=='certificate':identity['certificateSha256']='c'*64
+    if change=='sdk':identity['sdk']=["sdkVersion:'23'"]
+    if change=='abi':identity['abis']=['x86_64']
     (tmp_path/'APK-IDENTITY.json').write_text(json.dumps(identity))
     if change=='mixed':(tmp_path/'Windows.exe').write_bytes(b'fixture')
     (tmp_path/'SHA256SUMS.txt').write_text(''.join(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.name+'\n' for p in tmp_path.iterdir()))

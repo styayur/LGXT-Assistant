@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "certificateSha256": "0ec0084b65aff166d379206ca244ea54904511e95573b15fd2159bd4bd604114",
+  "alias": "lgxt-android-beta",
+  "package": "io.github.styayur.lgxt_assistant_mobile",
+  "historicalCertificateSha256": "26c318acad5518ef0344e68e54bfb976a9ea23ab1d26a324f1c88c024ee86f49",
+  "reinstallRequired": true
+}

@@ -2,6 +2,10 @@
 
 The Android preparation record below supersedes older Android blocker statements. Historical Windows/assignment evidence is retained afterward.
 
+## Durable signing preparation — 25 October 2026
+
+The maintainer explicitly approved the new identity and reinstall requirement. Baseline `8e3b9d6f960f55e779561a9d20301bc2615e85b7` and all its main/PR checks passed; the application/dependency source still equals the accepted candidate. Public durable certificate: `0ec0084b65aff166d379206ca244ea54904511e95573b15fd2159bd4bd604114`. Independent encrypted-backup recovery and restored-key SDK signing passed; full custody details are in [android-signing.md](android-signing.md), without secret values. Local updated Python suite: **126 passed**, including missing/mismatched credentials, non-main signing, synthetic APK, SDK/debuggable manifest, ABI and release metadata rejection. The local signing smoke result is not a release build. Final main workflow/native/publication outcomes will be recorded separately after execution. The older Android section below describes the pre-authorization state.
+
 ## Android 3.3 Beta preparation — 24 October 2026
 
 **Not published.** PR [#24](https://github.com/styayur/LGXT-Assistant/pull/24) prepares the Android Beta; no `v3.3.0-android` tag or GitHub Release exists. Development started from clean `main` at `b4c02a7ec2a4d158bf8980a1e116929b819be1e6`, on a separate Android branch. No unrelated PR or historical release was changed.

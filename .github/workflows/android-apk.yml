@@ -6,16 +6,31 @@ on:
       candidate_run_id:
         description: 'Optional existing candidate run: rerun native acceptance only (app/dependency source must match)'
         default: ''
-  push:
-    tags:
-      - 'v*-android'
+      release_signing:
+        description: 'Sign with the durable Beta identity (main only; tag is created after acceptance)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
   actions: read
 
 jobs:
+  validate-request:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate signing request before accessing credentials
+        env:
+          RELEASE_SIGNING: ${{ inputs.release_signing }}
+          CANDIDATE_RUN: ${{ inputs.candidate_run_id }}
+        run: |
+          if [ "$RELEASE_SIGNING" = true ]; then
+            test "$GITHUB_REF" = refs/heads/main
+            test -z "$CANDIDATE_RUN"
+          fi
+
   build-apk:
+    needs: validate-request
     if: inputs.candidate_run_id == ''
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -106,9 +121,48 @@ jobs:
       # Candidate build artifacts are retained for review only. Production release
       # requires signing identity and device/emulator checks, not just flet build.
 
-  emulator:
+  sign-apk:
     needs: build-apk
-    if: always() && (needs.build-apk.result == 'success' || inputs.candidate_run_id != '')
+    if: inputs.release_signing
+    runs-on: ubuntu-latest
+    environment: android-beta-signing
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v7
+        with:
+          name: lgxt-android-apk
+          path: candidate
+      - name: Ensure pinned Android SDK tools
+        run: test -x "$ANDROID_HOME/build-tools/36.0.0/apksigner" || "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'build-tools;36.0.0'
+      - name: Sign and verify exact application payload
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_CERTIFICATE_SHA256: ${{ vars.ANDROID_CERTIFICATE_SHA256 }}
+        run: python scripts/sign_android_apk.py --input candidate/LGXT-Assistant-Android-v3.3.0.apk --directory release-out --source-commit "$GITHUB_SHA"
+      - name: Collect only release assets
+        run: |
+          cp candidate/LICENSE candidate/NOTICE.md candidate/ANDROID-GUIDE.md candidate/THIRD-PARTY.txt release-out/
+          cd release-out
+          sha256sum *.apk LICENSE NOTICE.md ANDROID-GUIDE.md THIRD-PARTY.txt APK-IDENTITY.json > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v7
+        with:
+          name: lgxt-android-release-signed
+          path: release-out/*
+
+  emulator:
+    needs: [validate-request, build-apk, sign-apk]
+    if: >-
+      always() && needs.validate-request.result == 'success' &&
+      ((inputs.release_signing && needs.sign-apk.result == 'success') ||
+      (!inputs.release_signing && (needs.build-apk.result == 'success' || inputs.candidate_run_id != '')))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -133,7 +187,7 @@ jobs:
           java-version: '17'
       - uses: actions/download-artifact@v7
         with:
-          name: lgxt-android-apk
+          name: ${{ inputs.release_signing && 'lgxt-android-release-signed' || 'lgxt-android-apk' }}
           path: build/android/apk
           run-id: ${{ inputs.candidate_run_id || github.run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -143,6 +197,12 @@ jobs:
           path: build/android/fixture
           run-id: ${{ inputs.candidate_run_id || github.run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Independently verify release APK before native acceptance
+        if: inputs.release_signing
+        run: |
+          (cd build/android/apk && sha256sum --check SHA256SUMS.txt)
+          certificate=$(python -c "import json;print(json.load(open('packaging/android/signing-identity.json'))['certificateSha256'])")
+          python scripts/check_android_metadata.py --apk build/android/apk/LGXT-Assistant-Android-v3.3.0.apk --expected-certificate "$certificate" --source-commit "$GITHUB_SHA" --output build/android/ACCEPTANCE-IDENTITY.json
       - name: Obtain immutable historical APK for upgrade rejection test
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -161,7 +221,7 @@ jobs:
           profile: pixel_2
           disable-animations: true
           script: |
-            python scripts/check_android_device.py --apk build/android/apk/LGXT-Assistant-Android-v3.3.0.apk --historical-apk build/android/history/LGXT-Assistant-3.2.1-android.apk
+            python scripts/check_android_device.py --apk build/android/apk/LGXT-Assistant-Android-v3.3.0.apk --historical-apk build/android/history/LGXT-Assistant-3.2.1-android.apk ${{ inputs.release_signing && '--backup-roundtrip' || '' }}
             adb uninstall io.github.styayur.lgxt_assistant_mobile
             python scripts/check_android_device.py --apk build/android/fixture/LGXT-fixture-only.apk --fixture --output build/android/device-fixture
       - uses: actions/upload-artifact@v7
@@ -171,3 +231,4 @@ jobs:
           path: |
             build/android/device
             build/android/device-fixture
+            build/android/ACCEPTANCE-IDENTITY.json

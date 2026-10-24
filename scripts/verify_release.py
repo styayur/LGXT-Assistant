@@ -55,6 +55,8 @@ def verify_assets(release, directory, tag, allow_draft=False, expected_commit=No
         require(bool(expected_commit) and bool(expected_certificate), 'Android publication requires source and certificate pins')
         identity = json.loads((directory / 'APK-IDENTITY.json').read_text(encoding='utf-8'))
         require(identity.get('debugTestOnly') is False and identity.get('signatureVerified') is True, 'Test or unverified APK cannot be published')
+        require(identity.get('fixture') is False, 'Synthetic APK cannot be published')
+        require(identity.get('abis') == ['arm64-v8a', 'x86_64'] and identity.get('sdk') == ["sdkVersion:'24'", "targetSdkVersion:'36'"], 'Wrong Android SDK/ABI metadata')
         require(identity.get('sourceCommit') == expected_commit, 'APK source differs from release source')
         require(identity.get('certificateSha256') == expected_certificate.lower().replace(':', ''), 'Wrong Android signing identity')
         require(identity.get('version') == version and identity.get('versionCode') == 4
