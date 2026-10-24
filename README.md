@@ -39,7 +39,7 @@ The release page and its assets are the source of truth; source archives are not
 | --- | --- | --- |
 | Windows desktop | [v4.1.0 beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.1.0) | Windows 10/11 x64, WebView2; run the EXE or fully extract the portable ZIP and keep `_internal` beside its EXE |
 | Windows web | [v4.2.0-web beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.2.0-web) | Windows 10/11 x64; launch the Web EXE, retain its console, use its private loopback link in Edge/Chrome; no WebView2 needed |
-| Android | [v3.2.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.2.1) | No published 3.3.0 APK: source-built Pillow 13 candidates now build; durable signing and final native acceptance gate publication. Historical 3.2.1 lacks the new transport fixes |
+| Android | [v3.2.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.2.1) | No published 3.3.0 APK: Pillow 13 candidates build and pass Android 15 x86_64 emulation; durable signing and an upgrade decision gate publication. Historical 3.2.1 lacks the new transport fixes |
 
 New Windows asset names identify channel, version and platform; check every download against that release's `SHA256SUMS.txt`. No MSI or signing trust is claimed. Historical tags/assets remain unchanged, including an old Android asset attached to a web release; use the Android baseline above for the historical Android channel.
 
@@ -61,5 +61,7 @@ py -3.13 default.pyw --legacy
 [Architecture](docs/architecture.md) · [Editor decision and licenses](docs/editor-decision.md) · [Validation commands](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
 
 Application source is [AGPL-3.0-only](LICENSE), copyright StyAyur. [Historical attribution and third-party notices](NOTICE.md) are preserved. Report vulnerabilities privately through [GitHub security advisories](https://github.com/styayur/LGXT-Assistant/security/advisories/new). [Issues](https://github.com/styayur/LGXT-Assistant/issues) are for non-sensitive bug reports.
+
+Native Android 15 emulator captures: [login](docs/screenshots/android-native-login.png) · [fixture keyboard](docs/screenshots/android-native-keyboard-fixture.png) · [fixture saved note](docs/screenshots/android-native-saved-fixture.png). These do not establish physical ARM64 compatibility.
 
 Android preparation: [guide and backup](docs/android-beta.md) · [evidence and limitations](docs/research/ANDROID_LIMITATIONS.md). Test/debug and fixture APKs are not distributable releases.

@@ -1,6 +1,6 @@
 # Android 3.3 Beta preparation
 
-**Not published yet.** Use the actual Android release page only after signing and native acceptance are complete. Actions artifacts labeled test-only or fixture are not public release builds.
+**Not published yet.** Android 15 x86_64 emulator acceptance passed; durable signing and the historical-upgrade decision still gate publication. Use the actual Android release page only after those gates are complete. Actions artifacts labeled test-only or fixture are not public release builds.
 
 The 3.3 candidate requires Android 7.0/API 24 or later and ARM64. x86_64 is included for emulator testing; this does not establish phone compatibility. Package: `io.github.styayur.lgxt_assistant_mobile`; versionName: `3.3.0`; versionCode: `4`.
 

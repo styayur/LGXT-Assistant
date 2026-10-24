@@ -1,4 +1,38 @@
-# Assignment upgrade verification
+# Verification record
+
+The Android preparation record below supersedes older Android blocker statements. Historical Windows/assignment evidence is retained afterward.
+
+## Android 3.3 Beta preparation — 24 October 2026
+
+**Not published.** PR [#24](https://github.com/styayur/LGXT-Assistant/pull/24) prepares the Android Beta; no `v3.3.0-android` tag or GitHub Release exists. Development started from clean `main` at `b4c02a7ec2a4d158bf8980a1e116929b819be1e6`, on a separate Android branch. No unrelated PR or historical release was changed.
+
+### Build, artifact and security evidence
+
+- [Candidate run 40093464655](https://github.com/styayur/LGXT-Assistant/actions/runs/40093464655): the **build-apk job passed**, producing ordinary and separately marked synthetic fixture APKs. The overall run failed on the earlier native UI driver; it is not recorded as an overall pass. The final app source is `f44d146dca14aa9183322bf5650660edfabcd1e0`. Later acceptance runs require a zero diff across app, dependency, native recipe and fixture-entry source before reusing its exact bytes.
+- Ordinary APK SHA-256: `54dd2ebad9a1f77aecbd46b852bf8157e1a33b710fd0c4f83193e3d119465b07`. Local Android SDK signature verification and all six manifest checksums passed on the downloaded artifact. Package `io.github.styayur.lgxt_assistant_mobile`, versionName `3.3.0`, versionCode `4`, min SDK 24, target SDK 36, ABIs `arm64-v8a` and `x86_64`.
+- Temporary **test-only** certificate SHA-256: `89b63bb74ad0f9462e63488bef860e67325c0ae88af4b76f10e1bbcf3dcbb1b8`. A valid cryptographic signature does not make this a permitted publication identity. Fixture APKs and temporary-key APKs must never be release assets.
+- Pillow 13.0.0 built from hash-verified upstream source with pinned Forge/Crossenv/CPython/NDK inputs. Actual wheel ELF headers, platform tags, metadata and required decoder modules verified locally for ARM64 (machine 183) and x86_64 (machine 62). Wheel SHA-256: ARM64 `5405f51bd900ddf4bf3baaadd1dda03e2d9170df299db01776ef0cb9a61c82e3`; x86_64 `aaea5d4e9e32741cba7d6ef1b90b86a9f3fe616c71955b5dd110a2ebe96b3b55`. Build logs, constraints, recipe/diff, input/output hashes and environment freeze are retained in the Actions wheel-evidence artifact. This is a repeatable recipe, not a bit-for-bit reproducibility claim.
+- Local Python 3.13: **121 passed**. Tests cover full decode/MIME/resource limits, storage atomicity/corruption/import, provider serialization/cancel/redirect/stream bounds, stale auth and submission callbacks, lifecycle enums, and release-identity rejection. Targeted Bandit: zero findings, with no suppressions. Root/mobile pip-audit, npm audit, CodeQL and CodeForge 0.2.1 passed on the acceptance-driver commit ([checks](https://github.com/styayur/LGXT-Assistant/pull/24/checks)); final documentation commits must also satisfy the required checks; CodeForge baseline is unchanged. A local root pip-audit query timed out contacting PyPI; successful CI audits provide the dependency result. Native-library CVE coverage remains separate; the build audit explicitly reports source-only Mobile Forge as unindexed.
+- Real Flet browser-renderer fixture regression passed after the final app changes. Control tests cover 390×844, 360×740 and 390×480; browser screenshots clearly display the fixture banner. Browser checks do not establish native Android acceptance.
+- OCR corpus: 12 self-authored rendered samples, mock responses only; 11/12 schema parse, 8/12 normalized exact match, 10/12 render, 4/12 require correction. **Zero live OCR calls; no measured model accuracy.**
+
+### Native Android acceptance
+
+Ordinary candidate installed and launched in Android 15/API 35 x86_64 emulation, with default HTTP rejection using dummy inputs, offline library, background resume and force-stop restart. Historical 3.2.1 installed in the disposable emulator; attempting the new candidate correctly returned `INSTALL_FAILED_UPDATE_INCOMPATIBLE`. Native fixture decoder self-checks passed all 18 cases (PNG/JPEG/WebP, malformed/truncated/corrupt/oversize/bomb/multiframe rejection, repeated decode, HTTP tripwire, notes restart, password persistence refusal and corrupt-store fail closed).
+
+[Native acceptance run 40095767034](https://github.com/styayur/LGXT-Assistant/actions/runs/40095767034) **passed** after its source-equality gate. Both ordinary and isolated fixture APKs installed and launched. Fixture paths passed course/assignment/question navigation, submission cancellation/confirmation without a server, note editing/saving, unconfirmed vision rejection before a provider request, note restoration after process termination, system Back, background resume and native file-picker export/import. The backup test exports a note, modifies and saves it, then imports and verifies the original exact value. It does not rely on a transient success notification. No native/Python crash was present in the acceptance logs.
+
+The earlier import-driver failure was corrected by waiting for settled Flutter dialog bounds after returning from the Android picker; no app validation/confirmation gate was removed. Earlier native runs also exposed a real Flet lifecycle enum mismatch, now fixed and covered against every runtime enum member. Historical failed runs remain visible.
+
+Compact reports: [ordinary APK](evidence/android-3.3/device-acceptance.json), [synthetic fixture APK](evidence/android-3.3/device-fixture-acceptance.json). Native screenshots: [login](screenshots/android-native-login.png), [HTTP rejected](screenshots/android-native-http-blocked.png), [fixture with actual Android keyboard](screenshots/android-native-keyboard-fixture.png), [fixture saved status](screenshots/android-native-saved-fixture.png). Fixture screenshots display a synthetic-data banner; they are not real courses. Full logs/XML/actions/screenshots are in the native acceptance artifact. Native image decoding is covered by the 18 self-checks; image zoom gestures, live image networking and vendor-specific layout are not established by this small flow.
+
+### Signing and remaining limits
+
+Historical 3.2.1 APK SHA-256 `6a9ec5a4113a1a24a4bfad29068158544aa526f892ffa972b590d53a7e29487d`; verified certificate SHA-256 `26c318acad5518ef0344e68e54bfb976a9ea23ab1d26a324f1c88c024ee86f49` (Android Debug DN). Historical workflow supplied no persistent key. Repository Secrets names are empty; no key is tracked; the standard local debug certificate differs. No private key values were read into reports and no broad disk search was performed. The original signing key has not been located. A new durable identity would require reinstalling existing installations and backing up notes first; publication needs the maintainer’s explicit decision. No new release key has been created.
+
+No physical ARM64 device, real LGXT login/grade write, live paid provider, OCR accuracy, provider billing cancellation, vendor-specific keyboard or all-Android-version coverage is claimed. Native offline recovery is not a cloud-sync or encryption claim. Slow-network/429/5xx/timeout/cancel boundaries use synthetic transport/control tests rather than a live platform. HTTPS remains unverified after credential-free HTTP HEAD and failed TLS negotiation. Word/PDF equations remain LaTeX source. Detailed sources, dates, decisions and follow-ups: [Android limitations](research/ANDROID_LIMITATIONS.md), [OCR #25](https://github.com/styayur/LGXT-Assistant/issues/25), [equation export #26](https://github.com/styayur/LGXT-Assistant/issues/26).
+
+## Historical assignment upgrade verification
 
 Date: 24 October 2026 (Asia/Singapore). This record separates executed checks from release gates still in progress. Earlier historical evidence follows below.
 

@@ -37,7 +37,7 @@ New Windows releases require source tests, UI checks, dependency/security scans,
 
 The Android OAuthlib audit blocker was resolved by migrating to Flet 1.0.5 and requiring OAuthlib >=4,<5. The mobile control flows and atomic local notes store are regression-tested; no advisory is ignored. Android release signing remains unresolved; native candidate acceptance is tracked in docs/VERIFICATION.md. No Android 3.3 release is published.
 
-Android candidate build evidence: [run 40000566710](https://github.com/styayur/LGXT-Assistant/actions/runs/40000566710) reached arm64 dependency packaging, but Flet’s wheel index offers Pillow 12.2/12.3 and no security-required Pillow >=13 wheel. No insecure downgrade was used. That historical binary-dependency failure is superseded by the source-built Pillow 13 candidates in the Android preparation record. Durable signing and final native acceptance still gate publication.
+Android candidate build evidence: [run 40000566710](https://github.com/styayur/LGXT-Assistant/actions/runs/40000566710) reached arm64 dependency packaging, but Flet’s wheel index offers Pillow 12.2/12.3 and no security-required Pillow >=13 wheel. No insecure downgrade was used. That historical binary-dependency failure is superseded by the source-built Pillow 13 candidates in the Android preparation record. Native Android 15 x86_64 acceptance passed (run 40095767034); durable signing and the historical-upgrade decision still gate publication.
 
 ## Android 3.3 preparation update — 2026-10-24
 

@@ -1,0 +1,21 @@
+{
+  "package": "io.github.styayur.lgxt_assistant_mobile",
+  "abi": "x86_64",
+  "android": "15",
+  "fixture": false,
+  "passed": [
+    "install",
+    "first launch",
+    "HTTP blocked with dummy credentials",
+    "offline library",
+    "background resume",
+    "force-stop restart"
+  ],
+  "historicalUpgradeIncompatible": true,
+  "not_covered": [
+    "real platform",
+    "paid provider",
+    "physical ARM64 device",
+    "signing continuity"
+  ]
+}

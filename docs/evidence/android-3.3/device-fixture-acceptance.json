@@ -1,0 +1,26 @@
+{
+  "package": "io.github.styayur.lgxt_assistant_mobile",
+  "abi": "x86_64",
+  "android": "15",
+  "fixture": true,
+  "passed": [
+    "install",
+    "first launch",
+    "fixture course/assignment/question",
+    "submission cancel and confirm (no server)",
+    "note edit and save",
+    "unconfirmed vision rejected before provider request",
+    "note survives process termination",
+    "system back navigation",
+    "native file-picker backup export/import",
+    "background resume",
+    "force-stop restart"
+  ],
+  "historicalUpgradeIncompatible": null,
+  "not_covered": [
+    "real platform",
+    "paid provider",
+    "physical ARM64 device",
+    "signing continuity"
+  ]
+}

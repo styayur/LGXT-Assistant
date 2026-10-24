@@ -39,7 +39,7 @@ AI 仅在用户发起时发送，内容会离开本机。请在 AI 设置核实�
 | --- | --- | --- |
 | Windows 桌面 | [v4.1.0 Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.1.0) | Windows 10/11 x64，需 WebView2；运行 EXE，或完整解压便携 ZIP，保留 `_internal` |
 | Windows 网页 | [v4.2.0-web Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.2.0-web) | Windows 10/11 x64；启动 Web EXE，保留控制台，用 Edge/Chrome 打开私有本机链接；无需 WebView2 |
-| Android | [v3.2.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.2.1) | 尚未发布 3.3.0 APK：自行构建 Pillow 13 的候选已能打包；持久签名与最终原生验收仍是发布门禁。历史 3.2.1 不包含此次连接安全修复 |
+| Android | [v3.2.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.2.1) | 尚未发布 3.3.0 APK：Pillow 13 候选已能打包并通过 Android 15 x86_64 模拟器验收；持久签名与升级路径决定仍是发布门禁。历史 3.2.1 不包含此次连接安全修复 |
 
 新 Windows 附件名包含平台、渠道与版本；请对照该发布的 `SHA256SUMS.txt` 校验。未声明提供 MSI 或可信签名。历史 tag 与附件保持原样；曾有 Android 附件附在网页发布中，历史 Android 渠道请使用上表链接。
 
@@ -61,5 +61,7 @@ py -3.13 default.pyw --legacy
 [架构](docs/architecture.md) · [编辑器选择与许可](docs/editor-decision.md) · [验证命令](CONTRIBUTING.md) · [更新记录](CHANGELOG.md)
 
 应用源代码采用 [AGPL-3.0-only](LICENSE)，作者 StyAyur。[历史署名与第三方声明](NOTICE.md) 保留。漏洞请通过 [GitHub 私密安全报告](https://github.com/styayur/LGXT-Assistant/security/advisories/new) 提交；普通问题可使用 [Issues](https://github.com/styayur/LGXT-Assistant/issues)。
+
+原生 Android 15 模拟器截图：[登录](docs/screenshots/android-native-login.png) · [fixture 软键盘](docs/screenshots/android-native-keyboard-fixture.png) · [fixture 笔记保存](docs/screenshots/android-native-saved-fixture.png)。这些结果不代表真实 ARM64 设备兼容性。
 
 Android 准备状态：[指南与备份](docs/android-beta.md) · [证据与限制](docs/research/ANDROID_LIMITATIONS.md)。测试/调试签名及 fixture APK 不作为发行版分发。
