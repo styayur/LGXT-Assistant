@@ -169,6 +169,8 @@ def main(page, client_factory=ApiClient, storage=None):
             border=ft.Border.only(bottom=ft.BorderSide(1, LINE)))
 
         column_controls = [header]
+        if getattr(api, 'fixture', False):
+            column_controls.append(ft.Text('Fixture · 合成数据验收，未连接真实平台', color=WARN, size=12))
         if warning:
             column_controls.append(ft.Container(warning, padding=ft.Padding.symmetric(horizontal=16, vertical=6), bgcolor='#FFF0ED'))
         column_controls.append(ft.Container(ft.Column(controls, scroll=ft.ScrollMode.AUTO,
@@ -398,13 +400,15 @@ def main(page, client_factory=ApiClient, storage=None):
         if err:
             controls.append(ft.Text(err, color=ERR, size=12))
         for course in courses:
-            controls.append(card(ft.Row([
+            entry = card(ft.Row([
                 ft.Column([ft.Text(course.get('courseName', ''), color=FG, size=16),
                            ft.Text(f"#{course.get('courseId')}", color=DIM, size=11,
                                    font_family='monospace')], spacing=2, expand=True),
                 ft.IconButton(icon=ICONS.CHEVRON_RIGHT, icon_color=CYAN, icon_size=26,
                               on_click=lambda e, c=course: open_course_works(c)),
-            ])))
+            ]))
+            entry.on_click = lambda e, c=course: open_course_works(c)
+            controls.append(entry)
         if not courses and not err:
             controls.append(ft.Text('没有课程数据', color=MUTED, size=13))
         show(make_view('/courses', '课程', 'COURSES · 选择科目', controls,

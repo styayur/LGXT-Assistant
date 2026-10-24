@@ -15,6 +15,7 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--apk',required=True)
     parser.add_argument('--output',default='build/android/device')
+    parser.add_argument('--fixture',action='store_true')
     args=parser.parse_args()
     out=Path(args.output);out.mkdir(parents=True,exist_ok=True)
     def adb(*args):
@@ -40,6 +41,13 @@ def main():
         x1,y1,x2,y2=map(int,re.findall(r'\d+',node.get('bounds')))
         shell('input','tap',str((x1+x2)//2),str((y1+y2)//2))
     def tap_text(text):tap_node(nodes_containing(wait_text(text),text)[-1])
+    def scroll_to(text):
+        for _ in range(12):
+            root=tree()
+            nodes=nodes_containing(root,text)
+            if nodes:return nodes[-1]
+            shell('input','swipe','500','1500','500','450','350')
+        screen('scroll-failure');raise AssertionError('Cannot find '+text)
     package='io.github.styayur.lgxt_assistant_mobile'
     print(adb('install','-r',args.apk).decode())
     shell('logcat','-c')
@@ -52,17 +60,38 @@ def main():
         time.sleep(.5)
     shell('input','keyevent','4')
     tap_text('登录理工学堂')
-    wait_text('已阻止明文 HTTP');screen('http-blocked-native')
-    tap_text('离线打开本地资料');wait_text('本地资料');screen('library-native')
-    shell('input','keyevent','3');launch();wait_text('本地资料')
+    passed=['install','first launch']
+    if args.fixture:
+        wait_text('刷新作业状态');tap_text('课程');tap_text('Fixture physics')
+        tap_text('查看题目');screen('question-native-fixture')
+        tap_text('提交成绩');wait_text('确认提交成绩');tap_text('取消')
+        tap_text('提交成绩');tap_text('确认提交');wait_text('Fixture accepted')
+        tap_node(scroll_to('查看原图 / 识别公式 / AI 分析'))
+        wait_text('题目与解答');screen('document-native-fixture')
+        tap_node(scroll_to('解答笔记'))
+        shell('input','text','native-fixture-note');shell('input','keyevent','4')
+        tap_node(scroll_to('保存学习材料'));wait_text('已保存到本机')
+        screen('saved-native-fixture')
+        passed+=['fixture course/assignment/question','submission cancel and confirm (no server)',
+                 'note edit and save']
+    else:
+        wait_text('已阻止明文 HTTP');screen('http-blocked-native')
+        tap_text('离线打开本地资料');wait_text('本地资料');screen('library-native')
+        passed+=['HTTP blocked with dummy credentials','offline library']
+    shell('input','keyevent','3');launch()
+    wait_text('题目与解答' if args.fixture else '本地资料')
     shell('am','force-stop',package);launch();wait_text('登录理工学堂');screen('restart-native')
+    if args.fixture:
+        tap_text('离线打开本地资料');tap_text('打开本地笔记')
+        wait_text('native-fixture-note');screen('restored-native-fixture')
+        passed.append('note survives process termination')
     log=shell('logcat','-d');(out/'logcat.txt').write_text(log,encoding='utf-8')
     if 'FATAL EXCEPTION' in log or 'Traceback (most recent call last)' in log:
         raise AssertionError('Native/Python crash in logcat')
+    if args.fixture and 'LGXT_NATIVE_CHECKS=' not in log:raise AssertionError('Native decoder checks not reported')
     report={'package':package,'abi':shell('getprop','ro.product.cpu.abi').strip(),
             'android':shell('getprop','ro.build.version.release').strip(),
-            'passed':['install','first launch','HTTP blocked with dummy credentials',
-                      'offline library','background resume','force-stop restart'],
+            'fixture':args.fixture,'passed':passed+['background resume','force-stop restart'],
             'not_covered':['real platform','paid provider','physical ARM64 device','signing continuity']}
     (out/'acceptance.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     print(json.dumps(report,ensure_ascii=False))

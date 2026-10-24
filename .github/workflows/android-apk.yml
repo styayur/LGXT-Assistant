@@ -71,6 +71,22 @@ jobs:
           name: lgxt-android-apk
           path: out/*.apk
 
+      - name: Build separate synthetic acceptance APK
+        env:
+          PIP_FIND_LINKS: ${{ github.workspace }}/build/android/wheels
+        run: |
+          cp mobile/src/main.py mobile/src/app_under_test.py
+          cp scripts/android_image_checks.py mobile/src/android_image_checks.py
+          cp scripts/android_fixture_entry.py mobile/src/main.py
+          cd mobile
+          flet build apk --verbose --yes --arch x86_64
+          mkdir -p ../fixture-out
+          cp build/apk/*.apk ../fixture-out/LGXT-fixture-only.apk
+      - uses: actions/upload-artifact@v7
+        with:
+          name: lgxt-fixture-only-apk
+          path: fixture-out/*.apk
+
       # Candidate build artifacts are retained for review only. Production release
       # requires signing identity and device/emulator checks, not just flet build.
 
@@ -91,6 +107,10 @@ jobs:
         with:
           name: lgxt-android-apk
           path: build/android/apk
+      - uses: actions/download-artifact@v7
+        with:
+          name: lgxt-fixture-only-apk
+          path: build/android/fixture
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -102,9 +122,14 @@ jobs:
           arch: x86_64
           profile: pixel_2
           disable-animations: true
-          script: python scripts/check_android_device.py --apk build/android/apk/LGXT-Assistant-Android-v3.3.0.apk
+          script: |
+            python scripts/check_android_device.py --apk build/android/apk/LGXT-Assistant-Android-v3.3.0.apk
+            adb uninstall io.github.styayur.lgxt_assistant_mobile
+            python scripts/check_android_device.py --apk build/android/fixture/LGXT-fixture-only.apk --fixture --output build/android/device-fixture
       - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: android-native-acceptance
-          path: build/android/device
+          path: |
+            build/android/device
+            build/android/device-fixture
