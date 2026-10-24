@@ -9,6 +9,12 @@ LGXT Assistant is one product with several clients sharing Python domain behavio
 | Windows desktop | `default.pyw` | `desktop/` bridge + built `frontend/` React UI | Current supported desktop channel |
 | Windows web | `web_app.py` | built `frontend/` served by the local Python process | Current supported Windows web channel |
 | Android | `mobile/src/main.py` | Flet client | Separately versioned Android channel |
+
+Android 3.3 preparation retains Flet/Python. The app imports the shared transport, provider and document modules directly from `mobile/src`; no Windows binary dependency is shipped to Android. The Android build compiles its own Pillow 13 wheel using the pinned source recipe in `scripts/build_android_wheels.sh`, supplied through `PIP_FIND_LINKS`. The recipe disables unused font/TIFF extensions and preserves PNG/JPEG/WebP decoding. Desktop requirements remain platform-compatible.
+
+Mobile work captures session/view generations so stale worker completions cannot navigate a newer page. Navigation and background lifecycle events stop local AI reception. A separate fixture entry is copied only into a test APK; the ordinary APK keeps the production entry. Emulator reruns may reuse a candidate only after app/dependency source comparison.
+
+Local notes use schema-1 app-private JSON, bounded to 32 MiB. Writes flush then atomically replace; the current document and previous revision commit together. The offline library and validated backup import/export do not require a platform login. Corrupt/future data is preserved rather than silently reset. See [Android research](research/ANDROID_LIMITATIONS.md) for limits and [Android guide](android-beta.md) for backup behavior.
 | Legacy Tk | `default.pyw --legacy` | `ui/` package | Compatibility support; not the target for new product work |
 
 ## Core domain

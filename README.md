@@ -21,7 +21,7 @@ Open a course and assignment, then select a question. The assignment workspace k
 - **Image-to-LaTeX:** recognize the whole original image or a percentage-based crop with your configured vision model. Inspect and correct the returned text and LaTeX before applying it. Printed formulas are the target; handwriting, diagrams and OCR accuracy are not guaranteed.
 - **Question-bound AI:** “使用 AI 分析此题” sends the selected image, corrected question, existing solution and checked text sources to your configured provider. Follow up within the question and add reviewed responses to its solution. Text-only analysis remains available.
 - **Documents:** Tiptap rich text, editable inline/block math, tables, code, images, headings, lists and undo/redo. Save locally with a previous-version copy. Export Markdown, Word or PDF; Word/PDF retain equations as **LaTeX source**, not native Word equations or typeset PDF formulas.
-- **Android:** a separate Flet UI with clearer assignment states, zoomable original images, editable question/solution notes and explicit AI/recognition actions. Android currently uses an OpenAI-compatible vision endpoint with an in-memory key; it has no desktop rich-text editor, crop tool or Word/PDF export.
+- **Android:** a separate Flet UI with clearer assignment states, zoomable original images, editable question/solution notes and explicit AI/recognition actions. Android supports offline local materials, backup/recovery and text-only or explicitly enabled vision requests to a compatible endpoint with an in-memory key; it has no desktop rich-text editor, crop tool or Word/PDF export.
 
 ## Transport limitation
 
@@ -33,13 +33,13 @@ AI calls are user-initiated and leave the local app. Confirm that the selected s
 
 ## Download by channel
 
-The release page and its assets are the source of truth; source archives are not runnable installers. The Windows beta tags for this upgrade are desktop **4.1.0** and web **4.2.0-web**. Download only from a published channel release after its gates complete; draft files are not a public release. Android **3.3.0** remains source-only. See [channel policy](docs/release-channels.md) and [delivery evidence](docs/VERIFICATION.md).
+The release page and its assets are the source of truth; source archives are not runnable installers. The Windows beta tags for this upgrade are desktop **4.1.0** and web **4.2.0-web**. Download only from a published channel release after its gates complete; draft files are not a public release. Android **3.3.0** has test APK candidates but no published release. See [channel policy](docs/release-channels.md) and [delivery evidence](docs/VERIFICATION.md).
 
 | Channel | Upgrade version / status | Installation |
 | --- | --- | --- |
 | Windows desktop | [v4.1.0 beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.1.0) | Windows 10/11 x64, WebView2; run the EXE or fully extract the portable ZIP and keep `_internal` beside its EXE |
 | Windows web | [v4.2.0-web beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.2.0-web) | Windows 10/11 x64; launch the Web EXE, retain its console, use its private loopback link in Edge/Chrome; no WebView2 needed |
-| Android | [v3.2.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.2.1) | No 3.3.0 APK: patched Pillow 13 has no Flet Android arm64 wheel, and signing/device acceptance are unavailable. Historical 3.2.1 lacks the new transport fixes |
+| Android | [v3.2.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.2.1) | No published 3.3.0 APK: source-built Pillow 13 candidates now build; durable signing and final native acceptance gate publication. Historical 3.2.1 lacks the new transport fixes |
 
 New Windows asset names identify channel, version and platform; check every download against that release's `SHA256SUMS.txt`. No MSI or signing trust is claimed. Historical tags/assets remain unchanged, including an old Android asset attached to a web release; use the Android baseline above for the historical Android channel.
 
@@ -61,3 +61,5 @@ py -3.13 default.pyw --legacy
 [Architecture](docs/architecture.md) · [Editor decision and licenses](docs/editor-decision.md) · [Validation commands](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
 
 Application source is [AGPL-3.0-only](LICENSE), copyright StyAyur. [Historical attribution and third-party notices](NOTICE.md) are preserved. Report vulnerabilities privately through [GitHub security advisories](https://github.com/styayur/LGXT-Assistant/security/advisories/new). [Issues](https://github.com/styayur/LGXT-Assistant/issues) are for non-sensitive bug reports.
+
+Android preparation: [guide and backup](docs/android-beta.md) · [evidence and limitations](docs/research/ANDROID_LIMITATIONS.md). Test/debug and fixture APKs are not distributable releases.

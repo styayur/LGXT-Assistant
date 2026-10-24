@@ -12,7 +12,7 @@ from pathlib import Path
 
 def certificate_fingerprint(signature):
     # Recent SDK tools include SDK-range labels before the signer number.
-    values=re.findall(r'^Signer[^\r\n]* certificate SHA-256 digest:\s*([a-f0-9:]+)\s*$',signature,re.IGNORECASE|re.MULTILINE)
+    values=re.findall(r'^(?:V[1-4] )?Signer[^\r\n]* certificate SHA-256 digest:\s*([a-f0-9:]+)\s*$',signature,re.IGNORECASE|re.MULTILINE)
     fingerprints={value.replace(':','').lower() for value in values}
     if len(fingerprints)!=1 or any(not re.fullmatch('[a-f0-9]{64}',value) for value in fingerprints):
         raise ValueError('One verifiable APK signing certificate is required: '+signature)

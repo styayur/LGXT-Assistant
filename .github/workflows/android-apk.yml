@@ -70,9 +70,11 @@ jobs:
           version=$(python -c "import tomllib; print(tomllib.load(open('mobile/pyproject.toml','rb'))['project']['version'])")
           cp mobile/build/apk/lgxt-assistant-mobile.apk "out/LGXT-Assistant-Android-v${version}.apk"
           python scripts/check_android_metadata.py --apk "out/LGXT-Assistant-Android-v${version}.apk" --allow-debug-for-testing --output out/APK-IDENTITY-TEST-ONLY.json
-          cp LICENSE NOTICE.md docs/user-guide.md out/
+          python scripts/collect_android_notices.py --apk "out/LGXT-Assistant-Android-v${version}.apk" --output out/THIRD-PARTY.txt
+          cp LICENSE NOTICE.md out/
+          cp docs/android-beta.md out/ANDROID-GUIDE.md
           cd out
-          sha256sum *.apk LICENSE NOTICE.md user-guide.md APK-IDENTITY-TEST-ONLY.json > SHA256SUMS.txt
+          sha256sum *.apk LICENSE NOTICE.md ANDROID-GUIDE.md THIRD-PARTY.txt APK-IDENTITY-TEST-ONLY.json > SHA256SUMS.txt
           ls -l .
 
       - uses: actions/upload-artifact@v7

@@ -23,6 +23,7 @@ def test_android_certificate_output_requires_one_complete_identity():
     digest='ab'*32
     assert certificate_fingerprint('Signer #1 certificate SHA-256 digest: '+digest)==digest
     assert certificate_fingerprint('Signer (minSdkVersion=24) #1 certificate SHA-256 digest: '+digest.upper())==digest
+    assert certificate_fingerprint('V2 Signer: certificate SHA-256 digest: '+digest)==digest
     with pytest.raises(ValueError):certificate_fingerprint('Signer #1 certificate SHA-256 digest: abcd')
     with pytest.raises(ValueError):certificate_fingerprint('Signer #1 certificate SHA-256 digest: '+digest+'\nSigner #2 certificate SHA-256 digest: '+'cd'*32)
 

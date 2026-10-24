@@ -1,0 +1,132 @@
+{
+  "mode": "MOCK responses, not measured OCR accuracy",
+  "samples": 12,
+  "parseSuccess": 11,
+  "exactMatch": 8,
+  "renderSuccess": 10,
+  "manualCorrectionNeeded": 4,
+  "diagramUnderstanding": "not measured",
+  "realModelRequests": 0,
+  "cases": [
+    {
+      "id": "math-01",
+      "latex": "x^2+y^2=z^2",
+      "variant": "clean",
+      "mockResponse": "{\"text\": \"synthetic formula\", \"latex\": \"x^2+y^2=z^2\"}",
+      "parseSuccess": true,
+      "normalizedExactMatch": true,
+      "renderSuccess": true,
+      "manualCorrectionNeeded": false
+    },
+    {
+      "id": "math-02",
+      "latex": "a_{n+1}=a_n+\\alpha",
+      "variant": "clean",
+      "mockResponse": "{\"text\": \"synthetic formula\", \"latex\": \"a_{n+1}=a_n+\\\\alpha\"}",
+      "parseSuccess": true,
+      "normalizedExactMatch": true,
+      "renderSuccess": true,
+      "manualCorrectionNeeded": false
+    },
+    {
+      "id": "math-03",
+      "latex": "\\frac{1}{\\sqrt{2\\pi\\sigma^2}}",
+      "variant": "clean",
+      "mockResponse": "{\"text\": \"synthetic formula\", \"latex\": \"\\\\frac{1}{\\\\sqrt{2\\\\pi\\\\sigma^2}}\"}",
+      "parseSuccess": true,
+      "normalizedExactMatch": true,
+      "renderSuccess": true,
+      "manualCorrectionNeeded": false
+    },
+    {
+      "id": "math-04",
+      "latex": "\\int_0^1 x^2\\,dx=\\frac13",
+      "variant": "clean",
+      "mockResponse": "{\"text\": \"synthetic formula\", \"latex\": \"\\\\int_0^1 x^2\\\\,dx=\\\\frac13\"}",
+      "parseSuccess": true,
+      "normalizedExactMatch": true,
+      "renderSuccess": true,
+      "manualCorrectionNeeded": false
+    },
+    {
+      "id": "math-05",
+      "latex": "\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}",
+      "variant": "clean",
+      "mockResponse": "{\"text\": \"synthetic formula\", \"latex\": \"\\\\begin{pmatrix}1&2\\\\\\\\3&4\\\\end{pmatrix}\"}",
+      "parseSuccess": true,
+      "normalizedExactMatch": true,
+      "renderSuccess": true,
+      "manualCorrectionNeeded": false
+    },
+    {
+      "id": "math-06",
+      "latex": "\\frac{d}{dx}\\sin x=\\cos x",
+      "variant": "clean",
+      "mockResponse": "{\"text\": \"synthetic formula\", \"latex\": \"\\\\frac{d}{dx}\\\\sin x=\\\\cos x\"}",
+      "parseSuccess": true,
+      "normalizedExactMatch": true,
+      "renderSuccess": true,
+      "manualCorrectionNeeded": false
+    },
+    {
+      "id": "math-07",
+      "latex": "F=ma",
+      "variant": "clean",
+      "mockResponse": "{\"text\": \"synthetic formula\", \"latex\": \"F=ma\"}",
+      "parseSuccess": true,
+      "normalizedExactMatch": true,
+      "renderSuccess": true,
+      "manualCorrectionNeeded": false
+    },
+    {
+      "id": "math-08",
+      "latex": "\\nabla\\cdot\\mathbf{E}=\\frac{\\rho}{\\varepsilon_0}",
+      "variant": "clean",
+      "mockResponse": "{\"text\": \"synthetic formula\", \"latex\": \"\\\\nabla\\\\cdot\\\\mathbf{E}=\\\\frac{\\\\rho}{\\\\varepsilon_0}\"}",
+      "parseSuccess": true,
+      "normalizedExactMatch": true,
+      "renderSuccess": true,
+      "manualCorrectionNeeded": false
+    },
+    {
+      "id": "low-resolution",
+      "latex": "\\frac{1}{\\sqrt{2\\pi\\sigma^2}}",
+      "variant": "low-resolution",
+      "mockResponse": "{\"text\": \"intentional recognition error\", \"latex\": \"x^3\"}",
+      "parseSuccess": true,
+      "normalizedExactMatch": false,
+      "renderSuccess": true,
+      "manualCorrectionNeeded": true
+    },
+    {
+      "id": "blur",
+      "latex": "\\int_0^1 x^2\\,dx=\\frac13",
+      "variant": "blur",
+      "mockResponse": "{\"text\": \"intentional recognition error\", \"latex\": \"x^3\"}",
+      "parseSuccess": true,
+      "normalizedExactMatch": false,
+      "renderSuccess": true,
+      "manualCorrectionNeeded": true
+    },
+    {
+      "id": "crop",
+      "latex": "\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}",
+      "variant": "crop",
+      "mockResponse": "not JSON: intentional malformed fixture",
+      "parseSuccess": false,
+      "normalizedExactMatch": false,
+      "renderSuccess": false,
+      "manualCorrectionNeeded": true
+    },
+    {
+      "id": "background",
+      "latex": "\\nabla\\cdot\\mathbf{E}=\\frac{\\rho}{\\varepsilon_0}",
+      "variant": "background",
+      "mockResponse": "{\"text\": \"untrusted model fixture\", \"latex\": \"\\\\input{private.tex}\"}",
+      "parseSuccess": true,
+      "normalizedExactMatch": false,
+      "renderSuccess": false,
+      "manualCorrectionNeeded": true
+    }
+  ]
+}

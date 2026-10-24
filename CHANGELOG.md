@@ -1,5 +1,14 @@
 # Changelog
 
+## Android 3.3.0 Beta preparation (not published)
+
+- Build Pillow 13.0.0 Android ARM64/x86_64 wheels from hash-verified source with pinned NDK, CPython support and build constraints; retain full PNG/JPEG/WebP validation without a vulnerable downgrade.
+- Fully decode accepted images and enforce response MIME equality. Validate vision capability/images on every provider request path and bound streamed events before parsing.
+- Fix cancelled login, late view updates, duplicate submissions and Android lifecycle handling; keep HTTP warnings outside scrolling content.
+- Add offline local materials, atomic document/revision saves, visible save state, bounded backup import/export and recovery of damaged stores. Keys remain in session memory; insecure login does not save credentials.
+- Add actual APK metadata/signature checks, native Android emulator acceptance, separate synthetic fixture APKs and a twelve-input mock OCR regression corpus.
+- Record historical signing fingerprint and the missing upgrade identity. Do not publish test/debug keys or claim an Android 3.3 release before final gates.
+
 ## Release verification follow-up
 
 - Resolve draft releases through the supported GitHub CLI lookup and verify source, bytes, checksums, metadata and channel before publication.
