@@ -42,7 +42,15 @@ def main():
     def tap_node(node):
         x1,y1,x2,y2=map(int,re.findall(r'\d+',node.get('bounds')))
         shell('input','tap',str((x1+x2)//2),str((y1+y2)//2))
-    def tap_text(text):tap_node(nodes_containing(wait_text(text),text)[-1])
+    def tap_text(text):
+        # File-picker return and Flutter dialogs can expose semantics while the
+        # entrance animation still moves the touch target. Use settled bounds.
+        wait_text(text)
+        time.sleep(.6)
+        node=nodes_containing(wait_text(text),text)[-1]
+        with (out/'actions.txt').open('a',encoding='utf-8') as actions:
+            actions.write(f"tap {text}: {node.get('bounds')}\n")
+        tap_node(node)
     def scroll_to(text):
         for _ in range(20):
             root=tree()
@@ -112,8 +120,19 @@ def main():
         shell('input','keyevent','4');wait_text('本地资料')
         screen('back-native-fixture')
         tap_text('导出备份');tap_text('SAVE');wait_text('本地资料')
+        # Change the saved value after exporting, so import must actually
+        # restore content rather than merely reopen an unchanged document.
+        tap_text('打开本地笔记')
+        tap_node(scroll_to('native-fixture-note'))
+        shell('input','text','-after-export');shell('input','keyevent','4')
+        tap_node(scroll_to('保存学习材料'));wait_text('已保存到本机')
+        shell('input','keyevent','4');wait_text('本地资料')
         tap_text('导入备份 / 恢复');tap_text('LGXT-study-notes.json')
-        wait_text('导入本地备份');tap_text('确认导入');wait_text('已恢复 1 份资料')
+        wait_text('导入本地备份');tap_text('确认导入')
+        wait_text('打开本地笔记');tap_text('打开本地笔记')
+        restored=scroll_to('native-fixture-note')
+        if restored.get('text')!='native-fixture-note':
+            raise AssertionError('Native backup import did not restore exported note: '+str(restored.attrib))
         screen('backup-restored-native-fixture')
         passed+=['system back navigation','native file-picker backup export/import']
     log=shell('logcat','-d');(out/'logcat.txt').write_text(log,encoding='utf-8')
