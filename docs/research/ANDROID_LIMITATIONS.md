@@ -19,7 +19,7 @@ Research date: **2026-10-24 (Asia/Singapore)**. This is a release-preparation re
 | CPython support | Flet python-build release 20260921, Python 3.14.7; archive SHA-256 `57ff6e122d7c05523c1704f4ea2118445c38a80e13a533ab3d0e143e3d6545fc` |
 | Pillow source | 13.0.0, PyPI sdist SHA-256 `cdcd1ba258178f7356d74170c9a81ba4eab6a5d55748bc402a5a2a6fe6be3510` |
 | Android compilation | NDK 27.3.13750724, API 24, cp314, arm64-v8a and x86_64 |
-| App shell | Flet CLI/runtime 1.0.5, Flutter 3.44.8, JDK 17 |
+| App shell | Flet CLI/runtime 1.0.5, Flutter 3.44.8, JDK 17, uv 0.13.5 |
 
 The local patch changes compiler search paths and disables unused TIFF/font extensions; it does not remove Pillow security fixes. The minimal Android recipe retains Flet's exact JPEG/WebP native dependencies (flet-libjpeg 3.0.90 and flet-libwebp 1.6.0). These come from Flet's official index; their wheel metadata/licenses are part of dependency provenance. Build tools update the upstream Jinja2 3.1.3 and wheel 0.43 pins to 3.1.6 and 0.48.0, with a separate pip-audit gate. Build-environment freeze, recipe, source patch, compiler logs and wheel SHA256SUMS accompany Actions artifacts. A procedure can be reproduced; wheel bytes are **not claimed bit-for-bit deterministic** across rebuilds.
 

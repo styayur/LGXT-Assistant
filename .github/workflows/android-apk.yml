@@ -32,6 +32,8 @@ jobs:
           java-version: '17'
 
       - uses: astral-sh/setup-uv@v7
+        with:
+          version: '0.13.5'
 
       - name: Build security-patched Android Pillow wheels
         run: bash scripts/build_android_wheels.sh

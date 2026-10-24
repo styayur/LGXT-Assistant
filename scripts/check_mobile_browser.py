@@ -25,9 +25,8 @@ with sync_playwright() as p:
     expect(page.get_by_role('button',name='刷新作业状态',exact=True)).to_be_visible()
     page.wait_for_timeout(500)
     page.screenshot(path=str(ROOT/'docs/screenshots/android-flet-dashboard-fixture.png'))
-    # Navigation position is inspected in the genuine 390x844 renderer screenshot.
-    page.mouse.click(146,798)
-    expect(page.get_by_text('Synthetic physics course',exact=True)).to_be_visible()
+    page.get_by_role('tab',name='课程',exact=True).click()
+    expect(page.get_by_role('group',name='Synthetic physics course #1',exact=True)).to_be_visible()
     page.wait_for_timeout(500)
     page.screenshot(path=str(ROOT/'docs/screenshots/android-flet-courses-fixture.png'))
     page.get_by_role('button').first.click()
