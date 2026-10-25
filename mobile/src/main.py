@@ -593,7 +593,7 @@ def main(page, client_factory=ApiClient, storage=None):
             confirmation = {'chosen': False, 'restore': False, 'finished': False}
             def choose(restore):
                 with confirmation_lock:
-                    if confirmation['chosen']: return
+                    if confirmation['chosen'] or confirmation['finished']: return
                     confirmation['chosen'] = True
                     confirmation['restore'] = restore
                 # Close this dialog, not whichever Snackbar is on the stack.
