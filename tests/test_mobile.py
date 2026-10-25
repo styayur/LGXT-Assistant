@@ -19,7 +19,7 @@ class Storage:
 class Page:
     def __init__(self,width=390,height=844):
         self.width=width;self.height=height;self.views=[];self.client_storage=Storage();self.dialog=None
-    def update(self):pass
+    def update(self,*controls):pass
     def show_dialog(self,dialog):self.dialog=dialog
     def pop_dialog(self):self.dialog=None
 
@@ -115,3 +115,34 @@ def test_atomic_mobile_store_preserves_versions_and_never_passwords(tmp_path):
     with pytest.raises(ValueError):future.set('question.2',{})
     assert json.loads(path.read_text())['schemaVersion']==99
     assert list(tmp_path.glob('*.bak'))
+
+
+@pytest.mark.parametrize('confirm',[True,False])
+def test_import_waits_for_dismiss_and_preserves_previous_once(tmp_path,monkeypatch,confirm):
+    import asyncio,json
+    from mobile.src.local_store import LocalStore
+    from mobile.src.question_documents import document_key
+    store=LocalStore(tmp_path/'store')
+    key='question.'+document_key('1','2','3')
+    old={'schemaVersion':1,'courseId':'1','workId':'2','questionId':'3','solutionMarkdown':'edited current'}
+    store.save_document(key,old)
+    raw=json.dumps({'schemaVersion':1,'documents':{key:dict(old,solutionMarkdown='exported original')}}).encode()
+    backup=tmp_path/'backup.json';backup.write_bytes(raw)
+    calls=[]
+    original=store.import_backup
+    def imported(value):calls.append(value);return original(value)
+    store.import_backup=imported
+    async def pick_files(**kwargs):return [SimpleNamespace(size=len(raw),path=str(backup))]
+    monkeypatch.setattr(ft,'FilePicker',lambda:SimpleNamespace(pick_files=pick_files))
+    page=Page();main(page,FixtureClient,store)
+    find(page,ft.TextButton,text='离线打开本地资料').on_click(None)
+    asyncio.run(find(page,ft.TextButton,text='导入备份 / 恢复').on_click(None))
+    dialog=page.dialog
+    dialog.actions[1 if confirm else 0].on_click(None)
+    assert dialog.open is False and not calls
+    # Replayed clicks cannot change a cancelled choice or trigger another import.
+    dialog.actions[1].on_click(None)
+    dialog.on_dismiss(None);dialog.on_dismiss(None)
+    assert len(calls)==int(confirm)
+    assert store.get(key)['solutionMarkdown']==('exported original' if confirm else 'edited current')
+    if confirm:assert store.get(key+'.previous')['solutionMarkdown']=='edited current'
