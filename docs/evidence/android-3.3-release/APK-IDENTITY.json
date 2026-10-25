@@ -1,0 +1,21 @@
+{
+  "apk": "LGXT-Assistant-Android-v3.3.0.apk",
+  "sha256": "c0e2d4bfc307893baba457d8f1bf0e77ffc3884d87b88c750af4b9252b7811ad",
+  "certificateSha256": "0ec0084b65aff166d379206ca244ea54904511e95573b15fd2159bd4bd604114",
+  "debugTestOnly": false,
+  "package": "io.github.styayur.lgxt_assistant_mobile",
+  "version": "3.3.0",
+  "versionCode": 4,
+  "abis": [
+    "arm64-v8a",
+    "x86_64"
+  ],
+  "signatureVerified": true,
+  "fixture": false,
+  "appPayloadSha256": "313b26f94d16caa44dbaaa155d631e28421bc49e26e98be5ffbc0177144216d2",
+  "sdk": [
+    "sdkVersion:'24'",
+    "targetSdkVersion:'36'"
+  ],
+  "sourceCommit": "e402b78e558cc763b0e1fad87991674bb8bc831f"
+}

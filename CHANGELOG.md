@@ -1,5 +1,12 @@
 # Changelog
 
+## Android 3.3.0 Beta — 25 October 2026
+
+- Publish [v3.3.0-android](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.3.0-android) from `e402b78e558cc763b0e1fad87991674bb8bc831f` with the durable Beta certificate. Historical 3.2.1 requires backup and reinstall.
+- Build security-patched Pillow 13 for ARM64/x86_64; preserve image/resource validation and full decoding.
+- Improve offline notes, backup/recovery, HTTP warnings, cancellation and single-use confirmation. Restore only after the import dialog has closed; duplicate/late events preserve the previous revision.
+- Verify the exact release-signed APK in Android 15 x86_64, including HTTP rejection, same-certificate reinstall with notes retained, and export/edit/import recovery. 129 Python tests and 18 native fixture self-checks pass; real platform/provider/OCR/physical ARM64 coverage remains unverified.
+
 ## Android 3.3.0 Beta preparation (not published)
 
 - Build Pillow 13.0.0 Android ARM64/x86_64 wheels from hash-verified source with pinned NDK, CPython support and build constraints; retain full PNG/JPEG/WebP validation without a vulnerable downgrade.

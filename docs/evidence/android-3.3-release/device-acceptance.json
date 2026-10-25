@@ -1,0 +1,27 @@
+{
+  "package": "io.github.styayur.lgxt_assistant_mobile",
+  "abi": "x86_64",
+  "android": "15",
+  "fixture": false,
+  "syntheticDocuments": true,
+  "passed": [
+    "install",
+    "first launch",
+    "HTTP blocked with dummy credentials",
+    "offline library",
+    "ordinary release APK imports a synthetic document through native picker",
+    "same-certificate reinstall (notes checked after restart)",
+    "note survives process termination",
+    "system back navigation",
+    "native file-picker backup export/import",
+    "background resume",
+    "force-stop restart"
+  ],
+  "historicalUpgradeIncompatible": true,
+  "not_covered": [
+    "real platform",
+    "paid provider",
+    "physical ARM64 device",
+    "historical in-place signing continuity"
+  ]
+}

@@ -1,6 +1,23 @@
 # Verification record
 
-The Android preparation record below supersedes older Android blocker statements. Historical Windows/assignment evidence is retained afterward.
+## Published Android Beta — 25 October 2026
+
+[Release](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.3.0-android) is public, **Pre-release**, with exactly seven assets and no fixture/debug APK. Immutable annotated tag `v3.3.0-android` peels to `e402b78e558cc763b0e1fad87991674bb8bc831f`. Exact-ref ruleset [25790565](https://github.com/styayur/LGXT-Assistant/rules/25790565) prohibits update/deletion with no bypass actors. Existing releases/tags/assets were not replaced.
+
+[Full final workflow](https://github.com/styayur/LGXT-Assistant/actions/runs/40167960538) passed build, durable signing and both native flows. Required PR #29 CI, CodeForge, dependency audits and CodeQL passed; Python regression count **129**. Candidate `c91ea69` and its failed native attempts were withheld. The restore-success notice behind an open confirmation revealed a real route-close/view-replacement race; PR #29 closes the specific dialog, waits for dismissal, and consumes the choice once. Earlier attribution to input timing alone was incomplete. Failure records remain available and were not counted as passes.
+
+APK SHA-256: `c0e2d4bfc307893baba457d8f1bf0e77ffc3884d87b88c750af4b9252b7811ad`. Durable certificate SHA-256: `0ec0084b65aff166d379206ca244ea54904511e95573b15fd2159bd4bd604114`. Package `io.github.styayur.lgxt_assistant_mobile`, version `3.3.0`, versionCode `4`, minimum SDK 24, target SDK 36, ARM64 and x86_64. Independent local SDK verification matched the CI identity. All six manifest checksums passed; the checksum file itself and every asset matched GitHub digest/size metadata. Assets were downloaded afresh from the draft, verified, published, then downloaded and verified again; the actual public release page was reopened.
+
+The **exact ordinary release-signed APK** passed install/launch, default HTTP rejection, synthetic-document import via the Android picker, same-certificate reinstall with notes retained, process termination/restart, system Back, background resume and export/edit/import exact-content recovery. Historical 3.2.1 installation followed by update correctly returned signature incompatibility. The separate fixture passed course/question navigation, mock grade confirm/cancel, vision denial before requests, notes and backup, plus 18 native decoder/storage/security checks. No real grade or paid provider request was sent.
+
+Compact evidence: [SDK identity](evidence/android-3.3-release/APK-IDENTITY.json), [ordinary APK](evidence/android-3.3-release/device-acceptance.json), [separate fixture](evidence/android-3.3-release/device-fixture-acceptance.json). Screenshots: [actual release HTTP rejection](screenshots/android-release-http-blocked.png), [actual release with restored synthetic note](screenshots/android-release-restored-synthetic.png). The latter contains synthetic offline data, not a real course.
+
+Signing backup recovery passed from disk, including restored-key challenge and SDK APK signing; two main-only Environment Secrets persist the identity. Backup/recovery custody is local C:/D: with separate protected recovery information; offline/offsite custody is not established. See [signing maintenance](android-signing.md). Users must verify external question backups before uninstalling, then import and compare; exports exclude credentials and all-state migration is not claimed. Original 3.2.1 has no question-document export feature.
+
+Physical ARM64/vendor coverage, real LGXT behavior, official HTTPS, paid providers and OCR accuracy remain unverified. Word/PDF math remains LaTeX source. [Research](research/ANDROID_LIMITATIONS.md) records evidence, scope and issues #25/#26. Historical preparation records follow.
+
+
+The following preparation entries are historical records; the published outcome above is authoritative. Historical Windows/assignment evidence is retained afterward.
 
 ## Durable signing preparation — 25 October 2026
 

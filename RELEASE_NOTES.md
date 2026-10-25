@@ -1,5 +1,7 @@
 # Assignment upgrade release notes
 
+**Android publication, 25 October 2026:** [v3.3.0-android Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.3.0-android) is published with a durable signing identity and a reinstall-required migration from historical 3.2.1. [Exact signed-APK/native acceptance](https://github.com/styayur/LGXT-Assistant/actions/runs/40167960538) and fresh draft/published asset verification passed. Source `e402b78e558cc763b0e1fad87991674bb8bc831f`. This status supersedes historical preparation/blocker statements below. See [installation/data migration](docs/android-beta.md) and [signing custody](docs/android-signing.md).
+
 Channel candidates: Windows desktop **4.1.0**, Windows web **4.2.0-web**, Android **3.3.0-android**. These are beta feature releases; passing CI does not establish stable maturity. Availability is recorded in [verification](docs/VERIFICATION.md) and on each GitHub release page.
 
 The minor increments reflect additive assignment documents, contextual AI and recognition workflows. Desktop advances from 4.0.1 to 4.1.0; web from 4.1.0-web to 4.2.0-web; Android source from historical 3.2.1 to 3.3.0-android. Old workspace/chat files remain usable. Requiring explicit HTTP compatibility is an intentional security behavior change.

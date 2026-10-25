@@ -1,5 +1,7 @@
 # Security policy
 
+**Android publication, 25 October 2026:** [v3.3.0-android Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.3.0-android) is published with a durable signing identity and a reinstall-required migration from historical 3.2.1. [Exact signed-APK/native acceptance](https://github.com/styayur/LGXT-Assistant/actions/runs/40167960538) and fresh draft/published asset verification passed. Source `e402b78e558cc763b0e1fad87991674bb8bc831f`. This status supersedes historical preparation/blocker statements below. See [installation/data migration](docs/android-beta.md) and [signing custody](docs/android-signing.md).
+
 Current application license: AGPL-3.0-only. Report vulnerabilities privately through [GitHub security advisories](https://github.com/styayur/LGXT-Assistant/security/advisories/new). Never include passwords, tokens, AI keys, student identifiers, private course content or unredacted conversations in public issues.
 
 ## Platform transport evidence (24 October 2026, Singapore)

@@ -1,10 +1,10 @@
 # Android 3.3 Beta — reinstall required
 
-**Reinstall required for historical 3.2.1 installations.** The maintainer approved a new durable signing identity. Download only from the actual `v3.3.0-android` GitHub page once it is published as Pre-release / Beta. Actions artifacts labeled test-only or fixture are not release builds.
+**Reinstall required for historical 3.2.1 installations.** The maintainer approved a new durable signing identity. Download only from the published [v3.3.0-android Pre-release / Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.3.0-android). Actions artifacts labeled test-only or fixture are not release builds.
 
-The 3.3 candidate requires Android 7.0/API 24 or later and ARM64. x86_64 is included for emulator testing; this does not establish phone compatibility. Package: `io.github.styayur.lgxt_assistant_mobile`; versionName: `3.3.0`; versionCode: `4`.
+The 3.3 Beta requires Android 7.0/API 24 or later and ARM64. x86_64 is included for emulator testing; this does not establish phone compatibility. Package: `io.github.styayur.lgxt_assistant_mobile`; versionName: `3.3.0`; versionCode: `4`.
 
-1. Open the release tagged `v3.3.0-android` once it exists, verify it says **Pre-release / Beta**, and download only its Android APK, guide, notices and SHA256SUMS.
+1. Open the release tagged `v3.3.0-android`, verify it says **Pre-release / Beta**, and download only its Android APK, guide, notices and SHA256SUMS.
 2. Compare the APK's SHA-256 with that release's checksum. For maintainers, run Android SDK `apksigner verify --print-certs` and compare the published durable certificate fingerprint.
 3. Before replacing any older installation, follow the backup and reinstall steps below. Uninstalling deletes app-private data and preferences. Allow installation from your chosen file manager only after protecting your data.
 4. Launch the app. HTTP authentication is blocked by default because platform HTTPS is still unverified. Explicit compatibility mode transmits credentials and grades in plaintext; the warning remains visible throughout navigation. The app does not make HTTP safe.
