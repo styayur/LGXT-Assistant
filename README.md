@@ -33,15 +33,15 @@ AI calls are user-initiated and leave the local app. Confirm that the selected s
 
 ## Download by channel
 
-The release page and its assets are the source of truth; source archives are not runnable installers. The Windows beta tags for this upgrade are desktop **4.1.0** and web **4.2.0-web**. Download only from a published channel release after its gates complete; draft files are not a public release. Android **3.3.0** has test APK candidates but no published release. See [channel policy](docs/release-channels.md) and [delivery evidence](docs/VERIFICATION.md).
+The release page and its assets are the source of truth; source archives are not runnable installers. The Windows beta tags for this upgrade are desktop **4.1.0** and web **4.2.0-web**. Download only from a published channel release after its gates complete; draft files are not a public release. Android **3.3.0 Beta** is published; historical 3.2.1 installations require a verified backup, uninstall and reinstall. See [channel policy](docs/release-channels.md) and [delivery evidence](docs/VERIFICATION.md).
 
 | Channel | Upgrade version / status | Installation |
 | --- | --- | --- |
 | Windows desktop | [v4.1.0 beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.1.0) | Windows 10/11 x64, WebView2; run the EXE or fully extract the portable ZIP and keep `_internal` beside its EXE |
 | Windows web | [v4.2.0-web beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.2.0-web) | Windows 10/11 x64; launch the Web EXE, retain its console, use its private loopback link in Edge/Chrome; no WebView2 needed |
-| Android | [v3.2.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.2.1) | No published 3.3.0 APK: Pillow 13 candidates build and pass Android 15 x86_64 emulation; durable signing and an upgrade decision gate publication. Historical 3.2.1 lacks the new transport fixes |
+| Android | [v3.3.0 Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.3.0-android) | Android 7.0/API 24+, ARM64; x86_64 for emulation. New durable certificate: back up and verify notes before uninstalling 3.2.1, then install/import/compare. See [migration guide](docs/android-beta.md) |
 
-New Windows asset names identify channel, version and platform; check every download against that release's `SHA256SUMS.txt`. No MSI or signing trust is claimed. Historical tags/assets remain unchanged, including an old Android asset attached to a web release; use the Android baseline above for the historical Android channel.
+New Windows asset names identify channel, version and platform; check every download against that release's `SHA256SUMS.txt`. No MSI or signing trust is claimed. Historical tags/assets remain unchanged, including an old Android asset attached to a web release; use [v3.2.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.2.1) only for historical Android reference.
 
 ## Local data and development
 

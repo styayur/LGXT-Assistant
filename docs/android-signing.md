@@ -30,3 +30,7 @@ GitHub Environment `android-beta-signing` has a custom deployment-branch policy 
 7. Create a GitHub draft marked Pre-release, upload the exact seven assets, download them afresh and run `verify_release.py` with source/certificate pins. Publish only after all gates pass; download/reverify the published assets, tag and Beta state again. Never upload a fixture/test-only APK, private key, password or recovery archive.
 
 No historical release, tag or asset may be replaced. Installation/data migration is documented in [the Android guide](android-beta.md). Actual release outcomes belong in [VERIFICATION](VERIFICATION.md).
+
+## 3.3 publication outcome
+
+[v3.3.0-android Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.3.0-android) was published from `e402b78e558cc763b0e1fad87991674bb8bc831f` after [full signed build/native acceptance](https://github.com/styayur/LGXT-Assistant/actions/runs/40167960538). Draft and published bytes were independently downloaded and verified. The import dialog/view race discovered in withheld candidates was fixed and retested in a fresh build. The certificate and verified backup remained unchanged. Exact tag rule 25790565 prohibits update/deletion. A read-only companion workflow can reverify existing signed artifacts only after proving successful main build/sign provenance, unchanged app/build inputs and matching SDK source/certificate/checksums; it cannot sign or publish. Always tag the APK identity source, not a later test-driver commit.

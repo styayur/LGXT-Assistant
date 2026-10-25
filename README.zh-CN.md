@@ -33,15 +33,15 @@ AI 仅在用户发起时发送，内容会离开本机。请在 AI 设置核实�
 
 ## 按渠道下载
 
-以发布页实际附件为准，源码压缩包不是可运行安装包。此次 Windows Beta tag 为桌面 **4.1.0**、网页 **4.2.0-web**。只有对应渠道完成验证并公开发布后才可下载，草稿附件不等于公开发布。Android **3.3.0** 已有测试 APK 候选，但尚未公开发布。见 [渠道规则](docs/release-channels.md) 和 [交付证据](docs/VERIFICATION.md)。
+以发布页实际附件为准，源码压缩包不是可运行安装包。此次 Windows Beta tag 为桌面 **4.1.0**、网页 **4.2.0-web**。只有对应渠道完成验证并公开发布后才可下载，草稿附件不等于公开发布。Android **3.3.0 Beta** 已发布；历史 3.2.1 安装须核实外部备份后卸载重装。见 [渠道规则](docs/release-channels.md) 和 [交付证据](docs/VERIFICATION.md)。
 
 | 渠道 | 升级版本 / 状态 | 安装方式 |
 | --- | --- | --- |
 | Windows 桌面 | [v4.1.0 Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.1.0) | Windows 10/11 x64，需 WebView2；运行 EXE，或完整解压便携 ZIP，保留 `_internal` |
 | Windows 网页 | [v4.2.0-web Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.2.0-web) | Windows 10/11 x64；启动 Web EXE，保留控制台，用 Edge/Chrome 打开私有本机链接；无需 WebView2 |
-| Android | [v3.2.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.2.1) | 尚未发布 3.3.0 APK：Pillow 13 候选已能打包并通过 Android 15 x86_64 模拟器验收；持久签名与升级路径决定仍是发布门禁。历史 3.2.1 不包含此次连接安全修复 |
+| Android | [v3.3.0 Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.3.0-android) | Android 7.0/API 24+、ARM64；x86_64 用于模拟器。采用持久新证书：先备份并核对笔记，再卸载 3.2.1，安装新版后导入核对。见[迁移指南](docs/android-beta.md) |
 
-新 Windows 附件名包含平台、渠道与版本；请对照该发布的 `SHA256SUMS.txt` 校验。未声明提供 MSI 或可信签名。历史 tag 与附件保持原样；曾有 Android 附件附在网页发布中，历史 Android 渠道请使用上表链接。
+新 Windows 附件名包含平台、渠道与版本；请对照该发布的 `SHA256SUMS.txt` 校验。未声明提供 MSI 或可信签名。历史 tag 与附件保持原样；曾有 Android 附件附在网页发布中，历史 Android 请参阅 [v3.2.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.2.1)。
 
 ## 本地资料与开发
 
