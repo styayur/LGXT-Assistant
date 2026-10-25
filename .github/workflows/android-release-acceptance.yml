@@ -92,6 +92,8 @@ jobs:
           disable-animations: true
           script: |
             python scripts/check_android_device.py --apk build/android/apk/LGXT-Assistant-Android-v3.3.0.apk --historical-apk build/android/history/LGXT-Assistant-3.2.1-android.apk --backup-roundtrip
+            # Remove only the synthetic shared backup before the separate fixture.
+            adb shell rm -f /sdcard/Download/LGXT-study-notes.json
             adb uninstall io.github.styayur.lgxt_assistant_mobile
             python scripts/check_android_device.py --apk build/android/fixture/LGXT-fixture-only.apk --fixture --output build/android/device-fixture
       - uses: actions/upload-artifact@v7

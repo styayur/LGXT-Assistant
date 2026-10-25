@@ -589,16 +589,33 @@ def main(page, client_factory=ApiClient, storage=None):
             if len(raw)>32*1024*1024: raise ValueError('备份超过 32 MB')
             # A confirmation is necessary because matching document IDs replace
             # current content (the prior revision is retained atomically).
-            def confirmed(_):
-                page.pop_dialog()
+            confirmation_lock = threading.Lock()
+            confirmation = {'chosen': False, 'restore': False, 'finished': False}
+            def choose(restore):
+                with confirmation_lock:
+                    if confirmation['chosen'] or confirmation['finished']: return
+                    confirmation['chosen'] = True
+                    confirmation['restore'] = restore
+                # Close this dialog, not whichever Snackbar is on the stack.
+                # Wait for Flutter's dismissal before replacing the view or
+                # opening a notice, which otherwise races the closing route.
+                dialog.open = False
+                page.update(dialog)
+            def dismissed(_):
+                with confirmation_lock:
+                    if confirmation['finished']: return
+                    confirmation['finished'] = True
+                    restore = confirmation['restore']
+                if not restore: return
                 try:
                     count = local_store.import_backup(raw)
                     show_library();snack(f'已恢复 {count} 份资料，旧内容已保留为前一版本')
                 except Exception:
                     snack('备份无效、版本未知或保存失败；原数据已保留', ERR)
-            page.show_dialog(ft.AlertDialog(title=ft.Text('导入本地备份'),
+            dialog = ft.AlertDialog(title=ft.Text('导入本地备份'), on_dismiss=dismissed,
                 content=ft.Text('同一题目的内容将替换为备份内容，并保留前一版本。备份可能包含私人笔记，请核对来源。'),
-                actions=[ft.TextButton('取消', on_click=lambda e: page.pop_dialog()), ft.TextButton('确认导入', on_click=confirmed)]))
+                actions=[ft.TextButton('取消', on_click=lambda e: choose(False)), ft.TextButton('确认导入', on_click=lambda e: choose(True))])
+            page.show_dialog(dialog)
         except Exception:
             snack('备份未读取，请选择不超过 32 MB 的有效 JSON 备份', ERR)
 
