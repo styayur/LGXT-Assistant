@@ -138,7 +138,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: lgxt-android-apk
           path: candidate
@@ -188,13 +188,13 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: ${{ inputs.release_signing && 'lgxt-android-release-signed' || 'lgxt-android-apk' }}
           path: build/android/apk
           run-id: ${{ inputs.candidate_run_id || github.run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: lgxt-fixture-only-apk
           path: build/android/fixture
