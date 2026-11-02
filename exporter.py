@@ -233,6 +233,7 @@ def export_question_document(document, export_path, format='md', *, render_equat
             doc.add_heading('公式预览 位图', 2)
             if preview['status'] == 'rendered':
                 doc.add_picture(io.BytesIO(preview['png']), width=Inches(min(5, preview['width'] / 144)))
+                doc.paragraphs[-1].paragraph_format.keep_with_next = True
                 doc.add_paragraph('预览为位图；原始 LaTeX 保留在上方源码和 Markdown 文件中。')
             else:
                 doc.add_paragraph('此表达式未生成预览；请使用上方保留的 LaTeX 源码。')
@@ -242,7 +243,7 @@ def export_question_document(document, export_path, format='md', *, render_equat
         from reportlab.lib.styles import ParagraphStyle
         from reportlab.pdfbase import pdfmetrics
         from reportlab.pdfbase.cidfonts import UnicodeCIDFont
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage, Table, TableStyle
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage, Table, TableStyle, KeepTogether
         from reportlab.pdfbase.ttfonts import TTFont
         font = 'STSong-Light'
         system_font = Path(os.environ.get('WINDIR', 'C:/Windows')) / 'Fonts/msyh.ttc'
@@ -299,13 +300,14 @@ def export_question_document(document, export_path, format='md', *, render_equat
             story.append(Spacer(1,4))
         flush_table()
         if preview:
-            story.append(Paragraph('公式预览 位图', heading))
+            preview_block = [Paragraph('公式预览 位图', heading)]
             if preview['status'] == 'rendered':
                 scale = min(72/144, 360/preview['width'], 240/preview['height'])
-                story.append(RLImage(io.BytesIO(preview['png']), width=preview['width']*scale, height=preview['height']*scale))
-                story.append(Paragraph('预览为位图；原始 LaTeX 保留在上方源码和 Markdown 文件中。', normal))
+                preview_block.append(RLImage(io.BytesIO(preview['png']), width=preview['width']*scale, height=preview['height']*scale))
+                preview_block.append(Paragraph('预览为位图；原始 LaTeX 保留在上方源码和 Markdown 文件中。', normal))
             else:
-                story.append(Paragraph('此表达式未生成预览；请使用上方保留的 LaTeX 源码。', normal))
+                preview_block.append(Paragraph('此表达式未生成预览；请使用上方保留的 LaTeX 源码。', normal))
+            story.append(KeepTogether(preview_block))
         SimpleDocTemplate(str(path), pagesize=A4, leftMargin=45, rightMargin=45, topMargin=40, bottomMargin=40).build(story)
     result = {'path': str(path), 'equations': 'latex-source'}
     if preview:

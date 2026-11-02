@@ -16,7 +16,10 @@ _FORBIDDEN = re.compile(r'\\(?:begin|end|input|include|write|read|openout|usepac
 def _worker(latex, pipe, directory, module_root):
     """A trusted Python child process, without shell or TeX execution."""
     try:
-        os.environ.update(MPLCONFIGDIR=directory, MPLBACKEND='Agg')
+        # Mathtext uses the pinned bundled DejaVu fonts. Avoid scanning every
+        # installed Windows font while rebuilding this private, disposable cache.
+        os.environ.update(MPLCONFIGDIR=directory, MPLBACKEND='Agg',
+                          MPL_IGNORE_SYSTEM_FONTS='1')
         os.chdir(directory)
         sys.path.insert(0, module_root)
         import matplotlib

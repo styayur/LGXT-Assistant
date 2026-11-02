@@ -24,6 +24,9 @@ def main():
             path = args.output / directory / (filename + '.pdf')
             result = subprocess.run(['pdftotext', str(path), '-'], capture_output=True, text=True, check=True)
             assert ''.join(latex.split()) in ''.join(result.stdout.split()), str(path)
+            pages = [''.join(page.split()) for page in result.stdout.split('\f')]
+            caption = '预览为位图' if CASES[name][1] == 'rendered' else '此表达式未生成预览'
+            assert any('公式预览位图' in page and caption in page for page in pages), f'Orphaned preview caption: {path}'
         evidence.append({'case': name, 'source': 'retained', 'pictures': len(reopened.inline_shapes), 'tables': len(reopened.tables)})
     (args.output / 'roundtrip-report.json').write_text(json.dumps(evidence, indent=2), encoding='utf-8')
 
