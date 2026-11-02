@@ -24,10 +24,11 @@ image.save(buffer,'PNG')
 IMAGE='data:image/png;base64,'+base64.b64encode(buffer.getvalue()).decode()
 EXTRA=r'''
 const api=window.pywebview.api;
-test.documents={};test.ai=[];test.writes=[];test.cancelled=[];
+test.documents={};test.ai=[];test.writes=[];test.cancelled=[];test.exports=[];
 api.question_image=async()=>IMAGE;
 api.question_document=async(c,w,q)=>test.documents[q]||null;
 api.save_question_document=async d=>{test.documents[d.questionId]=structuredClone(d);return d;};
+api.export_question_document=async(d,format,render)=>{test.exports.push({d,format,render});return {path:'synthetic-export.'+format,equationPreview:{status:'source-fallback'}};};
 api.questions=async()=>[{id:201,name:'积分与能量 · 合成测试题',imgurl:'https://lgxt.wutp.com.cn/fixture.png',answer:'1/3'}];
 api.start_question_ai=async(d,p,image,recognize)=>{test.ai.push({d,p,image,recognize});test.mode=recognize?'recognize':'solve';test.step=0;return 'question-job';};
 api.parse_recognition=async text=>JSON.parse(text);
@@ -78,6 +79,19 @@ try:
   page.locator('.solution-editor').click();page.keyboard.press('Control+End');page.keyboard.type(' Correction round trip.')
   page.get_by_role('button',name='保存题目文档',exact=True).click()
   page.wait_for_function('window.__test.documents[201].solutionMarkdown.includes("Correction round trip")')
+  preview=page.get_by_role('checkbox',name='识别公式位图预览（保留源码）',exact=True)
+  expect(preview).not_to_be_checked()
+  page.get_by_role('button',name='导出 docx',exact=True).click()
+  page.wait_for_function('window.__test.exports.length===1')
+  assert page.evaluate('window.__test.exports.at(-1).render') is False
+  preview.check()
+  for count,format in enumerate(['docx','pdf','md'],start=2):
+   page.get_by_role('button',name='导出 '+format,exact=True).click()
+   page.wait_for_function('window.__test.exports.length==='+str(count))
+   exported=page.evaluate('window.__test.exports.at(-1)')
+   assert exported['format']==format and exported['render']==(format!='md')
+   assert 'x^3' in exported['d']['latex']
+  preview.uncheck()
   page.get_by_role('button',name='Markdown 源码',exact=True).click()
   source=page.get_by_role('textbox',name='解答 Markdown 源码')
   assert r'\int' in source.input_value(), source.input_value()

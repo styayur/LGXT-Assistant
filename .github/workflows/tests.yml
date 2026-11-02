@@ -25,7 +25,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt -r requirements-dev.txt
+          python -m pip install -r requirements.txt -r requirements-dev.txt -r requirements-equations.txt
       - name: Run pytest
         run: python -m pytest -q
       - name: Compile smoke test
@@ -59,3 +59,42 @@ jobs:
           path: |
             docs/screenshots/modern-*.png
             docs/screenshots/assignment-*.png
+
+  equation-exports:
+    name: Offline equation export roundtrip
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Install isolated export QA dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libreoffice-writer fonts-noto-cjk poppler-utils
+          python -m pip install python-docx reportlab 'Pillow>=13.0.0,<14' requests pytest -r requirements-equations.txt
+      - run: python -m pytest -q tests/test_equation_preview.py
+      - run: python scripts/check_equation_exports.py --output work/equation-exports
+      - name: Reopen and render actual Word and PDF files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p work/equation-exports/{roundtrip,word-pdfs,word-preview,native-pdf-preview}
+          soffice --version > work/equation-exports/converter-version.txt
+          pdftoppm -v 2>> work/equation-exports/converter-version.txt
+          soffice -env:UserInstallation=file://"$RUNNER_TEMP/lgxt-export-word" --headless --convert-to docx --outdir work/equation-exports/roundtrip work/equation-exports/question-documents/*.docx
+          soffice -env:UserInstallation=file://"$RUNNER_TEMP/lgxt-export-pdf" --headless --convert-to pdf --outdir work/equation-exports/word-pdfs work/equation-exports/question-documents/*.docx
+          python scripts/check_equation_roundtrip.py --output work/equation-exports
+          for file in work/equation-exports/word-pdfs/*.pdf; do
+            pdftoppm -r 120 -png "$file" "work/equation-exports/word-preview/$(basename "$file" .pdf)"
+          done
+          for file in work/equation-exports/question-documents/*.pdf; do
+            pdftoppm -r 120 -png "$file" "work/equation-exports/native-pdf-preview/$(basename "$file" .pdf)"
+          done
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: synthetic-equation-export-qa-${{ github.sha }}-${{ github.run_attempt }}
+          path: work/equation-exports/
+          if-no-files-found: error

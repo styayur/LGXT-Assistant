@@ -9,6 +9,7 @@ export default function QuestionDocument({ course, work, question, files = [], t
     [prompt, setPrompt] = useState('请逐步分析这道题，说明条件、公式和推导，并区分题目来源与模型推断。'),
     [includeImage, setIncludeImage] = useState(true), [crop, setCrop] = useState([0, 0, 100, 100]),
     [recognition, setRecognition] = useState(null), [editorVersion, setEditorVersion] = useState(0), [status, setStatus] = useState(''), [zoom, setZoom] = useState(false), [provenance, setProvenance] = useState({});
+  const [renderEquations, setRenderEquations] = useState(false);
   const current = useRef(null), job = useRef(null), alive = useRef(true);
   useEffect(() => {
     alive.current = true;
@@ -87,7 +88,8 @@ export default function QuestionDocument({ course, work, question, files = [], t
       <h3>解答文档</h3>
       <SolutionEditor key={editorVersion} value={doc.solutionMarkdown} onChange={value => change({solutionMarkdown:value})} />
       <div className="row-actions"><Button onClick={() => save().catch(e => toast(e.message,true))}>保存题目文档</Button>
-        {['md','docx','pdf'].map(format => <Button key={format} onClick={async () => { try {await save(); const r = await call('export_question_document', current.current, format); toast(`已导出：${r.path}`);} catch(e){toast(e.message,true);} }}>导出 {format}</Button>)}
+        <label><input type="checkbox" checked={renderEquations} onChange={e => setRenderEquations(e.target.checked)} />识别公式位图预览（保留源码）</label>
+        {['md','docx','pdf'].map(format => <Button key={format} onClick={async () => { try {await save(); const r = await call('export_question_document', current.current, format, renderEquations && format !== 'md'); toast(`已导出${r.equationPreview?.status === 'source-fallback' ? '（公式保留源码）' : ''}：${r.path}`);} catch(e){toast(e.message,true);} }}>导出 {format}</Button>)}
       </div><p role="status">{status}</p>
     </section>
     <aside className="question-ai"><h3>围绕此题的 AI</h3>
