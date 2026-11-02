@@ -1,0 +1,2 @@
+# Optional desktop/browser export renderer; excluded from Android packaging.
+matplotlib==3.11.2

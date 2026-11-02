@@ -439,9 +439,9 @@ class Bridge:
     def parse_recognition(self, text):
         return documents.parse_recognition(text)
 
-    def export_question_document(self, document, format='md'):
+    def export_question_document(self, document, format='md', render_equations=False):
         d = documents.validate_document(document)
-        return exporter.export_question_document(d, self._legacy.export_path, format)
+        return exporter.export_question_document(d, self._legacy.export_path, format, render_equations=render_equations is True)
 
     def choose_files(self):
         import webview

@@ -146,11 +146,11 @@ def save_questions_to_pdf(collected_questions, assignment_folder_path, work_name
 
     doc.build(elements)
 
-def export_question_document(document, export_path, format='md'):
+def export_question_document(document, export_path, format='md', *, render_equations=False):
     """Export a recoverable Markdown document. Equations remain editable source.
 
-    Word/PDF preserve original image and basic Markdown blocks. LaTeX is exported
-    verbatim, not falsely described as native Word equations or typeset PDF math.
+    Word/PDF preserve original image and basic Markdown blocks. An optional bounded
+    raster preview never replaces source or claims editable native Word equations.
     """
     import io
     import re
@@ -190,6 +190,10 @@ def export_question_document(document, export_path, format='md'):
     (directory / (name + '.md')).write_text(text, encoding='utf-8')
     if format == 'md':
         return {'path': str(path), 'equations': 'latex-source'}
+    preview = None
+    if render_equations:
+        from equation_preview import render_preview
+        preview = render_preview(d['latex'])
     if format == 'docx':
         doc = Document()
         if raw:
@@ -225,6 +229,13 @@ def export_question_document(document, export_path, format='md'):
                     run.bold = bool(i % 2) and not code
                     if code:
                         run.font.name = 'Consolas'
+        if preview:
+            doc.add_heading('公式预览 位图', 2)
+            if preview['status'] == 'rendered':
+                doc.add_picture(io.BytesIO(preview['png']), width=Inches(min(5, preview['width'] / 144)))
+                doc.add_paragraph('预览为位图；原始 LaTeX 保留在上方源码和 Markdown 文件中。')
+            else:
+                doc.add_paragraph('此表达式未生成预览；请使用上方保留的 LaTeX 源码。')
         doc.save(path)
     else:
         from reportlab.lib.pagesizes import A4
@@ -287,5 +298,17 @@ def export_question_document(document, export_path, format='md'):
                 story.append(Paragraph(part or ' ', heading if line.startswith('#') else normal))
             story.append(Spacer(1,4))
         flush_table()
+        if preview:
+            story.append(Paragraph('公式预览 位图', heading))
+            if preview['status'] == 'rendered':
+                scale = min(72/144, 360/preview['width'], 240/preview['height'])
+                story.append(RLImage(io.BytesIO(preview['png']), width=preview['width']*scale, height=preview['height']*scale))
+                story.append(Paragraph('预览为位图；原始 LaTeX 保留在上方源码和 Markdown 文件中。', normal))
+            else:
+                story.append(Paragraph('此表达式未生成预览；请使用上方保留的 LaTeX 源码。', normal))
         SimpleDocTemplate(str(path), pagesize=A4, leftMargin=45, rightMargin=45, topMargin=40, bottomMargin=40).build(story)
-    return {'path': str(path), 'equations': 'latex-source'}
+    result = {'path': str(path), 'equations': 'latex-source'}
+    if preview:
+        result['equationPreview'] = {k:v for k,v in preview.items() if k != 'png'}
+        if preview['status'] == 'rendered': result['equations'] = 'latex-source-with-raster-preview'
+    return result
