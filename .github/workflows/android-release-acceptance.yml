@@ -22,7 +22,7 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
@@ -48,13 +48,13 @@ jobs:
           source=$(python -c "import json; print(json.load(open('build-run.json'))['head_sha'])")
           git fetch origin "$source"
           git diff --exit-code "$source" HEAD -- mobile/src mobile/pyproject.toml mobile/requirements.txt packaging/android scripts/build_android_wheels.sh scripts/android_fixture_entry.py scripts/android_image_checks.py .github/workflows/android-apk.yml
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: lgxt-android-release-signed
           path: build/android/apk
           run-id: ${{ inputs.build_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: lgxt-fixture-only-apk
           path: build/android/fixture

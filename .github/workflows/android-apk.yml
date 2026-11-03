@@ -41,7 +41,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
@@ -134,11 +134,11 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: lgxt-android-apk
           path: candidate
@@ -184,17 +184,17 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: ${{ inputs.release_signing && 'lgxt-android-release-signed' || 'lgxt-android-apk' }}
           path: build/android/apk
           run-id: ${{ inputs.candidate_run_id || github.run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: lgxt-fixture-only-apk
           path: build/android/fixture
@@ -202,12 +202,16 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Ensure pinned Android SDK tools
         run: test -x "$ANDROID_HOME/build-tools/36.0.0/apksigner" || "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'build-tools;36.0.0'
+      - name: Independently verify downloaded candidate checksums
+        run: (cd build/android/apk && sha256sum --check SHA256SUMS.txt)
       - name: Independently verify release APK before native acceptance
         if: inputs.release_signing
         run: |
-          (cd build/android/apk && sha256sum --check SHA256SUMS.txt)
           certificate=$(python -c "import json;print(json.load(open('packaging/android/signing-identity.json'))['certificateSha256'])")
           python scripts/check_android_metadata.py --apk build/android/apk/LGXT-Assistant-Android-v3.3.0.apk --expected-certificate "$certificate" --source-commit "$GITHUB_SHA" --output build/android/ACCEPTANCE-IDENTITY.json
+      - name: Independently verify test-only candidate metadata
+        if: ${{ !inputs.release_signing }}
+        run: python scripts/check_android_metadata.py --apk build/android/apk/LGXT-Assistant-Android-v3.3.0.apk --allow-debug-for-testing --source-commit "$GITHUB_SHA" --output build/android/ACCEPTANCE-IDENTITY-TEST-ONLY.json
       - name: Obtain immutable historical APK for upgrade rejection test
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -226,7 +230,7 @@ jobs:
           profile: pixel_2
           disable-animations: true
           script: |
-            python scripts/check_android_device.py --apk build/android/apk/LGXT-Assistant-Android-v3.3.0.apk --historical-apk build/android/history/LGXT-Assistant-3.2.1-android.apk ${{ inputs.release_signing && '--backup-roundtrip' || '' }}
+            python scripts/check_android_device.py --apk build/android/apk/LGXT-Assistant-Android-v3.3.0.apk --historical-apk build/android/history/LGXT-Assistant-3.2.1-android.apk --backup-roundtrip
             # Remove only the synthetic shared backup before the separate fixture.
             adb shell rm -f /sdcard/Download/LGXT-study-notes.json
             adb uninstall io.github.styayur.lgxt_assistant_mobile
@@ -238,4 +242,4 @@ jobs:
           path: |
             build/android/device
             build/android/device-fixture
-            build/android/ACCEPTANCE-IDENTITY.json
+            build/android/ACCEPTANCE-IDENTITY*.json
