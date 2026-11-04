@@ -1,6 +1,6 @@
 keyring
 requests
-ttkbootstrap==1.10.1
+ttkbootstrap==2.2.6
 Pillow>=13.0.0,<14
 python-docx
 reportlab
