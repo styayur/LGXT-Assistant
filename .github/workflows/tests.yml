@@ -48,7 +48,7 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
-      - run: python -m pip install playwright Pillow
+      - run: python -m pip install requests playwright Pillow
       - run: python -m playwright install --with-deps chromium
       - run: python scripts/check_frontend.py
       - run: python scripts/check_assignment.py
