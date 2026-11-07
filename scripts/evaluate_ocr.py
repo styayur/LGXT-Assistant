@@ -453,7 +453,7 @@ def main(argv=None):
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-    print(json.dumps({
+    sys.stdout.write(json.dumps({
         'status': measurement_status,
         'accuracyClaim': accuracy_claim,
         'cases': len(evaluated),
@@ -463,7 +463,7 @@ def main(argv=None):
         'semanticCorrect': summary['semanticCorrect'],
         'diagramSemanticsCorrect': summary['diagramSemanticsCorrect'],
         'output': str(args.output),
-    }, ensure_ascii=False))
+    }, ensure_ascii=False) + chr(10))
     return 0
 
 
