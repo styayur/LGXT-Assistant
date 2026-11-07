@@ -1,0 +1,14 @@
+{"_meta": {"source": "synthetic", "provider": "synthetic-fixture", "model": "not-a-model", "requestParameters": {}, "capturedAt": "2026-11-07", "notes": "Hand-authored outputs for harness tests only; never OCR accuracy."}}
+{"caseId": "formula-square", "source": "synthetic", "raw": "{\"text\": \"x^2 + y^2 = z^2\", \"latex\": \"x^2+y^2=z^2\"}"}
+{"caseId": "formula-recurrence", "source": "synthetic", "raw": "{\"text\": \"a_(n+1) = a_n + alpha\", \"latex\": \"a_{n+1}=a_n+\\\\alpha\"}"}
+{"caseId": "formula-gaussian", "source": "synthetic", "raw": "{\"text\": \"1 / sqrt(2 pi sigma^2)\", \"latex\": \"\\\\frac{1}{\\\\sqrt{2\\\\pi\\\\sigma^2}}\"}"}
+{"caseId": "integral-definite", "source": "synthetic", "raw": "{\"text\": \"integral from 0 to 1 x^2 dx = 1/3\", \"latex\": \"\\\\int_0^1 x^2\\\\,dx=\\\\frac13\"}"}
+{"caseId": "matrix-2x2", "source": "synthetic", "raw": "{\"text\": \"matrix 1 2; 3 4\", \"latex\": \"\\\\begin{pmatrix}1&2\\\\\\\\3&4\\\\end{pmatrix}\"}"}
+{"caseId": "derivative-sin", "source": "synthetic", "raw": "{\"text\": \"d/dx sin x = cos x\", \"latex\": \"\\\\frac{d}{dx}\\\\sin x=\\\\cos x\"}"}
+{"caseId": "formula-newton", "source": "synthetic", "raw": "{\"text\": \"F = m a\", \"latex\": \"F=ma\"}"}
+{"caseId": "formula-maxwell", "source": "synthetic", "raw": "{\"text\": \"div E = rho / epsilon_0\", \"latex\": \"\\\\nabla\\\\cdot\\\\mathbf{E}=\\\\frac{\\\\rho}{\\\\varepsilon_0}\"}"}
+{"caseId": "degraded-low-resolution", "source": "synthetic", "raw": "{\"text\": \"1 / sqrt(2 pi sigma^2)\", \"latex\": \"\\\\frac{1}{\\\\sqrt{2\\\\pi\\\\sigma^2}}\"}"}
+{"caseId": "degraded-blur", "source": "synthetic", "raw": "{\"text\": \"integral from 0 to 1 x^2 dx = 1/3\", \"latex\": \"\\\\int_0^1 x^2\\\\,dx=\\\\frac13\"}"}
+{"caseId": "degraded-crop", "source": "synthetic", "raw": "{\"text\": \"matrix 1 2; 3 4\", \"latex\": \"\\\\begin{pmatrix}1&2\\\\\\\\3&4\\\\end{pmatrix}\"}"}
+{"caseId": "degraded-background", "source": "synthetic", "raw": "{\"text\": \"div E = rho / epsilon_0\", \"latex\": \"\\\\input{private.tex}\"}"}
+{"caseId": "diagram-right-triangle", "source": "synthetic", "raw": "{\"text\": \"right triangle A B C with sides 3 4 5\", \"latex\": \"\"}"}

@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "status": "NOT_VERIFIED",
+  "corpusSha256": "8b54306ee37ab3220846395e64cfd5d25b4fcacac558e442f7d51fc4a34e1189",
+  "independentReviewer": "",
+  "reviewedAt": null,
+  "notes": "Independent ground-truth review has not been completed. Live evaluation is fail-closed until this file is completed and re-hashed."
+}

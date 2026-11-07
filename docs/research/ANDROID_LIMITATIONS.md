@@ -66,7 +66,11 @@ Historical package `io.github.styayur.lgxt_assistant_mobile`, versionName 3.2.1,
 | Real model requests | 0 | No measured OCR accuracy |
 | Diagram/context understanding | Not measured | Formula transcription does not demonstrate reasoning |
 
-**Status / next step.** Corpus and parser/render regression executed locally. No provider benchmark, handwriting assessment, independent labels or confidence intervals exist. Before an accuracy claim, collect a larger licensed corpus with independent ground truth, fix a model/version and cost budget, compare exact/semantic/render results separately, and review every engineering diagram manually. No model key is required for this release's mock regression.
+**Evidence-bound harness.** [`scripts/evaluate_ocr.py`](../../scripts/evaluate_ocr.py) evaluates a 13-case self-authored corpus covering formulas, a matrix, a definite integral, four degraded images and a labelled diagram. It records image hashes, the corpus hash, exact Git commit, pinned provider/model metadata and one result per case. It reports parsing, OCR text exact match, normalized LaTeX exact match, KaTeX rendering with trust disabled, independently reviewed semantic correctness, manual correction and diagram semantics separately. Every proportion includes a Wilson 95% confidence interval.
+
+Mock and replay output is always marked as harness-only. Live mode is refused unless an independent corpus review is `VERIFIED`, an approval file pins provider/model/endpoint/request count/budget, an authorization reference exists, and `--allow-paid` is supplied. Paid calls are sequential and never retried. Model-output semantic review is separate and remains `NOT_VERIFIED` until an independent reviewer supplies it. The harness is defined in [`docs/research/ocr-eval/README.md`](ocr-eval/README.md).
+
+**Status / next step — BLOCKED.** The framework and test entry now exist, but no independent ground-truth review, approved live provider/model, request budget or live model responses have been supplied. Mock results remain synthetic and are not OCR accuracy. The issue stays open until an authorized live run and independent output review are complete.
 
 Tracked acceptance: [OCR benchmark issue #25](https://github.com/styayur/LGXT-Assistant/issues/25).
 
