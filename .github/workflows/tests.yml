@@ -52,6 +52,8 @@ jobs:
       - run: python -m playwright install --with-deps chromium
       - run: python scripts/check_frontend.py
       - run: python scripts/check_assignment.py
+      - name: OCR evaluation harness regression
+        run: python scripts/evaluate_ocr.py --mode mock --output work/ocr-eval/results.json
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -59,6 +61,7 @@ jobs:
           path: |
             docs/screenshots/modern-*.png
             docs/screenshots/assignment-*.png
+            work/ocr-eval/results.json
 
   equation-exports:
     name: Offline equation export roundtrip

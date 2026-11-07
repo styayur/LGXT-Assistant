@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "status": "NOT_APPROVED",
+  "provider": "OpenAI",
+  "endpoint": "https://api.openai.com/v1",
+  "model": "",
+  "temperature": 0,
+  "maxTokens": 4096,
+  "visionEnabled": true,
+  "maxRequests": 0,
+  "budgetUsd": 0,
+  "estimatedMaxCostUsd": 0,
+  "approvedBy": "",
+  "approvedAt": "",
+  "authorizationRef": ""
+}
