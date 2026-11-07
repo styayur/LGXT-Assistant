@@ -41,3 +41,5 @@ python scripts/evaluate_ocr.py --mode live --approval-file path/to/approval.json
 ```
 
 The default result is written to `results.json`. Current state remains **BLOCKED** pending independent ground-truth review, an approved provider/model and request budget, and live responses.
+
+The independent reviewer must not be the coding agent that authored the harness or the model prompt. That separation is required before live-output semantic metrics can be treated as reviewed evidence.
