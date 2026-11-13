@@ -9,15 +9,15 @@
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {
-    "@tiptap/extension-image": "3.32.2",
-    "@tiptap/extension-table": "3.32.2",
-    "@tiptap/markdown": "3.32.2",
+    "@tiptap/extension-image": "3.33.0",
+    "@tiptap/extension-table": "3.33.0",
+    "@tiptap/markdown": "3.33.0",
     "@tiptap/pm": "3.32.2",
-    "@tiptap/react": "3.32.2",
-    "@tiptap/starter-kit": "3.32.2",
+    "@tiptap/react": "3.33.0",
+    "@tiptap/starter-kit": "3.33.0",
     "highlight.js": "^11.11.1",
     "katex": "^0.19.1",
-    "lucide-react": "^1.66.0",
+    "lucide-react": "^1.70.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-markdown": "^10.1.0",
@@ -25,11 +25,11 @@
     "rehype-katex": "^7.0.1",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
-    "@tiptap/core": "3.32.2"
+    "@tiptap/core": "3.33.0"
   },
   "devDependencies": {
     "prettier": "^3.9.10",
-    "vite": "^8.3.5"
+    "vite": "^8.3.7"
   },
   "overrides": {
     "katex": "$katex"
