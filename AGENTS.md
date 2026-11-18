@@ -4,7 +4,7 @@
 
 Assignment-focused LGXT assistant: scoped submissions, image-to-LaTeX, question-linked AI and local study documents.
 
-This is a public repository in the `styayur` portfolio. Read `README.md`, release notes and verification documents before changing behavior.
+This is a public repository in the `styayur` portfolio. Android is the active product; Windows Desktop and Windows Web receive no new features. Preserve their history, releases and shared business modules. Read `README.md`, release notes and verification documents before changing behavior.
 
 ## Architecture & Stable Contracts
 
@@ -52,4 +52,4 @@ Platform-specific, real-device, signing, paid-provider and Windows-native tests 
 
 - Do not force-push, bypass rulesets, overwrite existing releases/tags/signatures or delete audit evidence.
 - Major dependency and public-contract changes require compatibility evidence and an explicit maintainer decision.
-- Use the portfolio evidence gate for PR risk classification and exact-head verification.
+- Use current required GitHub checks and normal squash merges. Retired Evidence Gate, R3/R4 and AI Review approvals are not required. Verify the actual merged PR state and release assets.
