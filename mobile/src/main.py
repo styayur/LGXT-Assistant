@@ -236,7 +236,25 @@ def main(page, client_factory=ApiClient, storage=None):
     pass_field = ft.TextField(label='密码', password=True, can_reveal_password=True,
                               bgcolor=SURFACE, border_color='#243040', text_size=15,
                               color=FG, height=56)
-    insecure_opt = ft.Checkbox(label='理解风险，本次允许明文 HTTP', value=False)
+    def store_http_compat(enabled):
+        try:
+            if enabled:
+                local_store.set('lgxt.http_compat', True)
+            else:
+                local_store.remove('lgxt.http_compat')
+        except Exception:
+            logging.warning('HTTP compatibility choice could not be stored')
+
+    def http_compat_changed(_e=None):
+        store_http_compat(bool(insecure_opt.value))
+        if getattr(api, 'insecure', False):
+            api.allow_insecure = bool(insecure_opt.value)
+
+    insecure_opt = ft.Checkbox(label='理解风险，允许明文 HTTP', value=False, on_change=http_compat_changed)
+    try:
+        insecure_opt.value = local_store.get('lgxt.http_compat') is True
+    except Exception:
+        logging.warning('Stored HTTP compatibility choice unavailable')
 
     def show_login(err=''):
         try:
@@ -260,12 +278,27 @@ def main(page, client_factory=ApiClient, storage=None):
         show(make_view('/login', '登录', 'AUTH · 建立会话', controls))
 
     def do_login(_e=None):
-        api.allow_insecure = bool(insecure_opt.value)
         if state.get('login_pending'):
             return
         if not user_field.value or not pass_field.value:
             snack('请输入用户名和密码', WARN)
             return
+        if getattr(api, 'insecure', False) and not insecure_opt.value:
+            def allow_http(_e=None):
+                insecure_opt.value = True
+                store_http_compat(True)
+                page.pop_dialog()
+                do_login()
+            def deny_http(_e=None):
+                page.pop_dialog()
+            page.show_dialog(ft.AlertDialog(
+                title=ft.Text('允许明文 HTTP'),
+                content=ft.Text('平台目前只有 HTTP，安全传输未验证。允许本次以明文发送账号、密码和成绩？'
+                                '这不是安全传输，不会保存密码或令牌，也不会把地址改成 HTTPS。'),
+                actions=[ft.TextButton('取消', on_click=deny_http),
+                         ft.TextButton('允许并登录', on_click=allow_http)]))
+            return
+        api.allow_insecure = bool(insecure_opt.value)
         login_id = uuid.uuid4().hex
         state['login_id'] = login_id
         state['login_pending'] = True
@@ -287,6 +320,7 @@ def main(page, client_factory=ApiClient, storage=None):
         insecure_login = bool(insecure_opt.value)
 
         def work():
+            nonlocal api
             candidate = None
             try:
                 candidate = client_factory()
@@ -299,17 +333,23 @@ def main(page, client_factory=ApiClient, storage=None):
                 return                            # 用户已取消
             state['login_pending'] = False
             if ok:
-                api.logout()
-                api.headers.update(candidate.headers)
+                # Keep the session that actually logged in. Copying only the token
+                # drops cookies set by the platform response.
+                previous = api
+                api = candidate
+                threading.Thread(target=previous.logout, daemon=True).start()
                 state['username'] = username
                 try:
-                    if not api.insecure: local_store.set('lgxt.user', username)
-                    else: local_store.remove('lgxt.user')
+                    local_store.set('lgxt.user', username)
                     local_store.remove('lgxt.pass')
+                    if insecure_login:
+                        local_store.set('lgxt.http_compat', True)
                 except Exception:
                     logging.warning('Local mobile storage unavailable')
                 ui(show_dashboard)
             else:
+                if candidate:
+                    candidate.logout()
                 ui(show_login, msg)
 
         start_work(work)
@@ -763,7 +803,6 @@ def main(page, client_factory=ApiClient, storage=None):
             threading.Thread(target=previous_api.logout, daemon=True).start()
             ai_fields['key'].value = ''
             pass_field.value = ''
-            insecure_opt.value = False
             state.update(username='', courses=[], works=[], questions=[], course=None, work=None)
             try:
                 local_store.remove('lgxt.pass')

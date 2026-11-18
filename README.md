@@ -25,7 +25,7 @@ Open a course and assignment, then select a question. The assignment workspace k
 
 ## Transport limitation
 
-**The official HTTP endpoint responds, but HTTPS could not be verified on 24 October 2026.** Login and authenticated requests over HTTP are blocked by default. There is no automatic downgrade and certificate validation remains enabled. If you explicitly enable insecure compatibility for this login, passwords, tokens and grade traffic can be intercepted or altered. A persistent warning remains visible and platform credentials are not saved. Prefer a verified HTTPS API configured through `LGXT_API_BASE` where available. See [transport evidence and policy](SECURITY.md).
+**The official HTTP endpoint responds, but HTTPS could not be verified on 24 October 2026.** Login and authenticated requests over HTTP stay blocked until an explicit plaintext compatibility choice. That choice can be remembered; passwords and session tokens are not. The app does not rewrite the HTTP platform address to HTTPS and does not disable certificate validation. Plaintext traffic can be intercepted or altered, and a warning remains visible. Prefer a verified HTTPS API configured through LGXT_API_BASE where available. See [transport evidence and policy](SECURITY.md).
 
 Images are restricted to the configured platform host, public destinations and supported raster formats. External hosts, redirects, private IP addresses, invalid images, oversized responses and unsafe data URLs are rejected. Some legitimate external image hosts may therefore be unavailable until independently reviewed.
 
