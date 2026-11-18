@@ -19,6 +19,7 @@ def main():
     parser.add_argument('--output',default='build/android/device')
     parser.add_argument('--fixture',action='store_true')
     parser.add_argument('--historical-apk')
+    parser.add_argument('--previous-beta-apk')
     parser.add_argument('--backup-roundtrip',action='store_true',help='Import synthetic notes through the ordinary release APK picker')
     args=parser.parse_args()
     expected_note='native-fixture-note' if args.fixture else 'native-fixture-note-saved'
@@ -77,7 +78,7 @@ def main():
             shell('input','swipe','500','1500','500','1000','1000')
         screen('scroll-failure');raise AssertionError('Cannot find '+text)
     package='io.github.styayur.lgxt_assistant_mobile'
-    if args.backup_roundtrip and shell('getprop','ro.kernel.qemu').strip()!='1':
+    if (args.backup_roundtrip or args.previous_beta_apk) and shell('getprop','ro.kernel.qemu').strip()!='1':
         raise ValueError('Synthetic backup injection requires a disposable Android emulator')
     upgrade_incompatible=None
     if args.historical_apk:
@@ -87,9 +88,24 @@ def main():
             raise AssertionError('Historical signing incompatibility not established')
         upgrade_incompatible=True
         adb('uninstall',package)
+    def launch():shell('am','start','-W','-n',package+'/.MainActivity')
+    if args.previous_beta_apk:
+        if 'Success' not in adb('install',args.previous_beta_apk).decode():raise ValueError('Previous beta installation failed')
+        launch();wait_text('登录理工学堂');tap_text('离线打开本地资料');tap_text('导出备份');tap_text('SAVE')
+        key='question.'+hashlib.sha256(json.dumps(['native-test','backup-test','1']).encode()).hexdigest()
+        document={'schemaVersion':1,'courseId':'native-test','workId':'backup-test','questionId':'1',
+                  'title':'Beta migration — synthetic','courseName':'Synthetic migration test',
+                  'workName':'Synthetic backup test','sourceText':'No real platform data',
+                  'correctedMarkdown':'','solutionMarkdown':'migration-fixture-note','originalImage':'','sources':[]}
+        seed=out/'migration-seed.json'
+        seed.write_text(json.dumps({'schemaVersion':1,'documents':{key:document}}),encoding='utf-8')
+        adb('push',str(seed),'/sdcard/Download/LGXT-study-notes.json')
+        tap_text('导入备份 / 恢复');tap_text('LGXT-study-notes.json');confirm_import()
+        tap_text('打开本地笔记');scroll_to('migration-fixture-note')
+        shell('am','force-stop',package)
+        shell('rm','-f','/sdcard/Download/LGXT-study-notes.json')
     if 'Success' not in adb('install','-r',args.apk).decode():raise ValueError('APK installation failed')
     shell('logcat','-c')
-    def launch():shell('am','start','-W','-n',package+'/.MainActivity')
     launch();root=wait_text('登录理工学堂');screen('login-native')
     edits=[node for node in root.iter('node') if node.get('class')=='android.widget.EditText']
     if len(edits)!=2:raise AssertionError('Expected two native editable login fields')
@@ -127,9 +143,14 @@ def main():
         passed+=['fixture course/assignment/question','submission cancel and confirm (no server)',
                  'note edit and save','unconfirmed vision rejected before provider request']
     else:
+        wait_text('允许明文 HTTP');tap_text('取消')
         wait_text('已阻止明文 HTTP');screen('http-blocked-native')
         tap_text('离线打开本地资料');wait_text('本地资料');screen('library-native')
         passed+=['HTTP blocked with dummy credentials','offline library']
+        if args.previous_beta_apk:
+            tap_text('打开本地笔记');scroll_to('migration-fixture-note');screen('previous-beta-note-preserved')
+            shell('input','keyevent','4');wait_text('本地资料')
+            passed.append('3.3.0 signed beta upgrades in place and preserves its schema-1 note')
         if args.backup_roundtrip:
             # Export through Android first so the picker indexes a real document.
             # Replace only that disposable emulator test file with synthetic notes.
@@ -155,7 +176,14 @@ def main():
         if 'Success' not in adb('install','-r',args.apk).decode():
             raise AssertionError('Same-certificate reinstall failed')
         passed.append('same-certificate reinstall (notes checked after restart)')
-    shell('am','force-stop',package);launch();wait_text('登录理工学堂');screen('restart-native')
+    shell('am','force-stop',package);launch()
+    if args.fixture:
+        wait_text('刷新作业状态');screen('encrypted-session-restored-native-fixture')
+        passed.append('device encrypted synthetic token session restores after process termination and validates')
+        tap_text('设置');tap_text('退出登录并清除设备会话');wait_text('登录理工学堂')
+        shell('am','force-stop',package);launch()
+        passed.append('logout clears device session across process termination')
+    wait_text('登录理工学堂');screen('restart-native')
     if args.fixture or args.backup_roundtrip:
         tap_text('离线打开本地资料');tap_text('打开本地笔记')
         scroll_to('native-fixture-note');screen('restored-native-fixture')
@@ -186,6 +214,7 @@ def main():
             'android':shell('getprop','ro.build.version.release').strip(),
             'fixture':args.fixture,'syntheticDocuments':args.fixture or args.backup_roundtrip,'passed':passed+['background resume','force-stop restart'],
             'historicalUpgradeIncompatible':upgrade_incompatible,
+            'previousBetaInPlaceUpgrade':bool(args.previous_beta_apk),
             'not_covered':['real platform','paid provider','physical ARM64 device','historical in-place signing continuity']}
     (out/'acceptance.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     sys.stdout.write(json.dumps(report,ensure_ascii=False)+'\n')

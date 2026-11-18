@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "postinstall": "node picomatch-backport.mjs --apply",
+    "audit:security": "node security-audit.mjs",
+    "test:backport": "node --test backport.test.mjs",
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1"

@@ -3,6 +3,7 @@ import base64
 import io
 import json
 import logging
+import requests
 
 import flet as ft
 from PIL import Image
@@ -15,9 +16,12 @@ class FixtureClient:
     fixture=True
     insecure=False
     allow_insecure=False
-    def __init__(self):self.headers={}
+    base_url='https://fixture.invalid/api'
+    def __init__(self):self.headers={};self.session=requests.Session()
     def login(self,*args):self.headers['Authorization']='synthetic';return True,'fixture'
     def logout(self):self.headers.clear()
+    def get_user_info(self):
+        return (True, {'name':'Synthetic user'}) if self.headers.get('Authorization')=='synthetic' else (False,'Invalid synthetic session')
     def get_my_courses(self):return True,[{'courseId':1,'courseName':'Fixture physics'}]
     def get_course_works(self,*args):return True,[{'workId':2,'workName':'Fixture assignment','tryTimes':3,'times':1,'grade':None}]
     def get_questions(self,*args):return True,[{'id':3,'name':'Fixture formula','imgurl':'fixture','answer':'synthetic'}]

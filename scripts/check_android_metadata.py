@@ -8,12 +8,19 @@ import re
 import subprocess
 import zipfile
 import sys
+import tomllib
 from pathlib import Path
 
 
+def project_identity():
+    project = tomllib.loads((Path(__file__).resolve().parents[1] / 'mobile/pyproject.toml').read_text(encoding='utf-8'))
+    return project['project']['version'], project['tool']['flet']['build_number']
+
+
 def validate_badging(info):
+    version, code = project_identity()
     lines = info.splitlines()
-    for expected in ("name='io.github.styayur.lgxt_assistant_mobile'", "versionName='3.3.0'", "versionCode='4'"):
+    for expected in ("name='io.github.styayur.lgxt_assistant_mobile'", f"versionName='{version}'", f"versionCode='{code}'"):
         if expected not in lines[0]: raise ValueError('Incorrect Android metadata: ' + expected)
     if "sdkVersion:'24'" not in lines or "targetSdkVersion:'36'" not in lines:
         raise ValueError('Android SDK levels must be min 24 / target 36')
@@ -69,9 +76,10 @@ def main():
         if archive.testzip():raise ValueError('APK ZIP integrity failure')
         payload_digest=app_payload(archive)
     with open(args.apk,'rb') as source:apk_digest=hashlib.file_digest(source,'sha256').hexdigest()
+    version, code = project_identity()
     result={'apk':Path(args.apk).name,'sha256':apk_digest,
             'certificateSha256':fingerprint,'debugTestOnly':args.allow_debug_for_testing,
-            'package':'io.github.styayur.lgxt_assistant_mobile','version':'3.3.0','versionCode':4,'abis':abis,
+            'package':'io.github.styayur.lgxt_assistant_mobile','version':version,'versionCode':code,'abis':abis,
             'signatureVerified':True,'fixture':False,'appPayloadSha256':payload_digest,
             'sdk':[line for line in info.splitlines() if line.startswith(('sdkVersion:','targetSdkVersion:'))]}
     if args.source_commit:

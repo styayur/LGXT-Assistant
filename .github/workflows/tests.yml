@@ -14,6 +14,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  android-renderer:
+    name: Android Flet renderer (synthetic browser)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -r mobile/requirements.txt flet-web==1.1.2 playwright pytest
+      - run: python -m playwright install --with-deps chromium
+      - name: Render actual Flet phone layouts with synthetic data
+        run: |
+          python scripts/preview_mobile.py --fixture --headless --port 8554 > mobile-render.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            if curl --silent --fail http://127.0.0.1:8554/ > /dev/null; then break; fi
+            sleep 1
+          done
+          python scripts/check_mobile_browser.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: android-browser-renderer-synthetic
+          path: |
+            docs/screenshots/android-3.3.1-*.png
+            mobile-render.log
+
   python:
     runs-on: windows-latest
     timeout-minutes: 25

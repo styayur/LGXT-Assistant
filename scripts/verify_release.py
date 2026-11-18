@@ -59,7 +59,8 @@ def verify_assets(release, directory, tag, allow_draft=False, expected_commit=No
         require(identity.get('abis') == ['arm64-v8a', 'x86_64'] and identity.get('sdk') == ["sdkVersion:'24'", "targetSdkVersion:'36'"], 'Wrong Android SDK/ABI metadata')
         require(identity.get('sourceCommit') == expected_commit, 'APK source differs from release source')
         require(identity.get('certificateSha256') == expected_certificate.lower().replace(':', ''), 'Wrong Android signing identity')
-        require(identity.get('version') == version and identity.get('versionCode') == 4
+        version_codes = {'3.3.0': 4, '3.3.1': 5}
+        require(version in version_codes and identity.get('version') == version and identity.get('versionCode') == version_codes[version]
                 and identity.get('package') == 'io.github.styayur.lgxt_assistant_mobile', 'Wrong Android package/version')
         require(identity.get('sha256') == entries[apk_name], 'APK identity digest differs')
     elif tag.endswith('-web'):

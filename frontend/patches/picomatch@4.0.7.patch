@@ -1,0 +1,37 @@
+diff --git a/lib/parse.js b/lib/parse.js
+index 2cbb417..9e01056 100644
+--- a/lib/parse.js
++++ b/lib/parse.js
+@@ -296,6 +296,32 @@ const analyzeRepeatedExtglob = (body, options) => {
+ 
+   const branches = splitTopLevel(body).map(branch => branch.trim());
+ 
++  // GHSA-fc5q-39xc-vjpf: one branch can also nest an unbounded wildcard
++  // inside a repeat. Follow the existing risky-pattern literalization policy.
++  // Ignore escaped/quoted stars, bracket classes and nested extglob openers;
++  // nested repeats are handled by the existing recursion/flattening checks.
++  const hasUnboundedWildcard = branch => {
++    let escaped = false;
++    let quoted = false;
++    let bracket = 0;
++    let paren = 0;
++    for (let i = 0; i < branch.length; i++) {
++      const ch = branch[i];
++      if (escaped) { escaped = false; continue; }
++      if (ch === '\\') { escaped = true; continue; }
++      if (ch === '"') { quoted = !quoted; continue; }
++      if (quoted) continue;
++      if (ch === '[') { bracket++; continue; }
++      if (ch === ']' && bracket > 0) { bracket--; continue; }
++      if (bracket > 0) continue;
++      if (ch === '(') { paren++; continue; }
++      if (ch === ')' && paren > 0) { paren--; continue; }
++      if (paren === 0 && ch === '*' && branch[i + 1] !== '(') return true;
++    }
++    return false;
++  };
++  if (branches.some(hasUnboundedWildcard)) return { risky: true };
++
+   if (branches.length > 1) {
+     if (
+       branches.some(branch => branch === '') ||

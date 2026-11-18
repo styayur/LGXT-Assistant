@@ -19,7 +19,7 @@ BASE_URL = os.environ.get('LGXT_API_BASE', 'http://lgxt.wutp.com.cn/api')
 TIMEOUT = (5, 10)
 MAX_IMAGE_BYTES = 8 * 1024 * 1024
 MAX_IMAGE_PIXELS = 20_000_000
-INSECURE_WARNING = '不安全兼容模式：账号、密码、题目和成绩通过明文 HTTP 传输，可能被窃取或篡改；不会保存密码或登录令牌。'
+INSECURE_WARNING = 'HTTP 明文兼容：账号、密码、令牌和成绩可能被窃取或篡改。'
 READ_ENDPOINTS = frozenset(('userInfo', 'myCourses', 'myCourseWorks', 'showQuestions'))
 TRANSIENT = frozenset((429, 500, 502, 503, 504))
 HTTP_BLOCKED = '已阻止明文 HTTP。平台 HTTPS 尚未验证；请阅读风险并明确启用不安全兼容模式。'
@@ -104,6 +104,7 @@ class APIClient:
         self._lock = threading.RLock()
         self._cache = {}
         self._image_cache = OrderedDict()
+        self.authentication_rejected = False
 
     def logout(self):
         with self._lock:
@@ -133,6 +134,7 @@ class APIClient:
         return True
 
     def _post(self, endpoint, data=None, fail_msg='请求失败', secret=None):
+        self.authentication_rejected = False
         if self.insecure and not self.allow_insecure:
             return False, HTTP_BLOCKED
         url = self.base_url + '/' + endpoint
@@ -151,6 +153,7 @@ class APIClient:
                     response = self.session.post(url, headers=self.headers, data=data, timeout=TIMEOUT,
                                                  allow_redirects=False, verify=True)
                     status = response.status_code
+                    self.authentication_rejected = status in (401, 403)
                     if readonly and status in TRANSIENT and attempt < self.retries:
                         if self._delay(attempt, response):
                             continue
@@ -198,6 +201,7 @@ class APIClient:
                     if readonly and endpoint != 'showQuestions':
                         self._cache[key] = (time.monotonic() + 10, answer)
                     return answer
+                self.authentication_rejected = result['code'] == -1
                 return False, platform_message(result, fail_msg, secret)
 
     def login(self, username, password):

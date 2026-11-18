@@ -19,6 +19,7 @@ pytest-tmp/
 mobile/pip-*
 frontend/node_modules/
 frontend/dist/
+frontend/npm-audit.raw.json
 .venv/
 tmp/pdfs/
 
