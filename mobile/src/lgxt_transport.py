@@ -26,7 +26,7 @@ HTTP_BLOCKED = '已阻止明文 HTTP。平台 HTTPS 尚未验证；请阅读风�
 HTTPS_UPGRADE_BLOCKED = '已拒绝将 HTTP 升级为 HTTPS：平台安全传输未验证，未发起该请求。'
 
 
-def platform_message(result, fail_msg, secret=''):
+def platform_message(result, fail_msg, secret=None):
     """Surface the platform msg from v3.2.1 without echoing secrets or URLs."""
     message = result.get('msg') if isinstance(result, dict) else None
     if not isinstance(message, str):
@@ -132,7 +132,7 @@ class APIClient:
         time.sleep(delay)
         return True
 
-    def _post(self, endpoint, data=None, fail_msg='请求失败', secret=''):
+    def _post(self, endpoint, data=None, fail_msg='请求失败', secret=None):
         if self.insecure and not self.allow_insecure:
             return False, HTTP_BLOCKED
         url = self.base_url + '/' + endpoint
