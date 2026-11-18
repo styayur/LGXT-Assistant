@@ -14,13 +14,43 @@ import requests
 from requests.adapters import HTTPAdapter
 
 # The official HTTP endpoint responds; HTTPS could not be verified. Fail closed.
+# Never rewrite that HTTP base to HTTPS, and never disable certificate validation.
 BASE_URL = os.environ.get('LGXT_API_BASE', 'http://lgxt.wutp.com.cn/api')
 TIMEOUT = (5, 10)
 MAX_IMAGE_BYTES = 8 * 1024 * 1024
 MAX_IMAGE_PIXELS = 20_000_000
-INSECURE_WARNING = '不安全兼容模式：账号、密码、题目和成绩通过明文 HTTP 传输，可能被窃取或篡改；不会保存登录凭据。'
+INSECURE_WARNING = '不安全兼容模式：账号、密码、题目和成绩通过明文 HTTP 传输，可能被窃取或篡改；不会保存密码或登录令牌。'
 READ_ENDPOINTS = frozenset(('userInfo', 'myCourses', 'myCourseWorks', 'showQuestions'))
 TRANSIENT = frozenset((429, 500, 502, 503, 504))
+HTTP_BLOCKED = '已阻止明文 HTTP。平台 HTTPS 尚未验证；请阅读风险并明确启用不安全兼容模式。'
+HTTPS_UPGRADE_BLOCKED = '已拒绝将 HTTP 升级为 HTTPS：平台安全传输未验证，未发起该请求。'
+
+
+def platform_message(result, fail_msg, secret=''):
+    """Surface the platform msg from v3.2.1 without echoing secrets or URLs."""
+    message = result.get('msg') if isinstance(result, dict) else None
+    if not isinstance(message, str):
+        return fail_msg + '：平台拒绝请求，请检查账号或作业状态'
+    text = ' '.join(message.split())
+    if secret:
+        text = text.replace(secret, '***')
+    if not text:
+        return fail_msg + '：平台拒绝请求，请检查账号或作业状态'
+    return f'{fail_msg}：{text[:180]}'
+
+
+def network_failure(insecure):
+    if insecure:
+        return '网络错误：连接失败或超时，请检查网络'
+    return '网络错误：连接失败或超时，请检查网络与 TLS 证书'
+
+
+def _json_object(response):
+    try:
+        value = response.json()
+    except (ValueError, AttributeError):
+        return None
+    return value if isinstance(value, dict) else None
 
 
 def validate_image(data):
@@ -60,7 +90,12 @@ class APIClient:
         self.allow_insecure = bool(allow_insecure)
         self.insecure = parsed.scheme == 'http'
         self.retries = max(0, min(3, int(retries)))
-        self.headers = {'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded'}
+        # Match the v3.2.1 client. Do not advertise JSON-only acceptance.
+        self.headers = {
+            'Accept': '*/*',
+            'Accept-Language': 'zh-CN,zh;q=0.9',
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }
         self.session = requests.Session()
         self.session.trust_env = False
         adapter = HTTPAdapter(pool_connections=2, pool_maxsize=2, max_retries=0)
@@ -97,9 +132,13 @@ class APIClient:
         time.sleep(delay)
         return True
 
-    def _post(self, endpoint, data=None, fail_msg='请求失败'):
+    def _post(self, endpoint, data=None, fail_msg='请求失败', secret=''):
         if self.insecure and not self.allow_insecure:
-            return False, '已阻止明文 HTTP。平台 HTTPS 尚未验证；请阅读风险并明确启用不安全兼容模式。'
+            return False, HTTP_BLOCKED
+        url = self.base_url + '/' + endpoint
+        # An HTTP platform must stay on HTTP. Do not call the unverified HTTPS transport.
+        if self.insecure and urlsplit(url).scheme != 'http':
+            return False, HTTPS_UPGRADE_BLOCKED
         readonly = endpoint in READ_ENDPOINTS
         key = (endpoint, repr(data))
         with self._lock:
@@ -109,8 +148,8 @@ class APIClient:
             for attempt in range((self.retries if readonly else 0) + 1):
                 response = None
                 try:
-                    response = self.session.post(self.base_url + '/' + endpoint, headers=self.headers,
-                                                 data=data, timeout=TIMEOUT, allow_redirects=False)
+                    response = self.session.post(url, headers=self.headers, data=data, timeout=TIMEOUT,
+                                                 allow_redirects=False, verify=True)
                     status = response.status_code
                     if readonly and status in TRANSIENT and attempt < self.retries:
                         if self._delay(attempt, response):
@@ -118,17 +157,33 @@ class APIClient:
                     if endpoint == 'submitAnswer' and (status >= 500 or 300 <= status < 400):
                         return False, '结果待核实：服务器未给出可靠确认；请在平台检查，勿直接重试。'
                     if 300 <= status < 400:
+                        location = response.headers.get('Location') or ''
+                        if urlsplit(location).scheme == 'https':
+                            return False, HTTPS_UPGRADE_BLOCKED
                         return False, '已阻止平台重定向，请检查 API 配置'
-                    response.raise_for_status()
+                    if status >= 400:
+                        detail = ''
+                        parsed = _json_object(response)
+                        if isinstance(parsed, dict) and isinstance(parsed.get('msg'), str):
+                            text = ' '.join(parsed['msg'].split())
+                            if secret:
+                                text = text.replace(secret, '***')
+                            if text:
+                                detail = '：' + text[:180]
+                        if 400 <= status < 500:
+                            return False, f'{fail_msg}：HTTP {status}{detail}（未自动重试）'
+                        if readonly and attempt < self.retries and self._delay(attempt, response):
+                            continue
+                        if endpoint == 'submitAnswer':
+                            return False, '结果待核实：连接中断或超时，服务器可能已提交；请在平台检查。'
+                        return False, network_failure(self.insecure) + detail
                     result = response.json()
                 except requests.exceptions.RequestException:
-                    if response is not None and 400 <= response.status_code < 500:
-                        return False, f'{fail_msg}：HTTP {response.status_code}（未自动重试）'
                     if readonly and attempt < self.retries and self._delay(attempt):
                         continue
                     if endpoint == 'submitAnswer':
                         return False, '结果待核实：连接中断或超时，服务器可能已提交；请在平台检查。'
-                    return False, '网络错误：连接失败或超时，请检查网络与 TLS 证书'
+                    return False, network_failure(self.insecure)
                 except ValueError:
                     return False, ('结果待核实：服务器返回非 JSON 响应' if endpoint == 'submitAnswer'
                                    else fail_msg + '：服务器返回了非 JSON 响应')
@@ -143,13 +198,16 @@ class APIClient:
                     if readonly and endpoint != 'showQuestions':
                         self._cache[key] = (time.monotonic() + 10, answer)
                     return answer
-                return False, fail_msg + '：平台拒绝请求，请检查账号或作业状态'
+                return False, platform_message(result, fail_msg, secret)
 
     def login(self, username, password):
         self.logout()
-        ok, data = self._post('login', {'loginName': username, 'password': password}, '登录失败')
+        ok, data = self._post('login', {'loginName': username, 'password': password}, '登录失败', secret=password or '')
         if ok and isinstance(data, str) and data:
+            # Token stays on the explicit request headers, not the ambient session,
+            # so image downloads cannot inherit it. Cookies from this response stay.
             self.headers['Authorization'] = data
+            self.session.headers.pop('Authorization', None)
             return True, '欢迎回来！'
         return False, data if not ok else '登录失败：无效的登录响应'
 
@@ -214,7 +272,7 @@ class APIClient:
             images.trust_env = False
             for attempt in range(self.retries + 1):
                 try:
-                    with images.get(url, timeout=TIMEOUT, stream=True, allow_redirects=False) as response:
+                    with images.get(url, timeout=TIMEOUT, stream=True, allow_redirects=False, verify=True) as response:
                         if response.status_code in TRANSIENT and attempt < self.retries and self._delay(attempt, response):
                             continue
                         if 300 <= response.status_code < 400:

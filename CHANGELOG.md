@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Restore Android login session handling to the v3.2.1 contract: keep the authenticated client, send the same form headers, and show the platform message.
+- Ask once before plaintext HTTP and remember that choice only. Do not save passwords or session tokens, rewrite the platform URL to HTTPS, or disable certificate validation.
+- Real-device login and OCR remain unverified.
+
 ## Android 3.3.0 Beta — 25 October 2026
 
 - Publish [v3.3.0-android](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.3.0-android) from `e402b78e558cc763b0e1fad87991674bb8bc831f` with the durable Beta certificate. Historical 3.2.1 requires backup and reinstall.

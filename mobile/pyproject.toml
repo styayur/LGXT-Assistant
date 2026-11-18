@@ -23,4 +23,7 @@ bundle_id = "io.github.styayur.lgxt_assistant_mobile"
 path = "src"
 
 [tool.flet.android]
+# Do not set usesCleartextTraffic globally. The working v3.2.0 APK had no
+# cleartext flag; Python sockets are not governed by that manifest attribute.
+# Do not disable HTTPS certificate validation.
 permissions = ["android.permission.INTERNET"]
