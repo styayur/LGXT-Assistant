@@ -233,7 +233,7 @@ jobs:
           profile: pixel_2
           disable-animations: true
           script: |
-            python scripts/check_android_device.py --apk build/android/apk/LGXT-Assistant-Android-v3.3.1.apk --historical-apk build/android/history/LGXT-Assistant-3.2.1-android.apk --previous-beta-apk build/android/history/LGXT-Assistant-Android-v3.3.0.apk --backup-roundtrip
+            python scripts/check_android_device.py --apk build/android/apk/LGXT-Assistant-Android-v3.3.1.apk --historical-apk build/android/history/LGXT-Assistant-3.2.1-android.apk ${{ inputs.release_signing && '--previous-beta-apk build/android/history/LGXT-Assistant-Android-v3.3.0.apk' || '' }} --backup-roundtrip
             # Remove only the synthetic shared backup before the separate fixture.
             adb shell rm -f /sdcard/Download/LGXT-study-notes.json
             adb uninstall io.github.styayur.lgxt_assistant_mobile

@@ -9,7 +9,7 @@ import flet as ft
 from PIL import Image
 
 from app_under_test import main
-from android_image_checks import run
+from android_image_checks import run, credential_free_transport_probe
 
 
 class FixtureClient:
@@ -34,6 +34,7 @@ class FixtureClient:
 def target(page):
     result=run()
     logging.getLogger('lgxt.acceptance').warning('LGXT_NATIVE_CHECKS=%s',json.dumps(result))
+    logging.getLogger('lgxt.acceptance').warning('LGXT_NETWORK_PROBE=%s',json.dumps(credential_free_transport_probe()))
     main(page,FixtureClient)
 
 

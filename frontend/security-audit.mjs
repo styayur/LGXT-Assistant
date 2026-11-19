@@ -11,10 +11,10 @@ writeFileSync('npm-audit.raw.json', result.stdout);
 const report = JSON.parse(result.stdout);
 if (report.auditReportVersion !== 2 || !report.metadata?.vulnerabilities || report.error) throw Error('Incomplete npm audit');
 const findings = Object.values(report.vulnerabilities ?? {});
+const verified = verifyBackport();
 if (!findings.length) {
-  console.log('npm audit: no current advisories');
+  process.stdout.write(JSON.stringify({ ...verified, rawAudit: 'npm-audit.raw.json', currentAuditFindings: 0 }) + '\n');
 } else {
-  const verified = verifyBackport();
   const installed = new Set(verified.copies.map(path => relative(process.cwd(), path).replaceAll('\\', '/')));
   const lock = JSON.parse(readFileSync('package-lock.json'));
   const graph = new Set(['picomatch', 'fdir', 'tinyglobby', 'vite']);
@@ -33,5 +33,5 @@ if (!findings.length) {
     if (item.name === 'picomatch' && item.nodes.some(path => !installed.has(path))) throw Error('Audit includes an unverified parser');
   }
   if (!advisory) throw Error('Backport cannot qualify unrelated findings');
-  console.log(JSON.stringify({ ...verified, rawAudit: 'npm-audit.raw.json', upstreamFixed: false }));
+  process.stdout.write(JSON.stringify({ ...verified, rawAudit: 'npm-audit.raw.json', upstreamFixed: false }) + '\n');
 }

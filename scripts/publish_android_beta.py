@@ -71,6 +71,20 @@ def main():
     work = Path('publication-evidence')
     work.mkdir(exist_ok=True)
     verify_identity(assets, work/'artifact-identity.json')
+    def verify_tag():
+        remote_tag = gh_json('api', f'repos/{repo}/git/ref/tags/{tag}')['object']
+        if remote_tag['type'] == 'tag':
+            remote_tag = gh_json('api', f'repos/{repo}/git/tags/{remote_tag["sha"]}')['object']
+        require(remote_tag['type'] == 'commit' and remote_tag['sha'] == source, 'Tag source differs')
+    # Draft release creation does not guarantee that GitHub creates its tag yet.
+    # Create a missing tag once, then reject any differing existing tag.
+    tag_lookup = subprocess.run(['gh', 'api', f'repos/{repo}/git/ref/tags/{tag}'],
+                                capture_output=True, text=True, timeout=60)
+    if tag_lookup.returncode != 0:
+        require('404' in tag_lookup.stderr, 'Tag lookup failed')
+        command('gh', 'api', '--method', 'POST', f'repos/{repo}/git/refs',
+                '-f', f'ref=refs/tags/{tag}', '-f', f'sha={source}')
+    verify_tag()
     existing = subprocess.run(['gh', 'release', 'view', tag, '--json', 'isDraft,targetCommitish'],
                               capture_output=True, text=True, timeout=60)
     if existing.returncode == 0:
@@ -81,6 +95,7 @@ def main():
         command('gh', 'release', 'create', tag, '--target', source, '--draft', '--prerelease',
                 '--title', f'Android {version} Beta', '--notes-file', f'docs/releases/v{version}-android.md')
     record = release_record(tag)
+    verify_tag()
     remote = {a['name']: a for a in record['assets']}
     require(set(remote) <= expected, 'Existing release contains unexpected assets')
     for path in sorted(assets.iterdir()):
@@ -102,10 +117,7 @@ def main():
     command('gh', 'release', 'download', tag, '--dir', str(public), '--clobber')
     result = verify_assets(release_record(tag), public, tag, False, source, pin)
     verify_identity(public, work/'published-identity.json')
-    remote_tag = gh_json('api', f'repos/{repo}/git/ref/tags/{tag}')['object']
-    if remote_tag['type'] == 'tag':
-        remote_tag = gh_json('api', f'repos/{repo}/git/tags/{remote_tag["sha"]}')['object']
-    require(remote_tag['type'] == 'commit' and remote_tag['sha'] == source, 'Tag source differs')
+    verify_tag()
     result.update(buildRun=args.build_run, certificateSha256=pin,
                   hashes={p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(public.iterdir())})
     (work/'PUBLICATION.json').write_text(json.dumps(result, indent=2), encoding='utf-8')

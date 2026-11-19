@@ -38,7 +38,8 @@ export function verifyBackport(apply = false, copies = installed()) {
     const parser = join(path, 'lib/parse.js');
     if (apply && hash(readFileSync(parser)) !== binding.installedSha256['lib/parse.js']) {
       const original = readFileSync(parser, 'utf8');
-      const insertion = patch.toString().split('\n').filter(line => line.startsWith('+') && !line.startsWith('+++')).map(line => line.slice(1)).join('\n') + '\n';
+      const added = patch.toString().split('\n').filter(line => line.startsWith('+') && !line.startsWith('+++')).map(line => line.slice(1)).join('\n');
+      const insertion = added.replace(/^\n+|\n+$/g, '') + '\n\n';
       const anchor = '  if (branches.length > 1) {';
       if (original.split(anchor).length !== 2) throw Error('Unexpected upstream parser');
       const patched = original.replace(anchor, insertion + anchor);
@@ -51,8 +52,9 @@ export function verifyBackport(apply = false, copies = installed()) {
     execFileSync(process.execPath, ['--input-type=commonjs', '-e', `
       const assert = require('node:assert/strict');
       const pm = require(process.argv[1]);
-      for (const pattern of ['+(*)', '*(*a)', '+(*a)', '*(a*)', '+(*?)', '+(*a|b)']) {
-        assert.equal(pm.isMatch('a'.repeat(64) + '!', pattern), false, pattern);
+      for (const pattern of ['+(*)', '*(*a)', '+(*a)', '*(a*)', '+(*?)', '+(*a|b)',
+        '+(@(*a))', '+(@(*(a)))', '*(@(*(a)))', '+(?(*(a)))', '+(@(+(a)))', '+(@(a|aa))']) {
+        assert.equal(pm.isMatch('a'.repeat(96) + '!', pattern), false, pattern);
         assert.equal(pm.isMatch(pattern, pattern), true, 'risky pattern remains literal');
       }
       for (const [value, pattern, expected] of [
@@ -67,5 +69,5 @@ export function verifyBackport(apply = false, copies = installed()) {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  console.log(JSON.stringify(verifyBackport(process.argv.includes('--apply'))));
+  process.stdout.write(JSON.stringify(verifyBackport(process.argv.includes('--apply'))) + '\n');
 }

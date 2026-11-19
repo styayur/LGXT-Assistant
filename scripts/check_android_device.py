@@ -207,6 +207,10 @@ def main():
         screen('backup-restored-native-fixture')
         passed+=['system back navigation','native file-picker backup export/import']
     log=shell('logcat','-d');(out/'logcat.txt').write_text(log,encoding='utf-8')
+    network_probe = None
+    for line in log.splitlines():
+        if 'LGXT_NETWORK_PROBE=' in line:
+            network_probe = json.loads(line.split('LGXT_NETWORK_PROBE=',1)[1])
     if 'FATAL EXCEPTION' in log or 'Traceback (most recent call last)' in log:
         raise AssertionError('Native/Python crash in logcat')
     if args.fixture and 'LGXT_NATIVE_CHECKS=' not in log:raise AssertionError('Native decoder checks not reported')
@@ -215,6 +219,7 @@ def main():
             'fixture':args.fixture,'syntheticDocuments':args.fixture or args.backup_roundtrip,'passed':passed+['background resume','force-stop restart'],
             'historicalUpgradeIncompatible':upgrade_incompatible,
             'previousBetaInPlaceUpgrade':bool(args.previous_beta_apk),
+            'credentialFreeNetworkProbe':network_probe,
             'not_covered':['real platform','paid provider','physical ARM64 device','historical in-place signing continuity']}
     (out/'acceptance.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     sys.stdout.write(json.dumps(report,ensure_ascii=False)+'\n')
