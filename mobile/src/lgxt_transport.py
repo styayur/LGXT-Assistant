@@ -196,12 +196,19 @@ class APIClient:
                 if not isinstance(result, dict) or 'code' not in result:
                     return False, ('结果待核实：响应缺少必要字段' if endpoint == 'submitAnswer'
                                    else fail_msg + '：响应缺少必要字段')
-                if result['code'] == 0 and 'data' in result:
+                # The public portal normalizes numeric/string response codes.
+                # Keep this narrow: JSON false/0.0 and structured codes must not
+                # become success through Python's equality/coercion rules.
+                code = result['code']
+                if type(code) not in (int, str):
+                    return False, ('结果待核实：响应状态码无效' if endpoint == 'submitAnswer'
+                                   else fail_msg + '：响应状态码无效')
+                if code in (0, '0') and 'data' in result:
                     answer = (True, result['data'])
                     if readonly and endpoint != 'showQuestions':
                         self._cache[key] = (time.monotonic() + 10, answer)
                     return answer
-                self.authentication_rejected = result['code'] == -1
+                self.authentication_rejected = code in (-1, '-1')
                 return False, platform_message(result, fail_msg, secret)
 
     def login(self, username, password):
