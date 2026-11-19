@@ -1,6 +1,8 @@
 """Flet control-tree interaction tests, using synthetic course data only."""
 import io
 import dataclasses
+import json
+import logging
 import time
 from types import SimpleNamespace
 
@@ -9,7 +11,7 @@ import pytest
 from PIL import Image
 
 from mobile.src.main import main, ICONS
-from scripts.synthetic_credentials import FIXTURE_USERNAME, FIXTURE_PASSWORD, exact_synthetic_login
+from scripts.synthetic_credentials import FIXTURE_USERNAME, FIXTURE_PASSWORD, credential_observation, exact_synthetic_login
 
 class Storage:
     def __init__(self): self.data={'lgxt.pass':'legacy-plaintext'}
@@ -32,6 +34,7 @@ class FixtureClient:
     def __init__(self):self.headers={}
     def login(self,username,password):
         self.headers.clear()
+        logging.getLogger('lgxt.input-fidelity').warning('LGXT_SYNTHETIC_LOGIN=%s',json.dumps(credential_observation(username,password)))
         if not exact_synthetic_login(username,password):
             return False,'Synthetic input did not match exactly'
         self.headers['Authorization']='fixture'

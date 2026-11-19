@@ -12,6 +12,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 import time
 import xml.etree.ElementTree as ET
 import zipfile
@@ -268,8 +269,8 @@ def main():
               'notCovered':['CUA host app.typeText implementation','real credentials/platform',
                             'physical ARM64/vendor IMEs','production APK/account acceptance']}
     (runner.output/'report.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
-    print(json.dumps({'passed':report['passed'],'cases':len(results),
-                      'failed':[r['case'] for r in results if not r['passed']]}))
+    sys.stdout.write(json.dumps({'passed':report['passed'],'cases':len(results),
+                      'failed':[r['case'] for r in results if not r['passed']]})+'\n')
     if not report['passed']:
         raise SystemExit(1)
 
