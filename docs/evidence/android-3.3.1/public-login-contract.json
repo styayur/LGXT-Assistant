@@ -1,0 +1,84 @@
+{
+  "observedAtUtc": "2026-11-19T11:13:40.647394+00:00",
+  "publicSourceUrl": "http://lgxt.wutp.com.cn/assets/main/index.50c2f.js",
+  "sha256": "d9488d4d2233cc36b89921f8d28adaae4ff3ea1c94b32c6600965fb48976e30a",
+  "size": 104321,
+  "discovery": "Observed loaded script via browser pageAssets, fetched anonymously with no browser session or cookie/token values.",
+  "publicLogin": {
+    "method": "POST",
+    "baseUrl": "http://lgxt.wutp.com.cn/api/",
+    "endpoint": "login",
+    "contentType": "application/x-www-form-urlencoded",
+    "formKeys": [
+      "loginName",
+      "password"
+    ],
+    "passwordTransformation": "None: selected edit-box string passed directly. No hashing/encryption in sendLogin/sendAutoLogin or sendRequest.",
+    "formSerialization": "Concatenates key=value& without percent-encoding; Python requests form-encodes in both historical clients. No new 3.2-to-3.3 difference here.",
+    "successCode": "code.toString() == 0 string",
+    "tokenField": "response.data assigned to token then Authorization header, no observed token value retained.",
+    "expiryCode": "-1 (normalized string)",
+    "timeoutMs": 5000
+  },
+  "historical32": {
+    "source": "9db4666f12d46297388873716d9e59c47f701786",
+    "binarySourceVerified": true,
+    "method": "POST",
+    "endpoint": "/api/login",
+    "contentType": "application/x-www-form-urlencoded",
+    "formKeys": [
+      "loginName",
+      "password"
+    ],
+    "passwordTransformation": "None",
+    "successCode": "numeric 0",
+    "tokenField": "data",
+    "cookieSession": "retained",
+    "accept": "*/*",
+    "acceptLanguage": "zh-CN,zh;q=0.9"
+  },
+  "released33": {
+    "source": "e402b78e558cc763b0e1fad87991674bb8bc831f",
+    "binarySourceVerified": true,
+    "method": "POST",
+    "endpoint": "/api/login",
+    "contentType": "application/x-www-form-urlencoded",
+    "formKeys": [
+      "loginName",
+      "password"
+    ],
+    "passwordTransformation": "None",
+    "successCode": "numeric 0",
+    "tokenField": "nonempty string data",
+    "cookieSession": "temporary login session dropped; only headers handed off",
+    "accept": "application/json",
+    "acceptLanguage": "not explicitly set",
+    "redirects": "refused",
+    "http": "explicit app opt-in required"
+  },
+  "conclusions": [
+    "No endpoint, form-key or password-transformation regression identified between verified 3.2 and 3.3 clients.",
+    "Public code normalizes response codes but both Python historical versions require numeric zero; this is not a newly introduced 3.3 difference. Live successful login response code/token types were not inspected.",
+    "Authorized current course/assignment reads succeeded with Authorization present and no cookies; cookie loss is not a proven incident cause.",
+    "Do not weaken redirects/TLS/HTTP consent or reproduce the public client password-saving behavior."
+  ],
+  "actualIncidentRootCause": "NOT_VERIFIED",
+  "realLoginPostObserved": false,
+  "credentialsOrSessionsExported": false,
+  "accountMutationsPerformed": false,
+  "authenticatedReadCodeObservation": {
+    "observedAtUtc": "2026-11-19T11:31:28.588747+00:00",
+    "paths": [
+      "/api/myCourses",
+      "/api/myCourseWorks"
+    ],
+    "httpStatus": 200,
+    "responseMimeType": "application/json",
+    "codeType": "number",
+    "integerCode": true,
+    "code": 0,
+    "privateDataRetained": false,
+    "loginResponseObserved": false
+  },
+  "responseCodeCompatibility": "PR66 accepts exact integer0/string0 and expiry-1/string-1; rejects booleans/floats/structured codes and missing required fields. Current reads numeric0; no incident-cause claim."
+}
