@@ -101,8 +101,21 @@ jobs:
           python-version: '3.13'
       - name: Install isolated export QA dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libreoffice-writer fonts-noto-cjk poppler-utils
+          # The EC2 Ubuntu mirror repeatedly stalled on the 61 MB CJK package.
+          # Keep the same signed Ubuntu packages, using the official HTTPS mirror.
+          sudo python3 - <<'PY'
+          from pathlib import Path
+          import re
+          sources = [Path('/etc/apt/sources.list'), *Path('/etc/apt/sources.list.d').glob('*.sources'), *Path('/etc/apt/sources.list.d').glob('*.list')]
+          for path in sources:
+              if path.exists():
+                  text = path.read_text()
+                  updated = re.sub(r'https?://[^/\s]+\.ec2\.archive\.ubuntu\.com/ubuntu/?', 'https://archive.ubuntu.com/ubuntu/', text)
+                  if updated != text:
+                      path.write_text(updated)
+          PY
+          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update
+          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends libreoffice-writer fonts-noto-cjk poppler-utils
           python -m pip install python-docx reportlab 'Pillow>=13.0.0,<14' requests pytest -r requirements-equations.txt
       - run: python -m pytest -q tests/test_equation_preview.py
       - run: python scripts/check_equation_exports.py --output work/equation-exports

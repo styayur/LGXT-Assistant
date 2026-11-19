@@ -32,18 +32,26 @@ def main():
     args = parser.parse_args()
     require(re.fullmatch(r'[0-9]+', args.build_run), 'Invalid build run')
     require(os.environ.get('GITHUB_REF') == 'refs/heads/main', 'Publication requires main')
-    repo, source = os.environ['GITHUB_REPOSITORY'], os.environ['GITHUB_SHA']
-    require(re.fullmatch(r'[a-f0-9]{40}', source), 'Invalid source commit')
+    repo, validated_head = os.environ['GITHUB_REPOSITORY'], os.environ['GITHUB_SHA']
+    require(re.fullmatch(r'[a-f0-9]{40}', validated_head), 'Invalid validation commit')
     run = gh_json('api', f'repos/{repo}/actions/runs/{args.build_run}')
+    source = run['head_sha']
+    require(re.fullmatch(r'[a-f0-9]{40}', source), 'Invalid signed source commit')
     require(run['head_repository']['full_name'] == repo and run['head_branch'] == 'main'
-            and run['head_sha'] == source and run['path'] == '.github/workflows/android-apk.yml'
+            and run['path'] == '.github/workflows/android-apk.yml'
             and run['status'] == 'completed' and run['conclusion'] == 'success',
             'A complete successful signed main build at this exact source is required')
     jobs = gh_json('api', f'repos/{repo}/actions/runs/{args.build_run}/jobs?per_page=100')['jobs']
     require(all(any(j['name'] == name and j['conclusion'] == 'success' for j in jobs)
                 for name in ('validate-request', 'build-apk', 'sign-apk', 'emulator')),
             'Build/sign/native acceptance did not all pass')
-    checks = gh_json('api', f'repos/{repo}/commits/{source}/check-runs?per_page=100')['check_runs']
+    require(subprocess.run(['git', 'merge-base', '--is-ancestor', source, validated_head],
+                           check=False, timeout=30).returncode == 0, 'Signed source is not a main ancestor')
+    changed = set(command('git', 'diff', '--name-only', source, validated_head).splitlines())
+    validation_only = {'.github/workflows/tests.yml', '.github/workflows/publish-android-beta.yml',
+                       'scripts/publish_android_beta.py'}
+    require(changed <= validation_only, 'Application, build, signing, notices or guide inputs changed; rebuild required')
+    checks = gh_json('api', f'repos/{repo}/commits/{validated_head}/check-runs?per_page=100')['check_runs']
     for name in ('python', 'frontend', 'dependencies', 'android-dependencies',
                  'Offline equation export roundtrip', 'Android Flet renderer (synthetic browser)'):
         matching = [c for c in checks if c['name'] == name]
@@ -52,6 +60,10 @@ def main():
     prs = gh_json('api', f'repos/{repo}/commits/{source}/pulls')
     require(any(pr['merged_at'] and pr['base']['ref'] == 'main' and pr['merge_commit_sha'] == source for pr in prs),
             'Source must be a normally merged main pull request')
+    if validated_head != source:
+        validation_prs = gh_json('api', f'repos/{repo}/commits/{validated_head}/pulls')
+        require(any(pr['merged_at'] and pr['base']['ref'] == 'main' and pr['merge_commit_sha'] == validated_head for pr in validation_prs),
+                'Validation-only changes must be a normally merged main pull request')
     project = tomllib.loads(Path('mobile/pyproject.toml').read_text(encoding='utf-8'))
     version = project['project']['version']
     tag = f'v{version}-android'
@@ -118,7 +130,7 @@ def main():
     result = verify_assets(release_record(tag), public, tag, False, source, pin)
     verify_identity(public, work/'published-identity.json')
     verify_tag()
-    result.update(buildRun=args.build_run, certificateSha256=pin,
+    result.update(buildRun=args.build_run, validatedHead=validated_head, certificateSha256=pin,
                   hashes={p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(public.iterdir())})
     (work/'PUBLICATION.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
     sys.stdout.write(json.dumps(result) + '\n')
