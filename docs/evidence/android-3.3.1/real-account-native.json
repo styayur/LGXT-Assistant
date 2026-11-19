@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "observedDate": "2026-11-20",
+  "evidenceKind": "Local actual public APK UI acceptance with an authorized account; not a CI account test",
+  "environment": {
+    "androidRelease": "15",
+    "abi": "x86_64",
+    "physicalDevice": false,
+    "emulatorOfficialSha1Verified": "4d7268aa7787c640ad892844e6c9a5f159e91ad3",
+    "systemImageOfficialSha1Verified": "2d857d170c0d1b827149565da34b3383e5306f7f",
+    "acceleration": "WHPX",
+    "restorationBootSnapshotLoadAndSaveExplicitlyDisabled": true,
+    "logoutBootSnapshotLoadAndSaveExplicitlyDisabled": true
+  },
+  "package": "io.github.styayur.lgxt_assistant_mobile",
+  "existingCertificateSha256": "0ec0084b65aff166d379206ca244ea54904511e95573b15fd2159bd4bd604114",
+  "historical330": {
+    "release": "https://github.com/styayur/LGXT-Assistant/releases/tag/v3.3.0-android",
+    "apkSha256": "c0e2d4bfc307893baba457d8f1bf0e77ffc3884d87b88c750af4b9252b7811ad",
+    "installedHashCheckedOnDevice": true,
+    "realLoginEnteredDashboard": true,
+    "reportedHistoricalIncidentReproduced": false
+  },
+  "published331": {
+    "release": "https://github.com/styayur/LGXT-Assistant/releases/tag/v3.3.1-android",
+    "signedApplicationSource": "9401d9d992807c6e8c808f99deb73acadf015c1f",
+    "apkSha256": "8b1da350c1cd9d089c52f8fbb65dbf289443c0a8f4f7dc462cda4fe4b201a4d1",
+    "versionCode": 5,
+    "installedHashCheckedOnDevice": true,
+    "sameCertificateInPlaceUpgradeFrom330": true,
+    "realLoginEnteredTaskHome": true,
+    "platformPartialCourseLoadWarningVisible": true,
+    "entireEmulatorProcessExitedBeforeRestoration": true,
+    "manualAppLaunchAfterColdBootRestoredRealSession": true,
+    "passwordReenteredForRestoration": false,
+    "publishedStartupRequiresFreshUserInfoBeforeDashboard": true,
+    "settingsLogoutReturnedToEmptyPasswordLoginPage": true,
+    "anotherEntireColdBootAndManualLaunchStayedOnLoginPage": true
+  },
+  "inputFidelityObservation": {
+    "bulkComputerInputMaskedLengthAnomaly": true,
+    "abnormalInputClearedBeforeSubmission": true,
+    "individualNativeKeyEntryAuthenticated": true,
+    "strictSyntheticFollowup": "IN_PROGRESS",
+    "productVersusInputTransportAttribution": "NOT_VERIFIED"
+  },
+  "privacyAndSideEffects": {
+    "accountAndStudentIdentifiersIncluded": false,
+    "passwordOrTokenValuesIncluded": false,
+    "privateResponseBodiesIncluded": false,
+    "privateScreenshotsIncluded": false,
+    "answersOrGradesSubmitted": false,
+    "profileOrCourseChangesSubmitted": false,
+    "aiOrPaidProviderRequestsMade": false,
+    "publishedAssetsOrSigningIdentityChanged": false
+  },
+  "notVerified": [
+    "Original historical login incident cause; public3.3.0 succeeded in this test environment.",
+    "Bulk computer-input anomaly attribution and physical-phone IME behavior.",
+    "Physical ARM64/vendor layouts and all-course platform availability.",
+    "Live grade operations, paid providers and OCR accuracy."
+  ]
+}
