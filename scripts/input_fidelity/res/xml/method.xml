@@ -1,0 +1,6 @@
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+<input-method xmlns:android="http://schemas.android.com/apk/res/android"
+    android:supportsSwitchingToNextInputMethod="true">
+    <subtype android:imeSubtypeLocale="en_US" android:imeSubtypeMode="keyboard"
+        android:isAsciiCapable="true" />
+</input-method>

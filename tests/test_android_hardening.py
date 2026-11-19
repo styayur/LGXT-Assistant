@@ -11,6 +11,7 @@ from mobile.src.local_store import LocalStore
 from mobile.src.main import main, ICONS
 from scripts.android_image_checks import run
 from test_mobile import Page, FixtureClient, Storage, find, wait_for
+from scripts.synthetic_credentials import FIXTURE_USERNAME, FIXTURE_PASSWORD
 
 
 def test_decoder_acceptance():
@@ -65,8 +66,8 @@ def test_cancelled_login_cannot_navigate_back_or_persist_password():
         def __init__(self):super().__init__();instances.append(self)
         def login(self,*a):started.set();finish.wait(3);return super().login(*a)
     page=Page();store=Storage();main(page,Delayed,store)
-    find(page,ft.TextField,label='账号').value='fixture'
-    password=find(page,ft.TextField,label='密码');password.value='fixture-secret'
+    find(page,ft.TextField,label='账号').value=FIXTURE_USERNAME
+    password=find(page,ft.TextField,label='密码');password.value=FIXTURE_PASSWORD
     find(page,ft.Button,text='登录理工学堂').on_click(None)
     assert started.wait(1) and password.value==''
     find(page,ft.Button,text='取消').on_click(None)
