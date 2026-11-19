@@ -74,11 +74,13 @@ def main():
         # Flutter can retain the modal input barrier briefly after semantics
         # appear. Retry only this negative action while the same dialog exists;
         # never accept consent or retry login/submission requests.
-        wait_text('允许明文 HTTP')
+        # The login checkbox also contains the dialog title. Only the unique
+        # approval action establishes that the consent modal is still present.
+        wait_text('允许并登录')
         for attempt in range(3):
             tap_text('取消')
             time.sleep(1)
-            if not nodes_containing(tree(),'允许明文 HTTP'):
+            if not nodes_containing(tree(),'允许并登录'):
                 return
             with (out/'actions.txt').open('a',encoding='utf-8') as actions:
                 actions.write(f'HTTP consent remains open after cancel tap {attempt+1}\n')
