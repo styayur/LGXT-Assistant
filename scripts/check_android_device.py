@@ -70,6 +70,21 @@ def main():
         screen('confirmation-failure')
         raise AssertionError('Import confirmation did not activate')
 
+    def cancel_http_consent():
+        # Flutter can retain the modal input barrier briefly after semantics
+        # appear. Retry only this negative action while the same dialog exists;
+        # never accept consent or retry login/submission requests.
+        wait_text('允许明文 HTTP')
+        for attempt in range(3):
+            tap_text('取消')
+            time.sleep(1)
+            if not nodes_containing(tree(),'允许明文 HTTP'):
+                return
+            with (out/'actions.txt').open('a',encoding='utf-8') as actions:
+                actions.write(f'HTTP consent remains open after cancel tap {attempt+1}\n')
+        screen('http-cancel-failure')
+        raise AssertionError('HTTP consent cancellation did not activate')
+
     def scroll_to(text):
         for _ in range(20):
             root=tree()
@@ -143,7 +158,7 @@ def main():
         passed+=['fixture course/assignment/question','submission cancel and confirm (no server)',
                  'note edit and save','unconfirmed vision rejected before provider request']
     else:
-        wait_text('允许明文 HTTP');tap_text('取消')
+        cancel_http_consent()
         wait_text('已阻止明文 HTTP');screen('http-blocked-native')
         tap_node(scroll_to('离线打开本地资料'));wait_text('本地资料');screen('library-native')
         passed+=['HTTP blocked with dummy credentials','offline library']
