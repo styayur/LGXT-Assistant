@@ -1,5 +1,13 @@
 # Verification record
 
+## Real-account APK follow-through — 20 November 2026
+
+The exact public Android3.3.0 and3.3.1 APK hashes were independently checked on an isolated Android15/x86_64 emulator. Both entered their real authenticated dashboards using an authorized account. The3.3.1 APK was installed in place over3.3.0 without changing the package or signing identity. After the entire emulator process exited, an explicit no-snapshot-load cold boot and manual app launch restored the real encrypted session without password entry. The published startup path requires a fresh platform userInfo check before entering the dashboard. Settings logout returned to an empty-password login page; another full cold boot and manual app launch stayed on that page. [Sanitized local native receipt](evidence/android-3.3.1/real-account-native.json). This is local actual-APK evidence, not a GitHub Actions account test or a physical-phone test.
+
+Some course-assignment requests returned platform business errors. The3.3.1 task home visibly reported incomplete course statistics; full-course availability is not claimed. No answers, grades, profile changes or provider requests were submitted. No account/student identifiers, passwords, token values, private response bodies or personal screenshots are included in this repository or the receipt.
+
+An initial bulk computer-input path produced an abnormal masked password length and was cleared **before submission**; individual native key entry authenticated successfully. This remains a separate synthetic input-fidelity investigation, with no attribution yet to the product, physical-phone IME or computer-input transport. No password protection option, response validator or published asset was changed on that observation. The historical3.3.0 login incident was not reproduced with the valid account in this environment; its original cause remains unverified. Physical ARM64/vendor keyboards and layouts, paid-provider behavior and live OCR accuracy remain unverified.
+
 ## Android 3.3.1 Beta — 19 November 2026
 
 [Published prerelease](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.3.1-android), seven assets. Signed source `9401d9d992807c6e8c808f99deb73acadf015c1f`; validation/driver head `0cfb4e920b678e8662107704166f3a8313dee160`. The latter changes only the native test driver. [Publication receipt and all asset hashes](evidence/android-3.3.1/publication.json).
@@ -14,7 +22,7 @@ On actual Android15/x86_64: signed3.3.0 upgraded in place with its synthetic sch
 
 The historical3.3 temporary-client/header-copy defect is fixed, but a cookie-required fixture is not proof of the reported platform incident cause. Authorized read-only portal course/assignment requests succeeded with Authorization present and no cookies; successful current reads use numeric0. Public login JS uses the same form endpoint/keys and untransformed password as both historical Python versions. Narrow0/string0 compatibility rejects booleans/floats/malformed token shapes. [Privacy-bounded public-source comparison](evidence/android-3.3.1/public-login-contract.json). No identifiers, credentials, sessions, account bodies or private screenshots are included.
 
-**NOT VERIFIED:** actual historical incident root cause, real-account Android APK login/restoration, physical ARM64/vendor layouts, paid providers and live OCR accuracy. Browser authentication evidence is separate from Android app evidence. The screenshot below is an actual native synthetic fixture, not real courses. [Migration/backup guide](android-beta.md).
+At the original release checkpoint, real-account APK login/restoration was unverified; the dated20November follow-through above now supplies that separate actual-APK evidence. **STILL NOT VERIFIED:** original historical incident cause, physical ARM64/vendor layouts, paid providers and live OCR accuracy. Browser authentication evidence is separate from Android app evidence. The screenshot below is an actual native synthetic fixture, not real courses. [Migration/backup guide](android-beta.md).
 
 <img src="screenshots/android-3.3.1-native-dashboard-fixture.png" width="360" alt="Native Android synthetic session restored to the task home">
 
