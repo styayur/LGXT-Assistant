@@ -1,0 +1,56 @@
+name: Publish verified Android Beta
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: 'Complete successful signed Android APK run at this exact main source'
+        required: true
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+  pull-requests: read
+
+concurrency:
+  group: publish-android-beta
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      actions: read
+      checks: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Ensure pinned SDK tools
+        run: test -x "$ANDROID_HOME/build-tools/36.0.0/apksigner" || "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'build-tools;36.0.0'
+      - uses: actions/download-artifact@v8
+        with:
+          name: lgxt-android-release-signed
+          path: accepted
+          run-id: ${{ inputs.build_run_id }}
+          github-token: ${{ github.token }}
+      - name: Verify provenance, source checks, signed bytes and release downloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_RUN: ${{ inputs.build_run_id }}
+        run: python scripts/publish_android_beta.py --build-run "$BUILD_RUN" --directory accepted
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: android-publication-evidence
+          path: publication-evidence/*.json

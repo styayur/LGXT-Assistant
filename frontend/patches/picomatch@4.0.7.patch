@@ -1,0 +1,34 @@
+diff --git a/lib/parse.js b/lib/parse.js
+--- a/lib/parse.js
++++ b/lib/parse.js
+@@ -295,6 +295,30 @@
+       : constants.DEFAULT_MAX_EXTGLOB_RECURSION;
+ 
+   const branches = splitTopLevel(body).map(branch => branch.trim());
++
++  // GHSA-fc5q-39xc-vjpf: literalize ambiguous repeats, including nested
++  // wrappers such as +(@(*(a))). Keep the upstream proven flat character-
++  // class simplification for direct star sequences. Preserve escaped/quoted
++  // literals and bracket classes; other nested extglobs in repeats fail closed.
++  const hasAmbiguousRepeat = branch => {
++    if (getStarExtglobSequenceChars(branch)) return false;
++    let escaped = false;
++    let quoted = false;
++    let bracket = 0;
++    for (let i = 0; i < branch.length; i++) {
++      const ch = branch[i];
++      if (escaped) { escaped = false; continue; }
++      if (ch === '\\') { escaped = true; continue; }
++      if (ch === '"') { quoted = !quoted; continue; }
++      if (quoted) continue;
++      if (ch === '[') { bracket++; continue; }
++      if (ch === ']' && bracket > 0) { bracket--; continue; }
++      if (bracket > 0) continue;
++      if (ch === '*' || ('?+@!'.includes(ch) && branch[i + 1] === '(')) return true;
++    }
++    return false;
++  };
++  if (branches.some(hasAmbiguousRepeat)) return { risky: true };
+ 
+   if (branches.length > 1) {
+     if (

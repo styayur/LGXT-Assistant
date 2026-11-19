@@ -37,7 +37,11 @@ def main():
     identity = json.loads((root/'packaging/android/signing-identity.json').read_text())
     expected, keystore = signing_configuration(os.environ, identity)
     out = Path(args.directory); out.mkdir(parents=True, exist_ok=True)
-    apk = out/'LGXT-Assistant-Android-v3.3.0.apk'
+    apk = out/Path(args.input).name
+    import tomllib
+    project = tomllib.loads((root/'mobile/pyproject.toml').read_text(encoding='utf-8'))
+    if apk.name != 'LGXT-Assistant-Android-v' + project['project']['version'] + '.apk':
+        raise ValueError('Input name differs from the source release version')
     if apk.exists(): raise ValueError('Do not overwrite a signed artifact')
     tools = Path(os.environ['ANDROID_HOME'])/'build-tools'/'36.0.0'
     suffix = '.bat' if os.name == 'nt' else ''

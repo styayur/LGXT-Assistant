@@ -3,21 +3,25 @@ import base64
 import io
 import json
 import logging
+import requests
 
 import flet as ft
 from PIL import Image
 
 from app_under_test import main
-from android_image_checks import run
+from android_image_checks import run, credential_free_transport_probe
 
 
 class FixtureClient:
     fixture=True
     insecure=False
     allow_insecure=False
-    def __init__(self):self.headers={}
+    base_url='https://fixture.invalid/api'
+    def __init__(self):self.headers={};self.session=requests.Session()
     def login(self,*args):self.headers['Authorization']='synthetic';return True,'fixture'
     def logout(self):self.headers.clear()
+    def get_user_info(self):
+        return (True, {'name':'Synthetic user'}) if self.headers.get('Authorization')=='synthetic' else (False,'Invalid synthetic session')
     def get_my_courses(self):return True,[{'courseId':1,'courseName':'Fixture physics'}]
     def get_course_works(self,*args):return True,[{'workId':2,'workName':'Fixture assignment','tryTimes':3,'times':1,'grade':None}]
     def get_questions(self,*args):return True,[{'id':3,'name':'Fixture formula','imgurl':'fixture','answer':'synthetic'}]
@@ -30,6 +34,7 @@ class FixtureClient:
 def target(page):
     result=run()
     logging.getLogger('lgxt.acceptance').warning('LGXT_NATIVE_CHECKS=%s',json.dumps(result))
+    logging.getLogger('lgxt.acceptance').warning('LGXT_NETWORK_PROBE=%s',json.dumps(credential_free_transport_probe()))
     main(page,FixtureClient)
 
 

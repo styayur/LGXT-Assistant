@@ -2,7 +2,7 @@
 
 A task-focused assistant for handling assignments on 理工学堂, from submission and image-to-LaTeX to AI-assisted problem solving and export.
 
-**Beta.** Windows desktop, Windows web and Android are independently versioned and validated.
+**Android Beta.** Android is the active product. Historical Windows Desktop and Windows Web releases and their shared business modules are retained; no new Windows features are planned.
 
 [中文](README.zh-CN.md) · [Releases](https://github.com/styayur/LGXT-Assistant/releases) · [Guide](docs/user-guide.md) · [Security](SECURITY.md) · [Verification](docs/VERIFICATION.md)
 
@@ -25,7 +25,7 @@ Open a course and assignment, then select a question. The assignment workspace k
 
 ## Transport limitation
 
-**The official HTTP endpoint responds, but HTTPS could not be verified on 24 October 2026.** Login and authenticated requests over HTTP stay blocked until an explicit plaintext compatibility choice. That choice can be remembered; passwords and session tokens are not. The app does not rewrite the HTTP platform address to HTTPS and does not disable certificate validation. Plaintext traffic can be intercepted or altered, and a warning remains visible. Prefer a verified HTTPS API configured through LGXT_API_BASE where available. See [transport evidence and policy](SECURITY.md).
+**The official HTTP endpoint responds, but HTTPS could not be verified on 24 October 2026.** Login and authenticated requests over HTTP stay blocked until an explicit plaintext compatibility choice. That choice can be remembered; passwords are never saved. Android can optionally retain an origin-bound token/cookie session in device encrypted storage and validates it with the platform on restart. The app does not rewrite the HTTP platform address to HTTPS and does not disable certificate validation. Plaintext traffic can be intercepted or altered, and a warning remains visible. Prefer a verified HTTPS API configured through LGXT_API_BASE where available. See [transport evidence and policy](SECURITY.md).
 
 Images are restricted to the configured platform host, public destinations and supported raster formats. External hosts, redirects, private IP addresses, invalid images, oversized responses and unsafe data URLs are rejected. Some legitimate external image hosts may therefore be unavailable until independently reviewed.
 
@@ -33,7 +33,7 @@ AI calls are user-initiated and leave the local app. Confirm that the selected s
 
 ## Download by channel
 
-The release page and its assets are the source of truth; source archives are not runnable installers. The Windows beta tags for this upgrade are desktop **4.1.0** and web **4.2.0-web**. Download only from a published channel release after its gates complete; draft files are not a public release. Android **3.3.0 Beta** is published; historical 3.2.1 installations require a verified backup, uninstall and reinstall. See [channel policy](docs/release-channels.md) and [delivery evidence](docs/VERIFICATION.md).
+The release page and its assets are the source of truth; source archives are not runnable installers. The Windows beta tags for this upgrade are desktop **4.1.0** and web **4.2.0-web**. Download only from a published channel release after its gates complete; draft files are not a public release. Android **3.3.1 Beta** is the next release candidate; use the published release page as the source of truth; historical 3.2.1 installations require a verified backup, uninstall and reinstall. See [channel policy](docs/release-channels.md) and [delivery evidence](docs/VERIFICATION.md).
 
 | Channel | Upgrade version / status | Installation |
 | --- | --- | --- |

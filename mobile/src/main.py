@@ -19,46 +19,70 @@ try:
     from .lgxt_transport import APIClient as ApiClient, BASE_URL, INSECURE_WARNING
     from . import model_transport, question_documents
     from .local_store import LocalStore
+    from .session_state import SessionVault, encode_session, restore_session
+    from .study_overview import overview
 except ImportError:
     from lgxt_transport import APIClient as ApiClient, BASE_URL, INSECURE_WARNING
     import model_transport
     import question_documents
     from local_store import LocalStore
+    from session_state import SessionVault, encode_session, restore_session
+    from study_overview import overview
 
 LOGIN_TIMEOUT = 20
-APP_VERSION = '3.3.0'
+APP_VERSION = '3.3.1'
 
 COLORS = getattr(ft, 'Colors', None) or getattr(ft, 'colors')
 ICONS = getattr(ft, 'Icons', None) or getattr(ft, 'icons')
 
-BG = '#F2F5F9'
-SURFACE = '#FFFFFF'
-SURFACE_2 = '#E5EDF6'
-LINE = '#CFDCE9'
-FG = '#172D46'
-MUTED = '#4D637C'
-DIM = '#526A83'
-PRIMARY = '#2563A6'
-CYAN = '#2563A6'
-WARN = '#9C5600'
-ERR = '#B42336'
+BG = COLORS.SURFACE
+SURFACE = COLORS.SURFACE_CONTAINER_LOW
+SURFACE_2 = COLORS.SECONDARY_CONTAINER
+LINE = COLORS.OUTLINE_VARIANT
+FG = COLORS.ON_SURFACE
+MUTED = COLORS.ON_SURFACE_VARIANT
+DIM = COLORS.ON_SURFACE_VARIANT
+PRIMARY = COLORS.PRIMARY
+CYAN = COLORS.PRIMARY
+WARN = COLORS.ON_SURFACE_VARIANT
+ERR = COLORS.ERROR
 
 
-def main(page, client_factory=ApiClient, storage=None):
+def main(page, client_factory=ApiClient, storage=None, session_storage=None):
     local_store = storage if storage is not None else LocalStore()
     page.title = 'LGXT Assistant'
     page.bgcolor = BG
-    page.theme_mode = ft.ThemeMode.LIGHT
-    page.theme = ft.Theme(color_scheme_seed=PRIMARY)
+    page.theme_mode = ft.ThemeMode.SYSTEM
+    page.theme = ft.Theme(color_scheme_seed='#2563A6', use_material3=True)
+    page.dark_theme = ft.Theme(color_scheme_seed='#2563A6', use_material3=True)
     page.padding = 0
     page.spacing = 0
 
     api = client_factory()
+    vault = SessionVault(session_storage) if session_storage is not None else None
+    if vault is None and storage is None:
+        try:
+            import flet_secure_storage as secure
+            vault = SessionVault(secure.SecureStorage(
+                android_options=secure.AndroidOptions(reset_on_error=False)))
+        except ImportError:
+            logging.warning('Device encrypted sessions unavailable; manual login remains available')
     state = {'username': '', 'courses': [], 'works': [],
              'questions': [], 'course': None, 'work': None}
     last_back = {'at': 0.0}
     workers = threading.local()
     state.update(epoch=0, view_epoch=0, ai_cancel=None, ai_response=None, ai_pending=False)
+
+    def session_task(action):
+        if not vault:
+            return
+        async def run():
+            try:
+                await action()
+            except Exception:
+                logging.warning('Encrypted session storage unavailable')
+                snack('设备加密存储不可用，请在下次启动时重新登录', WARN)
+        page.run_task(run)
 
     def stop_ai(_=None):
         if state.get('ai_cancel'):
@@ -109,14 +133,14 @@ def main(page, client_factory=ApiClient, storage=None):
             except Exception:
                 logging.warning('Mobile UI/storage operation unavailable')
 
-    def card(content, padding=14, bg=SURFACE):
+    def card(content, padding=16, bg=SURFACE):
         return ft.Container(
-            content=content, bgcolor=bg, padding=padding, border_radius=8,
-            border=ft.Border.all(1, LINE), margin=ft.Margin.only(bottom=10))
+            content=content, bgcolor=bg, padding=padding, border_radius=12,
+            margin=ft.Margin.only(bottom=8))
 
     def loading(text='SYNCING ...'):
         return ft.Column([ft.ProgressRing(width=22, height=22, color=PRIMARY),
-                          ft.Text(text, color=MUTED, size=12)],
+                          ft.Text(text, color=MUTED, size=14)],
                          horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10)
 
     def exit_app():
@@ -155,14 +179,15 @@ def main(page, client_factory=ApiClient, storage=None):
         header_left = []
         if show_back:
             header_left.append(ft.IconButton(icon=ICONS.ARROW_BACK, icon_color=CYAN,
-                                             icon_size=26, on_click=back_click))
+                                             icon_size=24, width=48, height=48,
+                                             tooltip='返回', on_click=back_click))
         header_left.append(ft.Column([
             ft.Text('理工学堂 · 作业助手', color=PRIMARY, size=13, weight=ft.FontWeight.BOLD),
-            ft.Text(title, color=FG, size=17, weight=ft.FontWeight.BOLD),
-            ft.Text(subtitle, color=DIM, size=11) if subtitle else ft.Container(height=0),
+            ft.Text(title, color=FG, size=20, weight=ft.FontWeight.BOLD),
+            ft.Text(subtitle, color=DIM, size=14) if subtitle else ft.Container(height=0),
         ], spacing=1, expand=True))
 
-        warning = ft.Text(INSECURE_WARNING, color=ERR, size=12) if api.insecure and api.allow_insecure else None
+        warning = ft.Text(INSECURE_WARNING, color=ERR, size=14) if api.insecure and api.allow_insecure else None
         header = ft.Container(
             content=ft.Row(header_left, spacing=4, vertical_alignment=ft.CrossAxisAlignment.CENTER),
             bgcolor=SURFACE, padding=ft.Padding.only(left=8, right=16, top=10, bottom=12),
@@ -170,9 +195,9 @@ def main(page, client_factory=ApiClient, storage=None):
 
         column_controls = [header]
         if getattr(api, 'fixture', False):
-            column_controls.append(ft.Text('Fixture · 合成数据验收，未连接真实平台', color=WARN, size=12))
+            column_controls.append(ft.Text('Fixture · 合成数据验收，未连接真实平台', color=WARN, size=14))
         if warning:
-            column_controls.append(ft.Container(warning, padding=ft.Padding.symmetric(horizontal=16, vertical=6), bgcolor='#FFF0ED'))
+            column_controls.append(ft.Container(warning, padding=ft.Padding.symmetric(horizontal=16, vertical=8), bgcolor=COLORS.ERROR_CONTAINER))
         column_controls.append(ft.Container(ft.Column(controls, scroll=ft.ScrollMode.AUTO,
                                                           spacing=10, expand=True),
                                                 expand=True, padding=ft.Padding.only(
@@ -182,7 +207,7 @@ def main(page, client_factory=ApiClient, storage=None):
             nav = ft.NavigationBar(
                 selected_index=nav_index, bgcolor=SURFACE, indicator_color=SURFACE_2,
                 destinations=[
-                    ft.NavigationBarDestination(icon=ICONS.DASHBOARD_OUTLINED, label='仪表盘'),
+                    ft.NavigationBarDestination(icon=ICONS.DASHBOARD_OUTLINED, label='待办'),
                     ft.NavigationBarDestination(icon=ICONS.SCHOOL_OUTLINED, label='课程'),
                     ft.NavigationBarDestination(icon=ICONS.FOLDER_OUTLINED, label='本地资料'),
                     ft.NavigationBarDestination(icon=ICONS.SETTINGS_OUTLINED, label='设置'),
@@ -231,11 +256,18 @@ def main(page, client_factory=ApiClient, storage=None):
         pop_view()
 
     # ---------------- 登录 ----------------
-    user_field = ft.TextField(label='账号', bgcolor=SURFACE, border_color='#243040',
-                              text_size=15, color=FG, height=56)
+    user_field = ft.TextField(label='账号', bgcolor=SURFACE,
+                              text_size=16, color=FG,
+                              autofill_hints=ft.AutofillHint.USERNAME,
+                              text_input_action=ft.TextInputAction.NEXT)
     pass_field = ft.TextField(label='密码', password=True, can_reveal_password=True,
-                              bgcolor=SURFACE, border_color='#243040', text_size=15,
-                              color=FG, height=56)
+                              bgcolor=SURFACE, text_size=16, color=FG,
+                              autofill_hints=ft.AutofillHint.PASSWORD,
+                              enable_ime_personalized_learning=False,
+                              autocorrect=False, enable_suggestions=False,
+                              on_submit=lambda e: do_login())
+    remember_session = ft.Checkbox(label='在此设备恢复会话（加密保存，不保存密码）', value=True,
+                                   visible=vault is not None)
     def store_http_compat(enabled):
         try:
             if enabled:
@@ -266,16 +298,18 @@ def main(page, client_factory=ApiClient, storage=None):
         controls = [
             ft.Text('从当前作业开始', color=FG, size=26, weight=ft.FontWeight.BOLD),
             ft.Text('输入理工学堂账号以建立会话', color=MUTED, size=13),
-            ft.Text('平台 HTTPS 尚未验证。默认阻止明文登录；兼容模式会暴露账号、密码和成绩传输。', color=ERR, size=13),
-            card(ft.Column([user_field, pass_field, insecure_opt,
+            ft.Text('平台 HTTPS 尚未验证。兼容模式会暴露账号、密码和成绩传输。', color=ERR, size=14)
+                if api.insecure else ft.Text('使用配置的平台安全连接', color=MUTED, size=14),
+            card(ft.Column([ft.AutofillGroup(ft.Column([user_field, pass_field], spacing=16)),
+                            insecure_opt, remember_session,
                             ft.Button('登录理工学堂', on_click=do_login,
-                                              bgcolor=PRIMARY, color='#FFFFFF',
+                                              bgcolor=PRIMARY, color=COLORS.ON_PRIMARY,
                                               height=52)], spacing=14)),
-            ft.Text(err, color=ERR, size=12) if err else ft.Container(height=0),
-            ft.Text(getattr(local_store, 'warning', ''), color=ERR, size=12),
-            ft.TextButton('离线打开本地资料', on_click=lambda e: show_library()),
+            ft.Text(err, color=ERR, size=14) if err else ft.Container(height=0),
+            ft.Text(getattr(local_store, 'warning', ''), color=ERR, size=14),
+            ft.TextButton('离线打开本地资料', on_click=lambda e: (cancel_login(), show_library())),
         ]
-        show(make_view('/login', '登录', 'AUTH · 建立会话', controls))
+        show(make_view('/login', '登录', '继续学习，从当前作业开始', controls))
 
     def do_login(_e=None):
         if state.get('login_pending'):
@@ -291,10 +325,11 @@ def main(page, client_factory=ApiClient, storage=None):
                 do_login()
             def deny_http(_e=None):
                 page.pop_dialog()
+                show_login('已阻止明文 HTTP；未发送账号或密码')
             page.show_dialog(ft.AlertDialog(
                 title=ft.Text('允许明文 HTTP'),
-                content=ft.Text('平台目前只有 HTTP，安全传输未验证。允许本次以明文发送账号、密码和成绩？'
-                                '这不是安全传输，不会保存密码或令牌，也不会把地址改成 HTTPS。'),
+                content=ft.Text('当前平台地址为 HTTP，安全传输未验证。允许以明文发送账号、密码和成绩？'
+                                '这不是安全传输。记住此选择，可在登录页或设置中撤销；不会保存密码。'),
                 actions=[ft.TextButton('取消', on_click=deny_http),
                          ft.TextButton('允许并登录', on_click=allow_http)]))
             return
@@ -305,11 +340,11 @@ def main(page, client_factory=ApiClient, storage=None):
         state['login_started'] = time.time()
         connecting = [
             loading('CONNECTING ...'),
-            ft.Text('正在连接理工学堂服务器，请稍候', color=MUTED, size=12),
+            ft.Text('正在连接理工学堂服务器，请稍候', color=MUTED, size=14),
             ft.Row([
                 ft.Button('取消', bgcolor=SURFACE_2, color=FG,
                                   on_click=lambda e: cancel_login()),
-                ft.Button('重试', bgcolor=PRIMARY, color='#FFFFFF',
+                ft.Button('重试', bgcolor=PRIMARY, color=COLORS.ON_PRIMARY,
                                   on_click=lambda e: cancel_login()),
             ], alignment=ft.MainAxisAlignment.CENTER, spacing=12),
         ]
@@ -339,6 +374,21 @@ def main(page, client_factory=ApiClient, storage=None):
                 api = candidate
                 threading.Thread(target=previous.logout, daemon=True).start()
                 state['username'] = username
+                if vault:
+                    if remember_session.value:
+                        try:
+                            raw = encode_session(api, username)
+                        except (ValueError, AttributeError):
+                            raw = None
+                        epoch = state['epoch']
+                        async def persist():
+                            if raw and epoch == state['epoch']:
+                                await vault.save(raw)
+                            if epoch != state['epoch']:
+                                await vault.forget()
+                        session_task(persist)
+                    else:
+                        session_task(vault.forget)
                 try:
                     local_store.set('lgxt.user', username)
                     local_store.remove('lgxt.pass')
@@ -369,7 +419,7 @@ def main(page, client_factory=ApiClient, storage=None):
 
     # ---------------- 仪表盘 ----------------
     def show_dashboard():
-        show(make_view('/dashboard', '仪表盘', 'DASHBOARD · 作业完成度',
+        show(make_view('/dashboard', '学习待办', '按截止日期安排下一步',
                        [loading('LOADING DASHBOARD ...')], show_nav=True, nav_index=0))
 
         def work():
@@ -379,45 +429,44 @@ def main(page, client_factory=ApiClient, storage=None):
                 ui(show_login, data)
                 return
             state['courses'] = data
-            pending = done = 0
-            scores = []
-            for course in data:
-                cok, works = api.get_course_works(course['courseId'])
-                if not cok:
-                    continue
-                for w in works:
-                    grade = w.get('grade')
-                    if grade is not None:
-                        done += 1
-                        try:
-                            scores.append(float(grade))
-                        except (TypeError, ValueError):
-                            pass
-                    elif max(0, (w.get('tryTimes') or 0) - (w.get('times') or 0)) > 0:
-                        pending += 1
-            avg = sum(scores) / len(scores) if scores else 0
-            ui(render_dashboard, pending, done, avg, len(data))
+            result = overview(data, api.get_course_works)
+            ui(render_dashboard, result, len(data))
 
         start_work(work)
 
-    def render_dashboard(pending, done, avg, courses):
-        def stat(title, value, color):
-            return ft.Container(
-                content=ft.Column([ft.Text(title, color=DIM, size=11, font_family='monospace'),
-                                   ft.Text(str(value), color=color, size=30,
-                                           weight=ft.FontWeight.BOLD, font_family='monospace')],
-                                  spacing=4),
-                bgcolor=SURFACE, padding=14, border_radius=8, expand=True,
-                border=ft.Border.all(1, LINE))
+    def render_dashboard(result, courses):
+        pending, done, total = result['pending'], result['done'], result['total']
+        def open_task(course, work):
+            state['course'] = course
+            open_questions(work)
         controls = [
-            ft.Text(f'{courses} 门课程 · 数据来自服务器实时统计', color=MUTED, size=12),
-            ft.Row([stat('待激活', pending, WARN), stat('已完成', done, CYAN),
-                    stat('平均分', f'{avg:.1f}', PRIMARY)], spacing=10),
-            ft.Button('刷新作业状态', on_click=lambda e: show_dashboard(),
-                              bgcolor=SURFACE_2, color=FG, height=48),
-            ft.Text('提示：底部「课程」可进入课程 → 作业 → 题目', color=DIM, size=11),
+            ft.Text(f'{len(pending)} 项未完成', color=FG, size=28, weight=ft.FontWeight.BOLD),
+            ft.Text(f'{courses} 门课程 · 已加载作业 {done}/{total} 已完成', color=MUTED, size=14),
+            ft.ProgressBar(value=done / total if total else 0,
+                           semantics_label=f'已加载作业完成 {done} 项，共 {total} 项'),
         ]
-        show(make_view('/dashboard', '仪表盘', 'DASHBOARD · 作业完成度', controls,
+        if result['failed']:
+            controls.append(ft.Text(f"{result['failed']} 门课程暂未加载，以下统计不完整。请刷新重试。", color=ERR, size=14))
+        controls.append(ft.Text('接下来要完成', color=FG, size=20, weight=ft.FontWeight.BOLD))
+        for course, work in pending:
+            deadline = work.get('expireTime') or '平台未提供'
+            attempts = '剩余次数未知'
+            if work.get('tryTimes') is not None and work.get('times') is not None:
+                try:
+                    remaining = max(0, int(work['tryTimes']) - int(work['times']))
+                    attempts = f'剩余 {remaining} 次' if remaining else '次数已用完，仍可查看题目'
+                except (ValueError, TypeError):
+                    pass
+            controls.append(ft.ListTile(
+                title=ft.Text(work.get('workName', '未命名作业'), size=16, color=FG),
+                subtitle=ft.Text(f"{course.get('courseName', '')}\n截止：{deadline} · {attempts}", size=14, color=MUTED),
+                is_three_line=True, min_height=88,
+                trailing=ft.Icon(ICONS.CHEVRON_RIGHT),
+                on_click=lambda e, c=course, w=work: open_task(c, w)))
+        if not pending:
+            controls.append(ft.Text('已加载的作业均已完成' if total else '暂无作业，进入课程查看或稍后刷新', color=MUTED, size=16))
+        controls.append(ft.OutlinedButton('刷新作业状态', on_click=lambda e: show_dashboard(), min_height=48))
+        show(make_view('/dashboard', '学习待办', '按截止日期安排下一步', controls,
                        show_nav=True, nav_index=0))
 
     # ---------------- 课程 ----------------
@@ -438,11 +487,11 @@ def main(page, client_factory=ApiClient, storage=None):
     def render_courses(courses, err):
         controls = []
         if err:
-            controls.append(ft.Text(err, color=ERR, size=12))
+            controls.append(ft.Text(err, color=ERR, size=14))
         for course in courses:
             entry = card(ft.Row([
                 ft.Column([ft.Text(course.get('courseName', ''), color=FG, size=16),
-                           ft.Text(f"#{course.get('courseId')}", color=DIM, size=11,
+                           ft.Text(f"#{course.get('courseId')}", color=DIM, size=14,
                                    font_family='monospace')], spacing=2, expand=True),
                 ft.IconButton(icon=ICONS.CHEVRON_RIGHT, icon_color=CYAN, icon_size=26,
                               on_click=lambda e, c=course: open_course_works(c)),
@@ -491,8 +540,8 @@ def main(page, client_factory=ApiClient, storage=None):
             controls.append(card(ft.Column([
                 ft.Text(work.get('workName', ''), color=FG, size=15),
                 ft.Text(f"{status} · DUE {work.get('expireTime', 'N/A')}", color=color,
-                        size=11, font_family='monospace'),
-                ft.Button('查看题目', bgcolor=PRIMARY, color='#FFFFFF', height=46,
+                        size=14, font_family='monospace'),
+                ft.Button('查看题目', bgcolor=PRIMARY, color=COLORS.ON_PRIMARY, min_height=48,
                                   on_click=lambda e, w=work: open_questions(w)),
             ], spacing=8)))
         push(make_view('/works', state['course'].get('courseName', ''),
@@ -501,15 +550,16 @@ def main(page, client_factory=ApiClient, storage=None):
 
     def open_questions(work):
         state['work'] = work
+        return_route = page.views[-1].route if page.views else '/dashboard'
         push(make_view('/questions', work.get('workName', ''), 'QUESTIONS · 题目',
                        [loading('LOADING QUESTIONS ...')], show_back=True,
-                       on_back=lambda: back_to('/works')))
+                       on_back=lambda: back_to(return_route)))
 
         def work_fn():
             ok, data = api.get_questions(work['workId'])
             if not ok:
                 ui(snack, data, ERR)
-                ui(back_to, '/works')
+                ui(back_to, return_route)
                 return
             state['questions'] = data
             ui(render_questions, data)
@@ -517,7 +567,7 @@ def main(page, client_factory=ApiClient, storage=None):
         start_work(work_fn)
 
     def render_questions(questions):
-        controls = [ft.Text(f'共 {len(questions)} 题', color=MUTED, size=12)]
+        controls = [ft.Text(f'共 {len(questions)} 题', color=MUTED, size=14)]
         for idx, q in enumerate(questions):
             image_holder = ft.Container(content=ft.Text('图片待加载', color=MUTED), on_click=lambda e, q=q: open_question_document(q))
             def fetch_image(q=q, holder=image_holder):
@@ -535,14 +585,14 @@ def main(page, client_factory=ApiClient, storage=None):
             img = image_holder
             controls.append(card(ft.Column([
                 ft.Text(f"Q{idx + 1} · {q.get('name', 'N/A')}", color=FG, size=15),
-                ft.Text(f"ID {q.get('id', 'N/A')}", color=DIM, size=11, font_family='monospace'),
+                ft.Text(f"ID {q.get('id', 'N/A')}", color=DIM, size=14, font_family='monospace'),
                 img,
                 ft.TextButton('查看原图 / 识别公式 / AI 分析', on_click=lambda e, q=q: open_question_document(q)),
                 ft.Text(f"答案：{q.get('answer', 'N/A')}", color=WARN, size=13),
             ], spacing=8)))
 
         grade_field = ft.TextField(label='成绩 0-100', value='100', width=150, height=52,
-                                   bgcolor=SURFACE, border_color='#243040', color=FG)
+                                   bgcolor=SURFACE, border_color=LINE, color=FG)
 
         submitting = threading.Event()
         confirmation_lock = threading.Lock()
@@ -590,7 +640,7 @@ def main(page, client_factory=ApiClient, storage=None):
 
         controls.append(card(ft.Row([grade_field,
                                      ft.Button('提交成绩', bgcolor=PRIMARY,
-                                                       color='#FFFFFF', height=52,
+                                                       color=COLORS.ON_PRIMARY, height=52,
                                                        on_click=submit)], spacing=12, wrap=True)))
         push(make_view('/questions', state['work'].get('workName', ''), 'QUESTIONS · 题目',
                        controls, show_back=True, on_back=lambda: back_to('/works')))
@@ -667,7 +717,7 @@ def main(page, client_factory=ApiClient, storage=None):
         for key, document in documents.items():
             controls.append(card(ft.Column([
                 ft.Text(document.get('title', '本地题目'), weight=ft.FontWeight.BOLD),
-                ft.Text(document.get('workName', '') + ' · ' + document.get('updatedAt', ''), size=12, color=MUTED),
+                ft.Text(document.get('workName', '') + ' · ' + document.get('updatedAt', ''), size=14, color=MUTED),
                 ft.TextButton('打开本地笔记', on_click=lambda e, d=document: open_question_document(None, saved=d))])))
         if not documents: controls.append(ft.Text('尚无保存的资料', color=MUTED))
         if not state['username']:
@@ -696,7 +746,7 @@ def main(page, client_factory=ApiClient, storage=None):
         output = ft.Text('', selectable=True, color=FG)
         latex = ft.TextField(label='识别 LaTeX（机器生成，请核对后应用）', multiline=True, min_lines=2)
         cancel = threading.Event()
-        save_status = ft.Text('本地内容已载入；编辑后请保存', color=MUTED, size=12)
+        save_status = ft.Text('本地内容已载入；编辑后请保存', color=MUTED, size=14)
         preview = ft.Text(corrected.value or '', selectable=True, color=FG)
         def save(_=None):
             try:
@@ -776,12 +826,12 @@ def main(page, client_factory=ApiClient, storage=None):
             preview.value = corrected.value
             page.update()
         controls = [ft.Text('来源：' + d['courseName'] + ' / ' + d['workName'], color=MUTED),
-                    ft.Text('原图为来源；识别与解答可能有误。点击 AI 操作将题图、编辑内容发送到所配模型服务。', color=WARN, size=12)]
+                    ft.Text('原图为来源；识别与解答可能有误。点击 AI 操作将题图、编辑内容发送到所配模型服务。', color=WARN, size=14)]
         if d.get('originalImage'):
             controls.append(ft.Container(ft.InteractiveViewer(content=ft.Image(src=base64.b64decode(d['originalImage'].split(',',1)[1]), fit=ft.BoxFit.CONTAIN), min_scale=0.5, max_scale=5), height=260))
         # Plain-text preview deliberately never fetches Markdown image URLs or
         # interprets HTML/model-generated markup. Equations retain their source.
-        controls.extend([corrected, ft.Text('校正预览 · LaTeX 源码', size=12, color=MUTED), preview, solution,
+        controls.extend([corrected, ft.Text('校正预览 · LaTeX 源码', size=14, color=MUTED), preview, solution,
                          ft.ExpansionTile(title=ft.Text('模型设置（密钥仅本次会话）'), controls=[*ai_fields.values(),vision,attach_image]),
                          question_input, ft.Button('使用 AI 分析此题', on_click=lambda e: run_ai(False)),
                          ft.TextButton('图片转 LaTeX', on_click=lambda e: run_ai(True)),
@@ -797,6 +847,8 @@ def main(page, client_factory=ApiClient, storage=None):
             nonlocal api
             state['epoch'] += 1
             state['login_pending'] = False
+            if vault:
+                session_task(vault.forget)
             stop_ai()
             previous_api = api
             api = client_factory()
@@ -812,23 +864,26 @@ def main(page, client_factory=ApiClient, storage=None):
 
         controls = [
             card(ft.Column([
-                ft.Text('SYSTEM', color=DIM, size=11, font_family='monospace'),
-                ft.Text(f'API  {BASE_URL}', color=MUTED, size=12, selectable=True),
-                ft.Text(f'VERSION  {APP_VERSION}-android', color=MUTED, size=12),
-                ft.Text('LICENSE  AGPL-3.0-only · Styayur', color=MUTED, size=12),
+                ft.Text('SYSTEM', color=DIM, size=14, font_family='monospace'),
+                ft.Text(f'API  {BASE_URL}', color=MUTED, size=14, selectable=True),
+                ft.Text(f'VERSION  {APP_VERSION}-android', color=MUTED, size=14),
+                ft.Text('LICENSE  AGPL-3.0-only · Styayur', color=MUTED, size=14),
                 ft.Text('AUTH  ' + ('token' if state['username'] else 'none'),
-                        color=MUTED, size=12),
+                        color=MUTED, size=14),
             ], spacing=8)),
             card(ft.Column([
-                ft.Text('使用说明', color=DIM, size=11, font_family='monospace'),
+                ft.Text('使用说明', color=DIM, size=14, font_family='monospace'),
                 ft.Text('· 课程 = 科目，作业 = 题目分组；点击课程进入作业，点击作业查看题目。',
-                        color=MUTED, size=12),
+                        color=MUTED, size=14),
                 ft.Text('· 手机返回键：返回上一级菜单；根菜单连按两次返回退出。',
-                        color=MUTED, size=12),
+                        color=MUTED, size=14),
                 ft.Text('· 支持课程作业、题图查看、公式校正和用户发起的 AI 分析；'
-                        'Word、PDF 导出请在桌面版使用。', color=MUTED, size=12),
+                        'Word、PDF 导出请在桌面版使用。', color=MUTED, size=14),
             ], spacing=8)),
-            ft.Button('LOGOUT', bgcolor=SURFACE_2, color=FG, height=48,
+            ft.Checkbox(label='理解风险，允许明文 HTTP', value=bool(insecure_opt.value),
+                        on_change=lambda e: (setattr(insecure_opt, 'value', bool(e.control.value)),
+                                             http_compat_changed(), logout(e))),
+            ft.Button('退出登录并清除设备会话', bgcolor=SURFACE_2, color=FG, min_height=48,
                               on_click=logout),
         ]
         show(make_view('/settings', '设置', 'SETTINGS · 系统信息', controls,
@@ -836,6 +891,57 @@ def main(page, client_factory=ApiClient, storage=None):
 
     # ---------------- 启动 ----------------
     show_login()
+    if vault:
+        async def resume_saved_session():
+            import asyncio
+            nonlocal api
+            restore_id = uuid.uuid4().hex
+            state.update(login_pending=True, login_id=restore_id)
+            try:
+                raw = await vault.load()
+                if not raw:
+                    return
+                if state.get('login_id') != restore_id:
+                    return
+                if api.insecure and not insecure_opt.value:
+                    show_login('已有设备会话；请先允许当前 HTTP 兼容模式后重新登录')
+                    return
+                show(make_view('/login', '恢复会话', '正在向平台确认会话有效性', [
+                    loading('正在验证会话…'),
+                    ft.TextButton('取消并手动登录', on_click=lambda e: cancel_login()),
+                    ft.TextButton('离线打开本地资料', on_click=lambda e: (cancel_login(), show_library())),
+                ]))
+                candidate = client_factory()
+                candidate.allow_insecure = bool(insecure_opt.value)
+                try:
+                    username = restore_session(candidate, raw)
+                except (ValueError, TypeError, KeyError):
+                    await vault.forget()
+                    candidate.logout()
+                    show_login('设备会话已过期或不适用于当前平台，请重新登录')
+                    return
+                ok, _ = await asyncio.to_thread(candidate.get_user_info)
+                if state.get('login_id') != restore_id:
+                    candidate.logout()
+                    return
+                if ok:
+                    previous, api = api, candidate
+                    threading.Thread(target=previous.logout, daemon=True).start()
+                    state['username'] = username
+                    show_dashboard()
+                else:
+                    if getattr(candidate, 'authentication_rejected', False):
+                        await vault.forget()
+                    candidate.logout()
+                    show_login('会话暂不可用，请重新登录或离线打开本地资料')
+            except Exception:
+                logging.warning('Device session could not be restored')
+                if state.get('login_id') == restore_id:
+                    show_login('设备加密会话不可用，请重新登录')
+            finally:
+                if state.get('login_id') == restore_id:
+                    state['login_pending'] = False
+        page.run_task(resume_saved_session)
     if storage is None:
         async def migrate_legacy_login():
             try:

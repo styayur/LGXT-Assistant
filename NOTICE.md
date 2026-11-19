@@ -48,3 +48,15 @@ SOFTWARE.
 
 LGXT-Assistant v3.0 整体（含对原项目的修改与新增部分）按以下
 GNU GENERAL PUBLIC LICENSE Version 3 授权：
+# Android design and build security additions (2026-11-18)
+
+Material Design 3 UI Skill: https://github.com/skydashnet/material-design-3-ui-skill,
+commit 82783f76de4a5b08a60421cae935cf8de7ca1ee8. MIT, copyright 2026 Material
+Design 3 UI Skill contributors; original license and reviewed guidance retained
+under docs/design/material3-skill. Guidance only, no installer executed.
+
+The picomatch 4.0.7 development-tool backport is adapted from styayur/gitpad-plus
+under AGPL-3.0-only. Original picomatch MIT license is installed unchanged and
+hash-verified; patch and executable provenance are in frontend/patches. It is not
+an upstream fixed release and does not form part of the Android APK.
+

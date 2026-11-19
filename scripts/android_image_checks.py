@@ -7,6 +7,33 @@ import tempfile
 import zlib
 
 
+def credential_free_transport_probe():
+    """Observe Android Python networking without a username, password or token."""
+    import requests
+    try:
+        import lgxt_transport as transport
+    except ImportError:
+        from mobile.src import lgxt_transport as transport
+    results = []
+    with requests.Session() as session:
+        session.trust_env = False
+        for endpoint in ('login', 'userInfo'):
+            item = {'endpoint': endpoint, 'credentialsSent': False}
+            try:
+                with session.post(transport.BASE_URL + '/' + endpoint, data={},
+                                  headers={'Accept': '*/*', 'Accept-Language': 'zh-CN,zh;q=0.9',
+                                           'Content-Type': 'application/x-www-form-urlencoded'},
+                                  timeout=(4, 6), allow_redirects=False, verify=True) as response:
+                    item.update(status=response.status_code, setCookiePresent='Set-Cookie' in response.headers)
+                    body = response.json()
+                    if isinstance(body, dict):
+                        item.update(code=body.get('code'), responseKeys=sorted(body))
+            except (requests.RequestException, ValueError) as exc:
+                item['failureType'] = type(exc).__name__
+            results.append(item)
+    return {'baseUrl': transport.BASE_URL, 'results': results, 'realLoginVerified': False}
+
+
 def run():
     import PIL
     from PIL import Image, features
