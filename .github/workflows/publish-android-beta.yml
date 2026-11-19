@@ -4,8 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       build_run_id:
-        description: 'Complete successful signed Android APK run at this exact main source'
+        description: 'Android APK run with successful build and signing jobs'
         required: true
+      acceptance_run_id:
+        description: 'Successful signed-artifact native acceptance run at current main (required after a driver-only fix)'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -50,7 +54,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           BUILD_RUN: ${{ inputs.build_run_id }}
-        run: python scripts/publish_android_beta.py --build-run "$BUILD_RUN" --directory accepted
+          ACCEPTANCE_RUN: ${{ inputs.acceptance_run_id }}
+        run: python scripts/publish_android_beta.py --build-run "$BUILD_RUN" --acceptance-run "$ACCEPTANCE_RUN" --directory accepted
       - uses: actions/upload-artifact@v7
         if: always()
         with:
