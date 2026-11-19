@@ -104,6 +104,8 @@ def test_portal_numeric_or_string_success_code(code):
     {'code': [], 'data': 'TOKEN'}, {'code': {}, 'data': 'TOKEN'},
     {'code': '00', 'data': 'TOKEN'}, {'code': 'false', 'data': 'TOKEN'},
     {'code': '0'}, {'data': 'TOKEN'}, [], '0',
+    {'code': 0, 'data': None}, {'code': '0', 'data': {}},
+    {'code': 0, 'data': []}, {'code': '0', 'data': True}, {'code': 0, 'data': ''},
 ])
 def test_malformed_login_schema_never_installs_authorization(payload):
     response = Response(payload=payload)
