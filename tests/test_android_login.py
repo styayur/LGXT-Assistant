@@ -177,7 +177,10 @@ def test_http_authorization_is_one_confirmation_and_can_be_remembered():
     find(page, ft.TextField, label='密码').value = 'not-a-real-password'
     find(page, ft.Button, text='登录理工学堂').on_click(None)
     assert page.dialog and HttpClient.logins == []
-    page.dialog.actions[1].on_click(None)
+    consent = page.dialog
+    consent.actions[1].on_click(None)
+    assert HttpClient.logins == []  # Flutter has not dismissed the route yet.
+    consent.on_dismiss(None)
     wait_for(lambda: page.views[-1].route == '/dashboard')
     assert HttpClient.logins and store.get('lgxt.http_compat') is True
     assert 'lgxt.pass' not in store.data and 'TOKEN' not in json.dumps(store.data)

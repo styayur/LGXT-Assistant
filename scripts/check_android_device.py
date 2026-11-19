@@ -135,6 +135,7 @@ def main():
     tap_text('登录理工学堂')
     passed=['install','first launch']
     if args.fixture:
+        wait_text('允许明文 HTTP');tap_text('允许并登录')
         wait_text('刷新作业状态');tap_text('课程');tap_text('Fixture physics')
         tap_text('查看题目');screen('question-native-fixture')
         tap_text('提交成绩');wait_text('确认提交成绩');tap_text('取消')
@@ -155,7 +156,8 @@ def main():
         screen('saved-native-fixture')
         tap_node(scroll_to('使用 AI 分析此题'));wait_text('视觉')
         screen('vision-rejected-native-fixture')
-        passed+=['fixture course/assignment/question','submission cancel and confirm (no server)',
+        passed+=['fixture-only explicit HTTP approval completes without a server login request',
+                 'fixture course/assignment/question','submission cancel and confirm (no server)',
                  'note edit and save','unconfirmed vision rejected before provider request']
     else:
         cancel_http_consent()

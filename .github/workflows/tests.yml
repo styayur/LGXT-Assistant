@@ -101,8 +101,9 @@ jobs:
           python-version: '3.13'
       - name: Install isolated export QA dependencies
         run: |
-          # The EC2 Ubuntu mirror repeatedly stalled on the 61 MB CJK package.
-          # Keep the same signed Ubuntu packages, using the official HTTPS mirror.
+          # EC2/archive downloads repeatedly stalled on the 61 MB CJK package;
+          # the Ubuntu Azure mirror fetched the full 158 MB QA set in seven seconds.
+          # Keep signed Ubuntu packages and use that mirror consistently over HTTPS.
           sudo python3 - <<'PY'
           from pathlib import Path
           import re
@@ -110,7 +111,7 @@ jobs:
           for path in sources:
               if path.exists():
                   text = path.read_text()
-                  updated = re.sub(r'https?://[^/\s]+\.ec2\.archive\.ubuntu\.com/ubuntu/?', 'https://archive.ubuntu.com/ubuntu/', text)
+                  updated = re.sub(r'https?://(?:[a-zA-Z0-9.-]+\.)?archive\.ubuntu\.com/ubuntu/?', 'https://azure.archive.ubuntu.com/ubuntu/', text)
                   if updated != text:
                       path.write_text(updated)
           PY

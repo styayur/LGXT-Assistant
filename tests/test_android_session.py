@@ -112,6 +112,39 @@ def test_corrupt_secure_store_keeps_offline_notes_available():
     assert page.views[-1].route == '/library'
 
 
+@pytest.mark.parametrize('choice', [True, False, None])
+def test_http_consent_waits_for_its_dismissal_even_with_another_notice(choice):
+    calls = []
+    class Client(FixtureClient):
+        insecure = True
+        def login(self, *args):
+            calls.append('login')
+            return super().login(*args)
+    page, notes = Page(), Storage()
+    main(page, Client, notes)
+    find(page, ft.TextField, label='账号').value = 'synthetic'
+    find(page, ft.TextField, label='密码').value = 'synthetic'
+    find(page, ft.Button, text='登录理工学堂').on_click(None)
+    consent = page.dialog
+    original_view = page.views[-1]
+    notice = ft.SnackBar(content=ft.Text('synthetic notice'))
+    page.show_dialog(notice)
+    if choice is not None:
+        consent.actions[1 if choice else 0].on_click(None)
+        assert consent.open is False
+        assert page.dialog is notice
+    assert page.views[-1] is original_view and not calls
+    consent.on_dismiss(None)
+    if choice:
+        wait_for(lambda: page.views[-1].route == '/dashboard')
+        assert calls == ['login'] and notes.data['lgxt.http_compat'] is True
+    else:
+        assert not calls and notes.data.get('lgxt.http_compat') is not True
+        assert find(page, ft.Text, value='已阻止明文 HTTP；未发送账号或密码')
+    consent.on_dismiss(None)
+    assert len(calls) == int(choice is True)
+
+
 def test_overview_orders_deadlines_without_dropping_exhausted_or_unknown_attempts():
     courses = [{'courseId': 1}, {'courseId': 2}]
     works = [
