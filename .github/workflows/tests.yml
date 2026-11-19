@@ -107,7 +107,12 @@ jobs:
           sudo python3 - <<'PY'
           from pathlib import Path
           import re
-          sources = [Path('/etc/apt/sources.list'), *Path('/etc/apt/sources.list.d').glob('*.sources'), *Path('/etc/apt/sources.list.d').glob('*.list')]
+          # Hosted images can use mirror+file: indirection instead of direct
+          # archive URLs in their .sources files. Rewrite the actual lists too.
+          sources = [Path('/etc/apt/sources.list'), Path('/etc/apt/apt-mirrors.txt'),
+                     Path('/etc/apt/apt-mirrors-security.txt'),
+                     *Path('/etc/apt/sources.list.d').glob('*.sources'),
+                     *Path('/etc/apt/sources.list.d').glob('*.list')]
           for path in sources:
               if path.exists():
                   text = path.read_text()
@@ -115,6 +120,7 @@ jobs:
                   if updated != text:
                       path.write_text(updated)
           PY
+          if [ -f /etc/apt/apt-mirrors.txt ]; then cat /etc/apt/apt-mirrors.txt; fi
           sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update
           # CID-font PDFs require Poppler's CJK character maps for text extraction.
           sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends libreoffice-writer fonts-noto-cjk poppler-utils poppler-data
