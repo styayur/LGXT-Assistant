@@ -9,11 +9,20 @@ A task-focused assistant for handling assignments on 理工学堂, from submissi
 [![Verify](https://github.com/styayur/LGXT-Assistant/actions/workflows/tests.yml/badge.svg)](https://github.com/styayur/LGXT-Assistant/actions/workflows/tests.yml)
 [![AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-blue)](LICENSE)
 
-![Assignment workspace fixture](docs/screenshots/assignment-desktop-fixture.png)
+<img src="docs/screenshots/android-3.3.1-native-dashboard-fixture.png" width="360" alt="Android 3.3.1 synthetic native task home">
 
-Updated React assignment workspace with synthetic questions and model replies; browser capture, not a native Android screenshot.
+Actual Android 15 emulator capture after encrypted synthetic-session restoration. Fixture data; not real courses or real-account login evidence.
 
 ## Start with an assignment
+
+Android puts unfinished assignments, platform deadlines, remaining attempts and loaded progress first. Partial course-load failures stay visible. Open a task directly from the phone home screen.
+
+- Zoom the original question image, edit LaTeX/question/solution notes, and explicitly request question-bound AI or recognition.
+- Read local materials offline; export/import backups through the native picker with a previous revision retained. Android has no desktop rich editor, crop tool or Word/PDF export.
+- Material 3 light/dark roles, phone safe areas and native controls; optional device-encrypted session restoration without saving passwords.
+
+<details>
+<summary>Preserved historical Windows workspace capabilities</summary>
 
 Open a course and assignment, then select a question. The assignment workspace keeps its original image, corrected question, editable LaTeX, solution document and AI discussion together. Select supporting text files explicitly; their names and excerpts remain visible as sources. AI explanations are marked as generated, not platform answers or verified citations.
 
@@ -21,7 +30,8 @@ Open a course and assignment, then select a question. The assignment workspace k
 - **Image-to-LaTeX:** recognize the whole original image or a percentage-based crop with your configured vision model. Inspect and correct the returned text and LaTeX before applying it. Printed formulas are the target; handwriting, diagrams and OCR accuracy are not guaranteed.
 - **Question-bound AI:** “使用 AI 分析此题” sends the selected image, corrected question, existing solution and checked text sources to your configured provider. Follow up within the question and add reviewed responses to its solution. Text-only analysis remains available.
 - **Documents:** Tiptap rich text, editable inline/block math, tables, code, images, headings, lists and undo/redo. Save locally with a previous-version copy. Export Markdown, Word or PDF; Word/PDF retain equations as **LaTeX source**, not native Word equations or typeset PDF formulas.
-- **Android:** a separate Flet UI with clearer assignment states, zoomable original images, editable question/solution notes and explicit AI/recognition actions. Android supports offline local materials, backup/recovery and text-only or explicitly enabled vision requests to a compatible endpoint with an in-memory key; it has no desktop rich-text editor, crop tool or Word/PDF export.
+
+</details>
 
 ## Transport limitation
 
@@ -33,13 +43,13 @@ AI calls are user-initiated and leave the local app. Confirm that the selected s
 
 ## Download by channel
 
-The release page and its assets are the source of truth; source archives are not runnable installers. The Windows beta tags for this upgrade are desktop **4.1.0** and web **4.2.0-web**. Download only from a published channel release after its gates complete; draft files are not a public release. Android **3.3.1 Beta** is the next release candidate; use the published release page as the source of truth; historical 3.2.1 installations require a verified backup, uninstall and reinstall. See [channel policy](docs/release-channels.md) and [delivery evidence](docs/VERIFICATION.md).
+The release page and its assets are the source of truth; source archives are not runnable installers. The Windows beta tags for this upgrade are desktop **4.1.0** and web **4.2.0-web**. Download only from a published channel release after its gates complete; draft files are not a public release. Android **3.3.1 Beta** is published with signed native acceptance and public-download verification. Upgrade directly over 3.3.0; historical 3.2.0/3.2.1 installations require a verified backup and reinstall. See [channel policy](docs/release-channels.md) and [delivery evidence](docs/VERIFICATION.md).
 
 | Channel | Upgrade version / status | Installation |
 | --- | --- | --- |
 | Windows desktop | [v4.1.0 beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.1.0) | Windows 10/11 x64, WebView2; run the EXE or fully extract the portable ZIP and keep `_internal` beside its EXE |
 | Windows web | [v4.2.0-web beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.2.0-web) | Windows 10/11 x64; launch the Web EXE, retain its console, use its private loopback link in Edge/Chrome; no WebView2 needed |
-| Android | [v3.3.0 Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.3.0-android) | Android 7.0/API 24+, ARM64; x86_64 for emulation. New durable certificate: back up and verify notes before uninstalling 3.2.1, then install/import/compare. See [migration guide](docs/android-beta.md) |
+| Android | [v3.3.1 Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.3.1-android) | Android 7.0/API 24+, ARM64; x86_64 for emulation. Same durable certificate: install over 3.3.0; verify external backups before reinstalling 3.2.0/3.2.1. See [migration guide](docs/android-beta.md) |
 
 New Windows asset names identify channel, version and platform; check every download against that release's `SHA256SUMS.txt`. No MSI or signing trust is claimed. Historical tags/assets remain unchanged, including an old Android asset attached to a web release; use [v3.2.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.2.1) only for historical Android reference.
 
@@ -62,6 +72,6 @@ py -3.13 default.pyw --legacy
 
 Application source is [AGPL-3.0-only](LICENSE), copyright StyAyur. [Historical attribution and third-party notices](NOTICE.md) are preserved. Report vulnerabilities privately through [GitHub security advisories](https://github.com/styayur/LGXT-Assistant/security/advisories/new). [Issues](https://github.com/styayur/LGXT-Assistant/issues) are for non-sensitive bug reports.
 
-Native Android 15 emulator captures: [login](docs/screenshots/android-native-login.png) · [fixture keyboard](docs/screenshots/android-native-keyboard-fixture.png) · [fixture saved note](docs/screenshots/android-native-saved-fixture.png). These do not establish physical ARM64 compatibility.
+Historical 3.3.0 native Android 15 emulator captures: [login](docs/screenshots/android-native-login.png) · [fixture keyboard](docs/screenshots/android-native-keyboard-fixture.png) · [fixture saved note](docs/screenshots/android-native-saved-fixture.png). These do not establish physical ARM64 compatibility.
 
 Android preparation: [guide and backup](docs/android-beta.md) · [evidence and limitations](docs/research/ANDROID_LIMITATIONS.md). Test/debug and fixture APKs are not distributable releases.
