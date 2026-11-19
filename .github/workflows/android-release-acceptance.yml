@@ -98,6 +98,27 @@ jobs:
             adb shell rm -f /sdcard/Download/LGXT-study-notes.json
             adb uninstall io.github.styayur.lgxt_assistant_mobile
             python scripts/check_android_device.py --apk build/android/fixture/LGXT-fixture-only.apk --fixture --output build/android/device-fixture
+      - name: Bind successful native reports to exact signed and fixture bytes
+        env:
+          BUILD_RUN: ${{ inputs.build_run_id }}
+          BUILD_SOURCE: ${{ steps.origin.outputs.source }}
+        run: |
+          python - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          root=Path('build/android')
+          identity=json.loads((root/'ACCEPTANCE-IDENTITY.json').read_text())
+          ordinary=json.loads((root/'device/acceptance.json').read_text())
+          fixture=json.loads((root/'device-fixture/acceptance.json').read_text())
+          fixture_hash=hashlib.sha256((root/'fixture/LGXT-fixture-only.apk').read_bytes()).hexdigest()
+          assert ordinary['apkSha256']==identity['sha256'] and ordinary['fixture'] is False
+          assert fixture['apkSha256']==fixture_hash and fixture['fixture'] is True
+          assert identity['sourceCommit']==os.environ['BUILD_SOURCE']
+          record={'buildRun':os.environ['BUILD_RUN'],'sourceCommit':os.environ['BUILD_SOURCE'],
+                  'validatedHead':os.environ['GITHUB_SHA'],'signedApkSha256':identity['sha256'],
+                  'fixtureApkSha256':fixture_hash}
+          (root/'NATIVE-ACCEPTANCE.json').write_text(json.dumps(record,indent=2))
+          PY
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -106,3 +127,4 @@ jobs:
             build/android/device
             build/android/device-fixture
             build/android/ACCEPTANCE-IDENTITY.json
+            build/android/NATIVE-ACCEPTANCE.json

@@ -1,0 +1,35 @@
+{
+  "verifiedNativeReports": true,
+  "buildRun": "44518874998",
+  "acceptanceRun": "44522507458",
+  "sourceCommit": "9401d9d992807c6e8c808f99deb73acadf015c1f",
+  "validatedHead": "0cfb4e920b678e8662107704166f3a8313dee160",
+  "apkSha256": "8b1da350c1cd9d089c52f8fbb65dbf289443c0a8f4f7dc462cda4fe4b201a4d1",
+  "nativeImageChecks": {
+    "pillow": "13.0.0",
+    "jpeg": "6.2",
+    "webp": "1.6.0",
+    "passed": [
+      "PNG decode",
+      "JPEG decode",
+      "WEBP decode",
+      "SVG rejected",
+      "empty rejected",
+      "invalid rejected",
+      "oversize bytes rejected",
+      "truncated JPEG rejected",
+      "corrupt PNG rejected",
+      "decompression bomb rejected",
+      "20 MP limit rejected",
+      "PNG animation rejected",
+      "WEBP animation rejected",
+      "30 repeated decode cycles complete",
+      "HTTP authentication blocked",
+      "notes survive restart",
+      "password persistence rejected",
+      "corrupt notes fail closed"
+    ],
+    "count": 18
+  },
+  "realAccountApkLoginVerified": false
+}

@@ -4,18 +4,27 @@
 
 以作业为中心的理工学堂助手：从提交管理、图片转 LaTeX，到 AI 辅助解题与学习资料导出。
 
-**Beta。** Windows 桌面、Windows 网页与 Android 独立版本、独立验证。
+**Android 3.3.1 Beta。** Android 为当前产品；Windows 历史渠道与共享业务模块保留。
 
 [English](README.md) · [发布](https://github.com/styayur/LGXT-Assistant/releases) · [使用说明](docs/user-guide.md) · [安全](SECURITY.md) · [验证记录](docs/VERIFICATION.md)
 
 [![Verify](https://github.com/styayur/LGXT-Assistant/actions/workflows/tests.yml/badge.svg)](https://github.com/styayur/LGXT-Assistant/actions/workflows/tests.yml)
 [![AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-blue)](LICENSE)
 
-![Assignment workspace fixture](docs/screenshots/assignment-desktop-fixture.png)
+<img src="docs/screenshots/android-3.3.1-native-dashboard-fixture.png" width="360" alt="Android 3.3.1 synthetic native task home">
 
-更新后的 React 作业工作区，题目与模型回复为明确的合成夹具；浏览器截图，不是 Android 原生截图。
+Android 15 模拟器实际截图：加密合成会话恢复后的首页。夹具数据，不是真实课程或账号登录证明。
 
 ## 从当前作业开始
+
+Android 首页优先显示未完成作业、平台截止日期、剩余次数与已加载进度；课程部分加载失败时会明确提示。进入作业即可查看题目，不需要操作桌面工作区。
+
+- 原图缩放、可编辑 LaTeX/题面与解答笔记、围绕当前题目的显式 AI/识别操作。
+- 本地资料离线阅读，原生文件选择器导出/导入备份，保留前一版；不包含桌面富文本、裁剪或 Word/PDF 导出。
+- Material 3 明暗主题、手机安全区域与原生控件；可选设备加密会话恢复，密码不保存。
+
+<details>
+<summary>保留的 Windows 历史工作区能力</summary>
 
 进入课程与作业后选择题目，在同一工作区查看原图、校正题面、编辑 LaTeX、整理解答并追问 AI。支持资料须手动勾选，来源名称和引用文字可见；模型解释与平台答案分开显示，不编造引用或页码。
 
@@ -23,7 +32,8 @@
 - **图片转 LaTeX：** 使用已配置的视觉模型识别完整原图或按百分比裁剪的区域，核对文字与公式源码后再应用。以印刷数学为目标，不保证手写、图形或识别准确率。
 - **围绕题目的 AI：**「使用 AI 分析此题」发送所选题图、校正题面、已有解答和勾选文字资料。可在当前题目中追问，把检查过的回复加入解答。可关闭图片使用纯文字分析。
 - **文档：** Tiptap 富文本，行内/独立公式源码编辑、表格、代码、图片、标题、列表及撤销重做。本地保存并保留上一版。导出 Markdown、Word、PDF；Word/PDF 中公式保留为 **LaTeX 源码**，不是 Word 原生公式或已排版的 PDF 数学。
-- **Android：** 独立 Flet 界面，改进作业状态、原图缩放、题面/解答笔记与显式 AI/识别操作。支持离线本地资料、备份恢复，以及兼容接口的纯文字或显式视觉请求，密钥仅存内存；不包含桌面富文本编辑器、裁剪工具或 Word/PDF 导出。
+
+</details>
 
 ## 平台连接限制
 
@@ -35,13 +45,13 @@ AI 仅在用户发起时发送，内容会离开本机。请在 AI 设置核实�
 
 ## 按渠道下载
 
-以发布页实际附件为准，源码压缩包不是可运行安装包。此次 Windows Beta tag 为桌面 **4.1.0**、网页 **4.2.0-web**。只有对应渠道完成验证并公开发布后才可下载，草稿附件不等于公开发布。Android **3.3.0 Beta** 已发布；历史 3.2.1 安装须核实外部备份后卸载重装。见 [渠道规则](docs/release-channels.md) 和 [交付证据](docs/VERIFICATION.md)。
+以发布页实际附件为准，源码压缩包不是可运行安装包。此次 Windows Beta tag 为桌面 **4.1.0**、网页 **4.2.0-web**。只有对应渠道完成验证并公开发布后才可下载，草稿附件不等于公开发布。Android **3.3.1 Beta** 已公开发布并通过签名、完整模拟器验收及公开下载校验；3.3.0 可原位升级，历史 3.2.0/3.2.1 须核实外部备份后重装。见 [渠道规则](docs/release-channels.md) 和 [交付证据](docs/VERIFICATION.md)。
 
 | 渠道 | 升级版本 / 状态 | 安装方式 |
 | --- | --- | --- |
 | Windows 桌面 | [v4.1.0 Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.1.0) | Windows 10/11 x64，需 WebView2；运行 EXE，或完整解压便携 ZIP，保留 `_internal` |
 | Windows 网页 | [v4.2.0-web Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.2.0-web) | Windows 10/11 x64；启动 Web EXE，保留控制台，用 Edge/Chrome 打开私有本机链接；无需 WebView2 |
-| Android | [v3.3.0 Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.3.0-android) | Android 7.0/API 24+、ARM64；x86_64 用于模拟器。采用持久新证书：先备份并核对笔记，再卸载 3.2.1，安装新版后导入核对。见[迁移指南](docs/android-beta.md) |
+| Android | [v3.3.1 Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.3.1-android) | Android 7.0/API 24+、ARM64；x86_64 用于模拟器。持久证书不变，直接覆盖 3.3.0；3.2.0/3.2.1 须先核实备份再重装。见[迁移指南](docs/android-beta.md) |
 
 新 Windows 附件名包含平台、渠道与版本；请对照该发布的 `SHA256SUMS.txt` 校验。未声明提供 MSI 或可信签名。历史 tag 与附件保持原样；曾有 Android 附件附在网页发布中，历史 Android 请参阅 [v3.2.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.2.1)。
 

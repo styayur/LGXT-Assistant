@@ -70,6 +70,23 @@ def main():
         screen('confirmation-failure')
         raise AssertionError('Import confirmation did not activate')
 
+    def cancel_http_consent():
+        # Flutter can retain the modal input barrier briefly after semantics
+        # appear. Retry only this negative action while the same dialog exists;
+        # never accept consent or retry login/submission requests.
+        # The login checkbox also contains the dialog title. Only the unique
+        # approval action establishes that the consent modal is still present.
+        wait_text('允许并登录')
+        for attempt in range(3):
+            tap_text('取消')
+            time.sleep(1)
+            if not nodes_containing(tree(),'允许并登录'):
+                return
+            with (out/'actions.txt').open('a',encoding='utf-8') as actions:
+                actions.write(f'HTTP consent remains open after cancel tap {attempt+1}\n')
+        screen('http-cancel-failure')
+        raise AssertionError('HTTP consent cancellation did not activate')
+
     def scroll_to(text):
         for _ in range(20):
             root=tree()
@@ -91,7 +108,7 @@ def main():
     def launch():shell('am','start','-W','-n',package+'/.MainActivity')
     if args.previous_beta_apk:
         if 'Success' not in adb('install',args.previous_beta_apk).decode():raise ValueError('Previous beta installation failed')
-        launch();wait_text('登录理工学堂');tap_text('离线打开本地资料');tap_text('导出备份');tap_text('SAVE')
+        launch();wait_text('登录理工学堂');tap_node(scroll_to('离线打开本地资料'));tap_text('导出备份');tap_text('SAVE')
         key='question.'+hashlib.sha256(json.dumps(['native-test','backup-test','1']).encode()).hexdigest()
         document={'schemaVersion':1,'courseId':'native-test','workId':'backup-test','questionId':'1',
                   'title':'Beta migration — synthetic','courseName':'Synthetic migration test',
@@ -120,6 +137,7 @@ def main():
     tap_text('登录理工学堂')
     passed=['install','first launch']
     if args.fixture:
+        wait_text('允许明文 HTTP');tap_text('允许并登录')
         wait_text('刷新作业状态');tap_text('课程');tap_text('Fixture physics')
         tap_text('查看题目');screen('question-native-fixture')
         tap_text('提交成绩');wait_text('确认提交成绩');tap_text('取消')
@@ -140,12 +158,13 @@ def main():
         screen('saved-native-fixture')
         tap_node(scroll_to('使用 AI 分析此题'));wait_text('视觉')
         screen('vision-rejected-native-fixture')
-        passed+=['fixture course/assignment/question','submission cancel and confirm (no server)',
+        passed+=['fixture-only explicit HTTP approval completes without a server login request',
+                 'fixture course/assignment/question','submission cancel and confirm (no server)',
                  'note edit and save','unconfirmed vision rejected before provider request']
     else:
-        wait_text('允许明文 HTTP');tap_text('取消')
+        cancel_http_consent()
         wait_text('已阻止明文 HTTP');screen('http-blocked-native')
-        tap_text('离线打开本地资料');wait_text('本地资料');screen('library-native')
+        tap_node(scroll_to('离线打开本地资料'));wait_text('本地资料');screen('library-native')
         passed+=['HTTP blocked with dummy credentials','offline library']
         if args.previous_beta_apk:
             tap_text('打开本地笔记');scroll_to('migration-fixture-note');screen('previous-beta-note-preserved')
@@ -180,12 +199,12 @@ def main():
     if args.fixture:
         wait_text('刷新作业状态');screen('encrypted-session-restored-native-fixture')
         passed.append('device encrypted synthetic token session restores after process termination and validates')
-        tap_text('设置');tap_text('退出登录并清除设备会话');wait_text('登录理工学堂')
+        tap_text('设置');tap_node(scroll_to('退出登录并清除设备会话'));wait_text('登录理工学堂')
         shell('am','force-stop',package);launch()
         passed.append('logout clears device session across process termination')
     wait_text('登录理工学堂');screen('restart-native')
     if args.fixture or args.backup_roundtrip:
-        tap_text('离线打开本地资料');tap_text('打开本地笔记')
+        tap_node(scroll_to('离线打开本地资料'));tap_text('打开本地笔记')
         scroll_to('native-fixture-note');screen('restored-native-fixture')
         passed.append('note survives process termination')
         shell('input','keyevent','4');wait_text('本地资料')
@@ -214,7 +233,8 @@ def main():
     if 'FATAL EXCEPTION' in log or 'Traceback (most recent call last)' in log:
         raise AssertionError('Native/Python crash in logcat')
     if args.fixture and 'LGXT_NATIVE_CHECKS=' not in log:raise AssertionError('Native decoder checks not reported')
-    report={'package':package,'abi':shell('getprop','ro.product.cpu.abi').strip(),
+    report={'package':package,'apkSha256':hashlib.sha256(Path(args.apk).read_bytes()).hexdigest(),
+            'abi':shell('getprop','ro.product.cpu.abi').strip(),
             'android':shell('getprop','ro.build.version.release').strip(),
             'fixture':args.fixture,'syntheticDocuments':args.fixture or args.backup_roundtrip,'passed':passed+['background resume','force-stop restart'],
             'historicalUpgradeIncompatible':upgrade_incompatible,

@@ -14,9 +14,11 @@ from android_image_checks import run, credential_free_transport_probe
 
 class FixtureClient:
     fixture=True
-    insecure=False
+    # Exercise the real consent UI with this isolated client only. login and
+    # userInfo below remain synthetic; fixture credentials never reach a server.
+    insecure=True
     allow_insecure=False
-    base_url='https://fixture.invalid/api'
+    base_url='http://fixture.invalid/api'
     def __init__(self):self.headers={};self.session=requests.Session()
     def login(self,*args):self.headers['Authorization']='synthetic';return True,'fixture'
     def logout(self):self.headers.clear()

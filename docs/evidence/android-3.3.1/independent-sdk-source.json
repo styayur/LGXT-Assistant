@@ -1,0 +1,63 @@
+{
+  "apk": "LGXT-Assistant-Android-v3.3.1.apk",
+  "sha256": "8b1da350c1cd9d089c52f8fbb65dbf289443c0a8f4f7dc462cda4fe4b201a4d1",
+  "certificateSha256": "0ec0084b65aff166d379206ca244ea54904511e95573b15fd2159bd4bd604114",
+  "debugTestOnly": false,
+  "package": "io.github.styayur.lgxt_assistant_mobile",
+  "version": "3.3.1",
+  "versionCode": 5,
+  "abis": [
+    "arm64-v8a",
+    "x86_64"
+  ],
+  "signatureVerified": true,
+  "fixture": false,
+  "appPayloadSha256": "87c991ee19ff658a58e676c024da74f18b12bb47850127382f880428af4bfc31",
+  "sdk": [
+    "sdkVersion:'24'",
+    "targetSdkVersion:'36'"
+  ],
+  "sourceCommit": "9401d9d992807c6e8c808f99deb73acadf015c1f",
+  "independentLocalSignatureVerification": true,
+  "allChecksumEntriesVerified": true,
+  "apkSize": 117305674,
+  "mergedSourceCodeObjectsVerified": [
+    {
+      "module": "main",
+      "embeddedPycSha256": "2f24f198b617f223e3ceb5f63520ddcb71b3f7e01967d6bfc023b282f9134196",
+      "sourceSha256": "9032f545712e4eb3ded39e857f851a9206fdf508eece43841ce95b359ded0395",
+      "matchingOptimizationLevels": [
+        0,
+        1
+      ]
+    },
+    {
+      "module": "lgxt_transport",
+      "embeddedPycSha256": "522a7366b3b70d9d66ca4a65a2c1b52cb57914d82b1e27e512baf7b512a545f5",
+      "sourceSha256": "461c709a662d42745d70dc0fd4d7041c3af1305d4870ec4804f7117ac639c339",
+      "matchingOptimizationLevels": [
+        0,
+        1
+      ]
+    },
+    {
+      "module": "session_state",
+      "embeddedPycSha256": "f725913cffb940ad256d6f71802712d275b27ff2f354987f833d047e0644bdca",
+      "sourceSha256": "0fb0dcf9888cc5505460c7ab8fa33f2cd02f77be6c7645c7b1ed0f1da040b52e",
+      "matchingOptimizationLevels": [
+        0,
+        1
+      ]
+    },
+    {
+      "module": "study_overview",
+      "embeddedPycSha256": "237adb02e44d3caaf202813d17153dc1eefff525548c4e4de8ac3863c56e4fdf",
+      "sourceSha256": "1d3dc6bcb655fd2f8460c3b2fd8265abcc5f96da8318b33257d1ff45667da63b",
+      "matchingOptimizationLevels": [
+        0,
+        1
+      ]
+    }
+  ],
+  "nativeAcceptanceReportedSeparately": true
+}

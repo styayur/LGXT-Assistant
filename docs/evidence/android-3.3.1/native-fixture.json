@@ -1,0 +1,60 @@
+{
+  "package": "io.github.styayur.lgxt_assistant_mobile",
+  "apkSha256": "c9679537f8b260950cd78cdfccffb68908d9474298bbc35d2500499cc7491718",
+  "abi": "x86_64",
+  "android": "15",
+  "fixture": true,
+  "syntheticDocuments": true,
+  "passed": [
+    "install",
+    "first launch",
+    "fixture-only explicit HTTP approval completes without a server login request",
+    "fixture course/assignment/question",
+    "submission cancel and confirm (no server)",
+    "note edit and save",
+    "unconfirmed vision rejected before provider request",
+    "device encrypted synthetic token session restores after process termination and validates",
+    "logout clears device session across process termination",
+    "note survives process termination",
+    "system back navigation",
+    "native file-picker backup export/import",
+    "background resume",
+    "force-stop restart"
+  ],
+  "historicalUpgradeIncompatible": null,
+  "previousBetaInPlaceUpgrade": false,
+  "credentialFreeNetworkProbe": {
+    "baseUrl": "http://lgxt.wutp.com.cn/api",
+    "results": [
+      {
+        "endpoint": "login",
+        "credentialsSent": false,
+        "status": 200,
+        "setCookiePresent": false,
+        "code": 500,
+        "responseKeys": [
+          "code",
+          "msg"
+        ]
+      },
+      {
+        "endpoint": "userInfo",
+        "credentialsSent": false,
+        "status": 200,
+        "setCookiePresent": false,
+        "code": -1,
+        "responseKeys": [
+          "code",
+          "msg"
+        ]
+      }
+    ],
+    "realLoginVerified": false
+  },
+  "not_covered": [
+    "real platform",
+    "paid provider",
+    "physical ARM64 device",
+    "historical in-place signing continuity"
+  ]
+}

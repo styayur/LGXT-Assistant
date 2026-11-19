@@ -1,5 +1,28 @@
 # Verification record
 
+## Android 3.3.1 Beta — 19 November 2026
+
+[Published prerelease](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.3.1-android), seven assets. Signed source `9401d9d992807c6e8c808f99deb73acadf015c1f`; validation/driver head `0cfb4e920b678e8662107704166f3a8313dee160`. The latter changes only the native test driver. [Publication receipt and all asset hashes](evidence/android-3.3.1/publication.json).
+
+APK SHA-256: `8b1da350c1cd9d089c52f8fbb65dbf289443c0a8f4f7dc462cda4fe4b201a4d1`. Existing certificate unchanged: `0ec0084b65aff166d379206ca244ea54904511e95573b15fd2159bd4bd604114`. Version3.3.1/code5, min24/target36, ARM64+x86_64. No signing key regenerated. [Independent local SDK and embedded-source comparison](evidence/android-3.3.1/independent-sdk-source.json) matched four packaged Python modules to the merged source; the publisher independently verified SDK identity and downloaded bytes before and after publication.
+
+[Build/sign44518874998](https://github.com/styayur/LGXT-Assistant/actions/runs/44518874998) passed build/sign; its original native job failed on a driver marker that also matched the background checkbox after the app dialog had closed. That failure remains recorded. [Companion44522507458](https://github.com/styayur/LGXT-Assistant/actions/runs/44522507458) **passed complete native acceptance in9m46s against those exact signed bytes**; no app/build/signing input changed. [Attestation](evidence/android-3.3.1/native-attestation.json), [ordinary report](evidence/android-3.3.1/native-ordinary.json), [fixture report](evidence/android-3.3.1/native-fixture.json).
+
+On actual Android15/x86_64: signed3.3.0 upgraded in place with its synthetic schema1 note preserved; same-cert reinstall, force-stop note survival and native-picker export/change/import exact restoration passed. Historical3.2.1 incompatible signing was rejected. The isolated fixture passed explicit dummy HTTP approval, mocked course/assignment/question and submission boundaries, actual Keystore-backed synthetic token restoration, logout across process termination and offline recovery. Both negative and positive consent flows ran. [18 native decoder/storage/boundary checks](evidence/android-3.3.1/native-runtime.json) passed. The fixture's business data is synthetic; a separate empty-form probe reached the real HTTP endpoint without credentials, observing200/code500 and200/code-1. This is not authenticated APK login.
+
+[Exact validation-head Verify44522513924 attempt2](https://github.com/styayur/LGXT-Assistant/actions/runs/44522513924/attempts/2) passed Python/frontend/actual Flet browser/Word-PDF roundtrip. An earlier20-minute package download timeout was retried unchanged; no sample/assertion/audit threshold was removed. [Security44522530691](https://github.com/styayur/LGXT-Assistant/actions/runs/44522530691), [Android dependency44522537482](https://github.com/styayur/LGXT-Assistant/actions/runs/44522537482), normal required CodeForge/Python/frontend checks and [guarded publisher44526002349](https://github.com/styayur/LGXT-Assistant/actions/runs/44526002349) passed. The publisher downloaded/SDK-verified draft assets, published the prerelease, then re-downloaded and verified public assets. The source tag is protected against update/deletion.
+
+The historical3.3 temporary-client/header-copy defect is fixed, but a cookie-required fixture is not proof of the reported platform incident cause. Authorized read-only portal course/assignment requests succeeded with Authorization present and no cookies; successful current reads use numeric0. Public login JS uses the same form endpoint/keys and untransformed password as both historical Python versions. Narrow0/string0 compatibility rejects booleans/floats/malformed token shapes. [Privacy-bounded public-source comparison](evidence/android-3.3.1/public-login-contract.json). No identifiers, credentials, sessions, account bodies or private screenshots are included.
+
+**NOT VERIFIED:** actual historical incident root cause, real-account Android APK login/restoration, physical ARM64/vendor layouts, paid providers and live OCR accuracy. Browser authentication evidence is separate from Android app evidence. The screenshot below is an actual native synthetic fixture, not real courses. [Migration/backup guide](android-beta.md).
+
+<img src="screenshots/android-3.3.1-native-dashboard-fixture.png" width="360" alt="Native Android synthetic session restored to the task home">
+
+## Historical records retained below
+
+The dated records below describe their original state, including obsolete signing/session limitations. The current3.3.1 evidence above supersedes those statements; historical releases and attribution remain intact.
+
+
 ## Published Android Beta — 25 October 2026
 
 [Release](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.3.0-android) is public, **Pre-release**, with exactly seven assets and no fixture/debug APK. Immutable annotated tag `v3.3.0-android` peels to `e402b78e558cc763b0e1fad87991674bb8bc831f`. Exact-ref ruleset [25790565](https://github.com/styayur/LGXT-Assistant/rules/25790565) prohibits update/deletion with no bypass actors. Existing releases/tags/assets were not replaced.

@@ -318,20 +318,38 @@ def main(page, client_factory=ApiClient, storage=None, session_storage=None):
             snack('请输入用户名和密码', WARN)
             return
         if getattr(api, 'insecure', False) and not insecure_opt.value:
-            def allow_http(_e=None):
-                insecure_opt.value = True
-                store_http_compat(True)
-                page.pop_dialog()
-                do_login()
-            def deny_http(_e=None):
-                page.pop_dialog()
-                show_login('已阻止明文 HTTP；未发送账号或密码')
-            page.show_dialog(ft.AlertDialog(
+            decision = {'choice': None, 'finished': False}
+            decision_lock = threading.Lock()
+            def choose_http(allowed):
+                with decision_lock:
+                    if decision['choice'] is not None or decision['finished']:
+                        return
+                    decision['choice'] = allowed
+                # Close this consent dialog even if a Snackbar was opened above
+                # it. Replacing the view before Flutter's dismissal races the
+                # dialog route and can leave its input barrier on screen.
+                dialog.open = False
+                page.update(dialog)
+            def http_dismissed(_e=None):
+                with decision_lock:
+                    if decision['finished']:
+                        return
+                    decision['finished'] = True
+                    allowed = decision['choice'] is True
+                if allowed:
+                    insecure_opt.value = True
+                    store_http_compat(True)
+                    do_login()
+                else:
+                    show_login('已阻止明文 HTTP；未发送账号或密码')
+            dialog = ft.AlertDialog(
                 title=ft.Text('允许明文 HTTP'),
+                on_dismiss=http_dismissed,
                 content=ft.Text('当前平台地址为 HTTP，安全传输未验证。允许以明文发送账号、密码和成绩？'
                                 '这不是安全传输。记住此选择，可在登录页或设置中撤销；不会保存密码。'),
-                actions=[ft.TextButton('取消', on_click=deny_http),
-                         ft.TextButton('允许并登录', on_click=allow_http)]))
+                actions=[ft.TextButton('取消', on_click=lambda e: choose_http(False)),
+                         ft.TextButton('允许并登录', on_click=lambda e: choose_http(True))])
+            page.show_dialog(dialog)
             return
         api.allow_insecure = bool(insecure_opt.value)
         login_id = uuid.uuid4().hex

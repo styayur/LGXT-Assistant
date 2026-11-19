@@ -91,6 +91,37 @@ def test_platform_messages_are_visible_and_secrets_are_not():
     assert not ok and '请重新登录' in message and message.startswith('获取用户信息失败')
 
 
+@pytest.mark.parametrize('code', [0, '0'])
+def test_portal_numeric_or_string_success_code(code):
+    active = client(Response(payload={'code': code, 'data': 'TOKEN'}))
+    assert active.login('user', 'synthetic')[0]
+    assert active.headers['Authorization'] == 'TOKEN'
+
+
+@pytest.mark.parametrize('payload', [
+    {'code': False, 'data': 'TOKEN'}, {'code': True, 'data': 'TOKEN'},
+    {'code': 0.0, 'data': 'TOKEN'}, {'code': None, 'data': 'TOKEN'},
+    {'code': [], 'data': 'TOKEN'}, {'code': {}, 'data': 'TOKEN'},
+    {'code': '00', 'data': 'TOKEN'}, {'code': 'false', 'data': 'TOKEN'},
+    {'code': '0'}, {'data': 'TOKEN'}, [], '0',
+    {'code': 0, 'data': None}, {'code': '0', 'data': {}},
+    {'code': 0, 'data': []}, {'code': '0', 'data': True}, {'code': 0, 'data': ''},
+])
+def test_malformed_login_schema_never_installs_authorization(payload):
+    response = Response(payload=payload)
+    active = client(response)
+    assert not active.login('user', 'synthetic')[0]
+    assert 'Authorization' not in active.headers and response.closed
+    assert len(active.session.calls) == 1
+
+
+@pytest.mark.parametrize('code', [-1, '-1'])
+def test_portal_numeric_or_string_expiry_code(code):
+    active = client(Response(payload={'code': code, 'msg': 'expired'}))
+    assert not active.get_user_info()[0]
+    assert active.authentication_rejected
+
+
 def test_https_upgrade_redirect_is_not_called():
     active = client(Response(302, headers={'Location': 'https://lgxt.wutp.com.cn/api/login'}))
     ok, message = active.login('user', 'secret')
@@ -177,7 +208,10 @@ def test_http_authorization_is_one_confirmation_and_can_be_remembered():
     find(page, ft.TextField, label='密码').value = 'not-a-real-password'
     find(page, ft.Button, text='登录理工学堂').on_click(None)
     assert page.dialog and HttpClient.logins == []
-    page.dialog.actions[1].on_click(None)
+    consent = page.dialog
+    consent.actions[1].on_click(None)
+    assert HttpClient.logins == []  # Flutter has not dismissed the route yet.
+    consent.on_dismiss(None)
     wait_for(lambda: page.views[-1].route == '/dashboard')
     assert HttpClient.logins and store.get('lgxt.http_compat') is True
     assert 'lgxt.pass' not in store.data and 'TOKEN' not in json.dumps(store.data)
