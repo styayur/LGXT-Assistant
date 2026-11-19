@@ -121,7 +121,7 @@ def main():
     result.update(buildRun=args.build_run, certificateSha256=pin,
                   hashes={p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(public.iterdir())})
     (work/'PUBLICATION.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
-    print(json.dumps(result))
+    sys.stdout.write(json.dumps(result) + '\n')
 
 
 if __name__ == '__main__':
