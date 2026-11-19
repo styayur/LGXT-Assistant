@@ -7,7 +7,8 @@ serial=$(adb devices | awk '$1 ~ /^emulator-[0-9]+$/ && $2=="device" {print $1}'
 [[ "$serial" =~ ^emulator-[0-9]+$ ]]
 # Only this disposable remote emulator's radios/clipboard are used.
 adb -s "$serial" shell svc wifi disable
-adb -s "$serial" shell svc data disable
+adb -s "$serial" shell cmd connectivity airplane-mode enable
+test "$(adb -s "$serial" shell settings get global airplane_mode_on | tr -d '\r')" = 1
 python scripts/check_android_input_fidelity.py --serial "$serial" \
   --apk build/android/input-artifacts/LGXT-input-fidelity-test-only.apk \
   --identity build/android/input-artifacts/identity.json \
