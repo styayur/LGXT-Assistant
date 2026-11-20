@@ -16,5 +16,8 @@
   "immutableTagRuleset": 27708545,
   "realAccount": "NOT_VERIFIED",
   "physicalArm64": "NOT_VERIFIED",
-  "originalBulkInputCause": "NOT_VERIFIED"
+  "originalBulkInputCause": "NOT_VERIFIED",
+  "anonymousSevenAssets": "PASS",
+  "independentLocalSdk": "PASS",
+  "independentIdentityScope": "Exact anonymously downloaded fullAPK/signature/metadata/Pythonpayload binding, not independently reproduced FlutterAOT"
 }

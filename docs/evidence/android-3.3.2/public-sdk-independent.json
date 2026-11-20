@@ -1,0 +1,33 @@
+{
+  "apk": "LGXT-Assistant-Android-v3.3.2.apk",
+  "sha256": "15767eaaabe03c7efb4f9340b52fad2414ef9a72a2227ddbffd8d5a2a60bed6f",
+  "certificateSha256": "0ec0084b65aff166d379206ca244ea54904511e95573b15fd2159bd4bd604114",
+  "debugTestOnly": false,
+  "package": "io.github.styayur.lgxt_assistant_mobile",
+  "version": "3.3.2",
+  "versionCode": 6,
+  "abis": [
+    "arm64-v8a",
+    "x86_64"
+  ],
+  "signatureVerified": true,
+  "fixture": false,
+  "appPayloadSha256": "75b22e91c999e514c68e89b3af9feeb15ea9a5b9e935b1dec854850d328c2f60",
+  "sdk": [
+    "sdkVersion:'24'",
+    "targetSdkVersion:'36'"
+  ],
+  "sourceCommit": "850dab5e96f8914da513a0084863c90a35e6e2dd",
+  "anonymousPublicApkDownloaded": true,
+  "independentLocalSdkVerification": true,
+  "allSevenPublicAssetsVerified": true,
+  "sameBytesAsQualifiedPublishedIdentity": true,
+  "capturedAt": "2026-11-20T08:02:11.979822+00:00",
+  "sourceBinding": "Immutable tag + qualified publisher source + matching public full-APK/identity hashes; not an independent reproducible Flutter AOT build.",
+  "accountAcceptance": "NOT_VERIFIED_FOR_THIS_APK",
+  "physicalDeviceAcceptance": "NOT_VERIFIED",
+  "tools": {
+    "apksignerJarSha256": "3716d9311e55d2b0918a2fd9d54ba9e406c5f6abeea700b287f11259bc163dec",
+    "aaptSha256": "c528418af0c5152650d9532485f371e8eed98e1436d1ab1a197580b97917b561"
+  }
+}
