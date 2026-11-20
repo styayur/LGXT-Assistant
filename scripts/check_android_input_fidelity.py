@@ -52,6 +52,16 @@ def parse_ime_response(response):
     return result
 
 
+def require_exact_boundary(observed, username, password, expected):
+    if (observed.get('usernameType') != 'str' or observed.get('passwordType') != 'str'
+            or observed['usernameLength'] != len(username)
+            or observed['passwordLength'] != len(password)):
+        raise AssertionError('Input type/length changed before strict login handoff')
+    # Password negatives must still prove the correct username reached login.
+    if observed['usernameExact'] is not True or observed['passwordExact'] is not expected:
+        raise AssertionError('Exact synthetic credential comparison differs')
+
+
 def require_disposable_runner(serial, environment=None):
     environment = os.environ if environment is None else environment
     if environment.get('GITHUB_ACTIONS') != 'true' or not re.fullmatch(r'emulator-\d+', serial):
@@ -192,6 +202,35 @@ class RemoteEmulator:
             time.sleep(.3)
         raise AssertionError('Controlled IME editor/view readiness failed before input')
 
+    def dismiss_controlled_keyboard(self):
+        # Android Back exits the app when no IME view is visible. In particular,
+        # switching back from the stock editor menu need not reopen that view.
+        probe = self.ime('probe')
+        visible = all(probe.get(k) is True for k in
+                      ('inputViewRequested', 'inputViewAttached', 'inputViewVisible'))
+        if visible:
+            self.shell('input', 'keyevent', '4')
+        return {'probe': probe, 'backSentToVisibleIme': visible}
+
+    def scroll_to_rejection(self, timeout=40):
+        # show_login places the rejection after the form. UIAutomator omits
+        # offscreen text, so navigate the actual app scroll view to expose it.
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            root = self.tree()
+            if self.matching(root, 'Synthetic input did not match exactly'):
+                return root
+            scrolls = [n for n in root.iter('node')
+                       if n.get('package') == PACKAGE and n.get('scrollable') == 'true']
+            if scrolls:
+                n = scrolls[0]
+                x1, y1, x2, y2 = map(int, re.findall(r'\d+', n.get('bounds', '')))
+                x = (x1+x2)//2
+                self.shell('input', 'swipe', str(x), str(y1+(y2-y1)*3//4),
+                           str(x), str(y1+(y2-y1)//3), '400')
+            time.sleep(.3)
+        raise AssertionError('Strict synthetic rejection was not visible in login UI')
+
     def case(self, name, route, username, password, expected):
         folder = self.output/name
         folder.mkdir(exist_ok=True)
@@ -264,24 +303,27 @@ class RemoteEmulator:
                 field_record['accessibilityTextLength'] = len(current.get('text', ''))
                 if number == 1 and not field_record['masked']:
                     raise AssertionError('Password masking unexpectedly disabled')
-                self.shell('input', 'keyevent', '4')
+                record['stage'] = 'dismiss-keyboard'
+                if route.startswith('adb-'):
+                    self.shell('input', 'keyevent', '4')
+                else:
+                    field_record['keyboardDismissal'] = self.dismiss_controlled_keyboard()
                 time.sleep(.3)
             record['fields'] = field_records
             (folder/'before-submit.png').write_bytes(self.adb('exec-out', 'screencap', '-p'))
             record['stage'] = 'submit'
             self.tap_text('登录理工学堂')
             self.tap_text('允许并登录')  # Fake client only; no platform network request.
-            target = '刷新作业状态' if expected else 'Synthetic input did not match exactly'
-            self.wait(target)
+            if expected:
+                self.wait('刷新作业状态')
+            else:
+                self.scroll_to_rejection()
             observations = self.observations()
             if len(observations) != 1:
                 raise AssertionError('Expected exactly one strict synthetic login observation')
             observed = observations[0]
             record['observation'] = observed
-            if observed['usernameLength'] != len(username) or observed['passwordLength'] != len(password):
-                raise AssertionError('Input length changed before strict login handoff')
-            if (observed['usernameExact'] and observed['passwordExact']) is not expected:
-                raise AssertionError('Exact synthetic credential comparison differs')
+            require_exact_boundary(observed, username, password, expected)
             record.update(passed=True, stage='complete')
             (folder/'after-submit.png').write_bytes(self.adb('exec-out', 'screencap', '-p'))
         except Exception as error:
@@ -293,6 +335,12 @@ class RemoteEmulator:
                 record['lastImeProbe'] = getattr(self, 'last_ime_probe', None)
                 record['lastImeTransport'] = getattr(self, 'last_ime_transport', None)
                 record['lastImeError'] = getattr(self, 'last_ime_error', None)
+            try:
+                (folder/'failure.png').write_bytes(self.adb('exec-out', 'screencap', '-p'))
+                ET.ElementTree(self.tree()).write(folder/'failure.xml', encoding='utf-8')
+                record['failureUiCaptured'] = True
+            except Exception:
+                record['failureUiCaptured'] = False
             if record['stage'] != 'prepare':
                 try:
                     record['observationsOnFailure'] = self.observations()

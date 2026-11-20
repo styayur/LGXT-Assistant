@@ -209,3 +209,33 @@ def test_built_project_sdk_binding_rejects_other_sdk_and_binds_bytes(tmp_path):
     properties.write_text('flutter.sdk='+str(tmp_path/'different-sdk')+'\n')
     with pytest.raises(ValueError, match='different Flutter SDK'):
         built_project_evidence(project, apk, sdk)
+
+
+def test_password_negative_cannot_pass_through_a_corrupted_username():
+    from scripts.check_android_input_fidelity import require_exact_boundary
+    wrong = 'fixture-passw0rd'
+    observed = credential_observation(FIXTURE_USERNAME, wrong)
+    require_exact_boundary(observed, FIXTURE_USERNAME, wrong, False)
+    # Both credentials have the expected lengths, and login rejects them.
+    # That alone must not qualify a password-only negative challenge.
+    corrupt = credential_observation('fixture-useR', wrong)
+    with pytest.raises(AssertionError, match='Exact synthetic'):
+        require_exact_boundary(corrupt, FIXTURE_USERNAME, wrong, False)
+    with pytest.raises(AssertionError, match='type/length'):
+        require_exact_boundary(dict(observed, passwordType='other'), FIXTURE_USERNAME, wrong, False)
+
+
+@pytest.mark.parametrize('visible', [True, False])
+def test_keyboard_dismissal_never_sends_back_to_an_already_hidden_ime(visible):
+    from scripts.check_android_input_fidelity import RemoteEmulator
+    runner = object.__new__(RemoteEmulator)
+    probes, actions = [], []
+    def probe(mode):
+        probes.append(mode)
+        return dict(inputViewRequested=visible, inputViewAttached=visible, inputViewVisible=visible)
+    runner.ime = probe
+    runner.shell = lambda *args: actions.append(args)
+    result = runner.dismiss_controlled_keyboard()
+    assert result['backSentToVisibleIme'] is visible
+    assert probes == ['probe'], 'Only native read-only state; no repeated text writes'
+    assert actions == ([('input', 'keyevent', '4')] if visible else [])

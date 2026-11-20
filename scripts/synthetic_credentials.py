@@ -9,6 +9,8 @@ def credential_observation(username, password):
     """Describe equality/length only; never return received credential text."""
     return {
         'fixtureOnly': True,
+        'usernameType': 'str' if type(username) is str else 'other',
+        'passwordType': 'str' if type(password) is str else 'other',
         'usernameExact': type(username) is str and username == FIXTURE_USERNAME,
         'passwordExact': type(password) is str and password == FIXTURE_PASSWORD,
         'usernameLength': len(username) if type(username) is str else None,
