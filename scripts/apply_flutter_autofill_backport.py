@@ -26,6 +26,19 @@ def patched_bytes(source, meta):
     return result, False
 
 
+def verify_selected_sdk(sdk, meta):
+    from importlib.metadata import version
+    from flet_cli.commands.flutter_base import BaseFlutterCommand
+    if version('flet-cli') != '1.1.2':
+        raise ValueError('Refusing a different Flet SDK selector')
+    from packaging.version import Version
+    selector = SimpleNamespace(required_flutter_version=Version(meta['flutterVersion']))
+    for executable in ('flutter', 'dart'):
+        selected = BaseFlutterCommand.find_flutter_batch(selector, executable)
+        if not selected or Path(selected).resolve().parent.parent != sdk:
+            raise ValueError('Flet would use a different SDK than the reviewed patched root')
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--flutter-root', type=Path, required=True)
@@ -34,14 +47,7 @@ def main():
     args = parser.parse_args()
     meta = json.loads(META.read_text())
     sdk = args.flutter_root.resolve()
-    from importlib.metadata import version
-    from flet_cli.commands.flutter_base import FlutterCommand
-    if version('flet-cli') != '1.1.2':
-        raise ValueError('Refusing a different Flet SDK selector')
-    selected = FlutterCommand.find_flutter_batch(
-        SimpleNamespace(required_flutter_version=meta['flutterVersion']), 'flutter')
-    if not selected or Path(selected).resolve().parent.parent != sdk:
-        raise ValueError('Flet would use a different SDK than the reviewed patched root')
+    verify_selected_sdk(sdk, meta)
     head = subprocess.check_output(['git','-C',str(sdk),'rev-parse','HEAD'],text=True).strip()
     if head != meta['flutterCommit']:
         raise ValueError('Refusing a different Flutter SDK revision')
