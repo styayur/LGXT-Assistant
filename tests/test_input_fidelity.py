@@ -121,6 +121,20 @@ def test_native_ime_readiness_requires_attached_visible_view_before_writing(monk
     assert calls == ['probe', 'probe'], 'Readiness polling must never repeat text writes'
 
 
+def test_native_ime_parser_uses_completion_data_not_intent_wrapper():
+    from scripts.check_android_input_fidelity import PACKAGE, parse_ime_response
+    data = {'ok':True, 'package':PACKAGE, 'inputType':1}
+    response = ('Broadcasting: Intent { flg=0x400000 cmp=test/.Bridge (has extras) }\n'
+                'Broadcast completed: result=-1, data="'+json.dumps(data)+'"\n')
+    result = parse_ime_response(response)
+    assert result['ok'] and result['package'] == PACKAGE
+    assert result['broadcastCompletionParsed'] and result['intentWrapperIgnored']
+    for invalid in ('Broadcasting: Intent { no completion }',
+                    response+response, 'Broadcast completed: result=0, data="{bad}"'):
+        with pytest.raises(AssertionError):
+            parse_ime_response(invalid)
+
+
 def test_native_driver_refuses_release_and_unbound_payload(tmp_path):
     import hashlib
     import io

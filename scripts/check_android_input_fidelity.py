@@ -33,6 +33,24 @@ ROUTES = ('adb-burst', 'adb-per-key', 'ime-commit-bulk', 'ime-commit-fast',
           'ime-per-key', 'ime-compose', 'ime-context-paste', 'editor-menu-paste')
 
 
+def parse_ime_response(response):
+    # `am broadcast` first echoes "Intent { ... }". Only the completion's
+    # result data belongs to our receiver; the first brace is not JSON.
+    completed = re.findall(r'^Broadcast completed: result=-?\d+, data="(\{[^\r\n]*\})"\s*$',
+                           response, re.MULTILINE)
+    if len(completed) != 1:
+        raise AssertionError('Missing unique controlled IME completion data')
+    try:
+        result = json.loads(completed[0])
+    except json.JSONDecodeError as error:
+        raise AssertionError('Invalid controlled IME completion JSON') from error
+    if not isinstance(result, dict):
+        raise AssertionError('Controlled IME completion is not an object')
+    result['broadcastCompletionParsed'] = True
+    result['intentWrapperIgnored'] = 'Broadcasting: Intent {' in response
+    return result
+
+
 def require_disposable_runner(serial, environment=None):
     environment = os.environ if environment is None else environment
     if environment.get('GITHUB_ACTIONS') != 'true' or not re.fullmatch(r'emulator-\d+', serial):
@@ -138,10 +156,7 @@ class RemoteEmulator:
         if index is not None:
             args += ['--ei', 'index', str(index)]
         response = self.shell(*args)
-        first, last = response.find('{'), response.rfind('}')
-        if first < 0 or last < first:
-            raise AssertionError('No controlled IME acknowledgement')
-        result = json.loads(response[first:last+1])
+        result = parse_ime_response(response)
         self.last_ime_probe = result
         if result.get('ok') is not True or result.get('package') != PACKAGE:
             raise AssertionError('Controlled IME route unavailable; input was not qualified')
@@ -181,6 +196,7 @@ class RemoteEmulator:
             record['stage'] = 'input'
             field_records = record['fields'] = []
             for number, value in enumerate((username, password)):
+                self.last_ime_probe = None
                 record['stage'] = 'focus'
                 self.tap(self.edits()[number])
                 started = time.monotonic()
