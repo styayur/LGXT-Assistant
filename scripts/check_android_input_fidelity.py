@@ -11,6 +11,7 @@ import io
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 import time
@@ -92,7 +93,9 @@ class RemoteEmulator:
         return subprocess.check_output(['adb', '-s', self.serial, *map(str, args)], timeout=90)
 
     def shell(self, *args):
-        return self.adb('shell', *args).decode('utf-8', errors='replace')
+        # adb joins arguments for a second, remote shell. Preserve literal $
+        # in the nested receiver class name instead of expanding $Bridge.
+        return self.adb('shell', shlex.join(map(str, args))).decode('utf-8', errors='replace')
 
     def tree(self):
         self.shell('uiautomator', 'dump', '/sdcard/lgxt-input-fixture.xml')
@@ -156,6 +159,11 @@ class RemoteEmulator:
         if index is not None:
             args += ['--ei', 'index', str(index)]
         response = self.shell(*args)
+        self.last_ime_transport = {
+            'componentEchoExact': BRIDGE in response,
+            'completionLinePresent': 'Broadcast completed:' in response,
+            'completionDataPresent': bool(re.search(r'Broadcast completed:.*?, data=', response)),
+        }
         result = parse_ime_response(response)
         self.last_ime_probe = result
         if result.get('ok') is not True or result.get('package') != PACKAGE:
@@ -172,8 +180,8 @@ class RemoteEmulator:
                 if all(result.get(key) is True for key in
                        ('inputViewRequested', 'inputViewAttached', 'inputViewVisible')):
                     return result
-            except AssertionError:
-                pass
+            except AssertionError as error:
+                self.last_ime_error = str(error)
             time.sleep(.3)
         raise AssertionError('Controlled IME editor/view readiness failed before input')
 
@@ -197,6 +205,8 @@ class RemoteEmulator:
             field_records = record['fields'] = []
             for number, value in enumerate((username, password)):
                 self.last_ime_probe = None
+                self.last_ime_transport = None
+                self.last_ime_error = None
                 record['stage'] = 'focus'
                 self.tap(self.edits()[number])
                 started = time.monotonic()
@@ -273,6 +283,8 @@ class RemoteEmulator:
             record['error'] = str(error) if isinstance(error, AssertionError) else 'Fixture route failed'
             if not route.startswith('adb-'):
                 record['lastImeProbe'] = getattr(self, 'last_ime_probe', None)
+                record['lastImeTransport'] = getattr(self, 'last_ime_transport', None)
+                record['lastImeError'] = getattr(self, 'last_ime_error', None)
             if record['stage'] != 'prepare':
                 try:
                     record['observationsOnFailure'] = self.observations()

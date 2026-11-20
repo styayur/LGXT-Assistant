@@ -135,6 +135,19 @@ def test_native_ime_parser_uses_completion_data_not_intent_wrapper():
             parse_ime_response(invalid)
 
 
+def test_adb_remote_shell_preserves_literal_nested_receiver_name():
+    import shlex
+    from scripts.check_android_input_fidelity import BRIDGE, RemoteEmulator
+    runner = object.__new__(RemoteEmulator)
+    commands = []
+    runner.adb = lambda *args: commands.append(args) or b'synthetic acknowledgement'
+    arguments = ('am', 'broadcast', '-n', BRIDGE, '--es', 'mode', 'probe')
+    assert runner.shell(*arguments) == 'synthetic acknowledgement'
+    assert len(commands[0]) == 2 and commands[0][0] == 'shell'
+    assert shlex.split(commands[0][1]) == list(arguments)
+    assert "'"+BRIDGE+"'" in commands[0][1], 'The remote shell must not expand $Bridge'
+
+
 def test_native_driver_refuses_release_and_unbound_payload(tmp_path):
     import hashlib
     import io
