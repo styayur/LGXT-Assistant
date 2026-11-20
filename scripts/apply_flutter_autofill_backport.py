@@ -33,10 +33,21 @@ def verify_selected_sdk(sdk, meta):
         raise ValueError('Refusing a different Flet SDK selector')
     from packaging.version import Version
     selector = SimpleNamespace(required_flutter_version=Version(meta['flutterVersion']))
+    result = {}
     for executable in ('flutter', 'dart'):
         selected = BaseFlutterCommand.find_flutter_batch(selector, executable)
-        if not selected or Path(selected).resolve().parent.parent != sdk:
-            raise ValueError('Flet would use a different SDK than the reviewed patched root')
+        # setup-flutter can expose the SDK's own cached Dart binary on PATH.
+        # It belongs to this SDK, unlike an unrelated system Dart installation.
+        allowed = {(sdk/'bin'/executable).resolve(),
+                   (sdk/'bin'/(executable+'.bat')).resolve()}
+        if executable == 'dart':
+            allowed |= {(sdk/'bin/cache/dart-sdk/bin/dart').resolve(),
+                        (sdk/'bin/cache/dart-sdk/bin/dart.exe').resolve()}
+        if not selected or Path(selected).resolve() not in allowed:
+            raise ValueError('Flet '+executable+' selector does not match the reviewed SDK: '+str(selected))
+        result[executable+'WithinReviewedSdk'] = True
+    return result
+
 
 
 def built_project_evidence(project, apk, sdk):
@@ -66,7 +77,7 @@ def main():
         parser.error('--built-project and --apk require each other and --verify-only')
     meta = json.loads(META.read_text())
     sdk = args.flutter_root.resolve()
-    verify_selected_sdk(sdk, meta)
+    selected_tools = verify_selected_sdk(sdk, meta)
     head = subprocess.check_output(['git','-C',str(sdk),'rev-parse','HEAD'],text=True).strip()
     if head != meta['flutterCommit']:
         raise ValueError('Refusing a different Flutter SDK revision')
@@ -86,7 +97,7 @@ def main():
     record = dict(meta, alreadyApplied=already, applied=True,
                   actualSha256=hashlib.sha256(target.read_bytes()).hexdigest(),
                   pythonAppFlagsChanged=False, autofillGroupRetained=True,
-                  fletSelectedSdkMatchesRequested=True, verifyOnly=args.verify_only)
+                  fletSelectedSdkMatchesRequested=True, selectedTools=selected_tools, verifyOnly=args.verify_only)
     if args.built_project:
         record['buildEvidence'] = built_project_evidence(args.built_project, args.apk, sdk)
     args.output.parent.mkdir(parents=True,exist_ok=True)
