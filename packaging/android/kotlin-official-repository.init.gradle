@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Keep the existing plugin repositories. Only Kotlin artifacts also have their
+// official Maven Central source, avoiding Plugin Portal redirect/cache failures.
+gradle.beforeSettings { settings ->
+    settings.pluginManagement.repositories.mavenCentral {
+        content {
+            includeGroup('org.jetbrains.kotlin')
+            includeGroupByRegex('org[.]jetbrains[.]kotlin[.].*')
+        }
+    }
+    // Declaring any repository disables Gradle's implicit Plugin Portal.
+    // Preserve that original default explicitly for non-Kotlin plugin markers.
+    settings.pluginManagement.repositories.gradlePluginPortal()
+}

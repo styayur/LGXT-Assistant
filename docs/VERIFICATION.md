@@ -1,12 +1,18 @@
 # Verification record
 
+## Strict synthetic input and independent SDK privacy repair —20 November2026
+
+[Diagnostic record and preserved failures](input-fidelity.md): all8 native positive routes and3 password negatives passed on a separately named test-only API35/x86_64 APK in [44680061737](https://github.com/styayur/LGXT-Assistant/actions/runs/44680061737). Each boundary requires string types, exact username and exact expected password comparison; negatives additionally require the actual rejection UI. Browser6/6 cases passed at25ms, including explicit synthetic prefill append/replacement. These are synthetic input tests, not account tests.
+
+Exact-source/native before-after confirms a separate Flutter3.47.9 AutofillScope privacy configuration omission: password imeOptions changes from0x02000006 to0x03000006 with the one-field compatibility backport. AutofillGroup, masking/reveal and no-suggestion flags remain. The original computer-input anomaly is still unattributed. Existing public3.3.1 APK/assets/account receipt are unchanged; this diagnostic does not qualify a new signed release or transfer3.3.1 account proof to another APK.
+
 ## Real-account APK follow-through — 20 November 2026
 
 The exact public Android3.3.0 and3.3.1 APK hashes were independently checked on an isolated Android15/x86_64 emulator. Both entered their real authenticated dashboards using an authorized account. The3.3.1 APK was installed in place over3.3.0 without changing the package or signing identity. After the entire emulator process exited, an explicit no-snapshot-load cold boot and manual app launch restored the real encrypted session without password entry. The published startup path requires a fresh platform userInfo check before entering the dashboard. Settings logout returned to an empty-password login page; another full cold boot and manual app launch stayed on that page. [Sanitized local native receipt](evidence/android-3.3.1/real-account-native.json). This is local actual-APK evidence, not a GitHub Actions account test or a physical-phone test.
 
 Some course-assignment requests returned platform business errors. The3.3.1 task home visibly reported incomplete course statistics; full-course availability is not claimed. No answers, grades, profile changes or provider requests were submitted. No account/student identifiers, passwords, token values, private response bodies or personal screenshots are included in this repository or the receipt.
 
-An initial bulk computer-input path produced an abnormal masked password length and was cleared **before submission**; individual native key entry authenticated successfully. This remains a separate synthetic input-fidelity investigation, with no attribution yet to the product, physical-phone IME or computer-input transport. No password protection option, response validator or published asset was changed on that observation. The historical3.3.0 login incident was not reproduced with the valid account in this environment; its original cause remains unverified. Physical ARM64/vendor keyboards and layouts, paid-provider behavior and live OCR accuracy remain unverified.
+An initial bulk computer-input path produced an abnormal masked password length and was cleared **before submission**; individual native key entry authenticated successfully. The [strict synthetic follow-up](input-fidelity.md) is complete; this observation still has no attribution to the product, physical-phone IME or computer-input transport. No password protection option, response validator or published asset was changed on that observation. The historical3.3.0 login incident was not reproduced with the valid account in this environment; its original cause remains unverified. Physical ARM64/vendor keyboards and layouts, paid-provider behavior and live OCR accuracy remain unverified.
 
 ## Android 3.3.1 Beta — 19 November 2026
 

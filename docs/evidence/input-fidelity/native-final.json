@@ -1,0 +1,1192 @@
+{
+  "fixtureOnly": true,
+  "sourceCommit": "720e4ec4e90d92ed72df2e28a51c721ec4823adb",
+  "apkSha256": "6f373680fc8a9e260ebe70d26192437ae5615abee96de853fe512980a0fbf52e",
+  "package": "io.github.styayur.lgxt_input_fidelity",
+  "cases": [
+    {
+      "case": "adb-burst",
+      "route": "adb-burst",
+      "expectedAccepted": true,
+      "passed": true,
+      "stage": "complete",
+      "hostClipboardUsed": false,
+      "baselineIme": "com.android.inputmethod.latin/.LatinIME",
+      "selectedIme": "com.android.inputmethod.latin/.LatinIME",
+      "fields": [
+        {
+          "field": "username",
+          "requestedLength": 12,
+          "route": "adb-burst",
+          "elapsedMs": 1579,
+          "masked": false,
+          "accessibilityTextLength": 12
+        },
+        {
+          "field": "password",
+          "requestedLength": 16,
+          "route": "adb-burst",
+          "elapsedMs": 1223,
+          "masked": true,
+          "accessibilityTextLength": 16
+        }
+      ],
+      "observation": {
+        "fixtureOnly": true,
+        "usernameType": "str",
+        "passwordType": "str",
+        "usernameExact": true,
+        "passwordExact": true,
+        "usernameLength": 12,
+        "passwordLength": 16,
+        "expectedUsernameLength": 12,
+        "expectedPasswordLength": 16
+      }
+    },
+    {
+      "case": "adb-per-key",
+      "route": "adb-per-key",
+      "expectedAccepted": true,
+      "passed": true,
+      "stage": "complete",
+      "hostClipboardUsed": false,
+      "baselineIme": "com.android.inputmethod.latin/.LatinIME",
+      "selectedIme": "com.android.inputmethod.latin/.LatinIME",
+      "fields": [
+        {
+          "field": "username",
+          "requestedLength": 12,
+          "route": "adb-per-key",
+          "elapsedMs": 1586,
+          "masked": false,
+          "accessibilityTextLength": 12
+        },
+        {
+          "field": "password",
+          "requestedLength": 16,
+          "route": "adb-per-key",
+          "elapsedMs": 1716,
+          "masked": true,
+          "accessibilityTextLength": 16
+        }
+      ],
+      "observation": {
+        "fixtureOnly": true,
+        "usernameType": "str",
+        "passwordType": "str",
+        "usernameExact": true,
+        "passwordExact": true,
+        "usernameLength": 12,
+        "passwordLength": 16,
+        "expectedUsernameLength": 12,
+        "expectedPasswordLength": 16
+      }
+    },
+    {
+      "case": "ime-commit-bulk",
+      "route": "ime-commit-bulk",
+      "expectedAccepted": true,
+      "passed": true,
+      "stage": "complete",
+      "hostClipboardUsed": false,
+      "baselineIme": "com.android.inputmethod.latin/.LatinIME",
+      "selectedIme": "io.github.styayur.lgxt_input_ime/.FidelityIme",
+      "fields": [
+        {
+          "field": "username",
+          "requestedLength": 12,
+          "route": "ime-commit-bulk",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "acknowledgement": {
+            "ok": true,
+            "mode": "commit",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 12,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 898,
+          "masked": false,
+          "accessibilityTextLength": 12,
+          "keyboardDismissal": {
+            "probe": {
+              "ok": true,
+              "mode": "probe",
+              "inputType": 32769,
+              "imeOptions": 33554437,
+              "package": "io.github.styayur.lgxt_input_fidelity",
+              "requestedCodeUnits": 0,
+              "inputViewRequested": true,
+              "inputViewAttached": true,
+              "inputViewVisible": true,
+              "broadcastCompletionParsed": true,
+              "intentWrapperIgnored": true
+            },
+            "backSentToVisibleIme": true
+          }
+        },
+        {
+          "field": "password",
+          "requestedLength": 16,
+          "route": "ime-commit-bulk",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 524417,
+            "imeOptions": 50331654,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "acknowledgement": {
+            "ok": true,
+            "mode": "commit",
+            "inputType": 524417,
+            "imeOptions": 50331654,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 16,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 371,
+          "masked": true,
+          "accessibilityTextLength": 16,
+          "keyboardDismissal": {
+            "probe": {
+              "ok": true,
+              "mode": "probe",
+              "inputType": 524417,
+              "imeOptions": 50331654,
+              "package": "io.github.styayur.lgxt_input_fidelity",
+              "requestedCodeUnits": 0,
+              "inputViewRequested": true,
+              "inputViewAttached": true,
+              "inputViewVisible": true,
+              "broadcastCompletionParsed": true,
+              "intentWrapperIgnored": true
+            },
+            "backSentToVisibleIme": true
+          }
+        }
+      ],
+      "observation": {
+        "fixtureOnly": true,
+        "usernameType": "str",
+        "passwordType": "str",
+        "usernameExact": true,
+        "passwordExact": true,
+        "usernameLength": 12,
+        "passwordLength": 16,
+        "expectedUsernameLength": 12,
+        "expectedPasswordLength": 16
+      }
+    },
+    {
+      "case": "ime-commit-fast",
+      "route": "ime-commit-fast",
+      "expectedAccepted": true,
+      "passed": true,
+      "stage": "complete",
+      "hostClipboardUsed": false,
+      "baselineIme": "com.android.inputmethod.latin/.LatinIME",
+      "selectedIme": "io.github.styayur.lgxt_input_ime/.FidelityIme",
+      "fields": [
+        {
+          "field": "username",
+          "requestedLength": 12,
+          "route": "ime-commit-fast",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "acknowledgement": {
+            "ok": true,
+            "mode": "fast",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 12,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 313,
+          "masked": false,
+          "accessibilityTextLength": 12,
+          "keyboardDismissal": {
+            "probe": {
+              "ok": true,
+              "mode": "probe",
+              "inputType": 32769,
+              "imeOptions": 33554437,
+              "package": "io.github.styayur.lgxt_input_fidelity",
+              "requestedCodeUnits": 0,
+              "inputViewRequested": true,
+              "inputViewAttached": true,
+              "inputViewVisible": true,
+              "broadcastCompletionParsed": true,
+              "intentWrapperIgnored": true
+            },
+            "backSentToVisibleIme": true
+          }
+        },
+        {
+          "field": "password",
+          "requestedLength": 16,
+          "route": "ime-commit-fast",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 524417,
+            "imeOptions": 50331654,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "acknowledgement": {
+            "ok": true,
+            "mode": "fast",
+            "inputType": 524417,
+            "imeOptions": 50331654,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 16,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 425,
+          "masked": true,
+          "accessibilityTextLength": 16,
+          "keyboardDismissal": {
+            "probe": {
+              "ok": true,
+              "mode": "probe",
+              "inputType": 524417,
+              "imeOptions": 50331654,
+              "package": "io.github.styayur.lgxt_input_fidelity",
+              "requestedCodeUnits": 0,
+              "inputViewRequested": true,
+              "inputViewAttached": true,
+              "inputViewVisible": true,
+              "broadcastCompletionParsed": true,
+              "intentWrapperIgnored": true
+            },
+            "backSentToVisibleIme": true
+          }
+        }
+      ],
+      "observation": {
+        "fixtureOnly": true,
+        "usernameType": "str",
+        "passwordType": "str",
+        "usernameExact": true,
+        "passwordExact": true,
+        "usernameLength": 12,
+        "passwordLength": 16,
+        "expectedUsernameLength": 12,
+        "expectedPasswordLength": 16
+      }
+    },
+    {
+      "case": "ime-per-key",
+      "route": "ime-per-key",
+      "expectedAccepted": true,
+      "passed": true,
+      "stage": "complete",
+      "hostClipboardUsed": false,
+      "baselineIme": "com.android.inputmethod.latin/.LatinIME",
+      "selectedIme": "io.github.styayur.lgxt_input_ime/.FidelityIme",
+      "fields": [
+        {
+          "field": "username",
+          "requestedLength": 12,
+          "route": "ime-per-key",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 1102,
+          "masked": false,
+          "accessibilityTextLength": 12,
+          "keyboardDismissal": {
+            "probe": {
+              "ok": true,
+              "mode": "probe",
+              "inputType": 32769,
+              "imeOptions": 33554437,
+              "package": "io.github.styayur.lgxt_input_fidelity",
+              "requestedCodeUnits": 0,
+              "inputViewRequested": true,
+              "inputViewAttached": true,
+              "inputViewVisible": true,
+              "broadcastCompletionParsed": true,
+              "intentWrapperIgnored": true
+            },
+            "backSentToVisibleIme": true
+          }
+        },
+        {
+          "field": "password",
+          "requestedLength": 16,
+          "route": "ime-per-key",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 524417,
+            "imeOptions": 50331654,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 1094,
+          "masked": true,
+          "accessibilityTextLength": 16,
+          "keyboardDismissal": {
+            "probe": {
+              "ok": true,
+              "mode": "probe",
+              "inputType": 524417,
+              "imeOptions": 50331654,
+              "package": "io.github.styayur.lgxt_input_fidelity",
+              "requestedCodeUnits": 0,
+              "inputViewRequested": true,
+              "inputViewAttached": true,
+              "inputViewVisible": true,
+              "broadcastCompletionParsed": true,
+              "intentWrapperIgnored": true
+            },
+            "backSentToVisibleIme": true
+          }
+        }
+      ],
+      "observation": {
+        "fixtureOnly": true,
+        "usernameType": "str",
+        "passwordType": "str",
+        "usernameExact": true,
+        "passwordExact": true,
+        "usernameLength": 12,
+        "passwordLength": 16,
+        "expectedUsernameLength": 12,
+        "expectedPasswordLength": 16
+      }
+    },
+    {
+      "case": "ime-compose",
+      "route": "ime-compose",
+      "expectedAccepted": true,
+      "passed": true,
+      "stage": "complete",
+      "hostClipboardUsed": false,
+      "baselineIme": "com.android.inputmethod.latin/.LatinIME",
+      "selectedIme": "io.github.styayur.lgxt_input_ime/.FidelityIme",
+      "fields": [
+        {
+          "field": "username",
+          "requestedLength": 12,
+          "route": "ime-compose",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "acknowledgement": {
+            "ok": true,
+            "mode": "compose",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 12,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 241,
+          "masked": false,
+          "accessibilityTextLength": 12,
+          "keyboardDismissal": {
+            "probe": {
+              "ok": true,
+              "mode": "probe",
+              "inputType": 32769,
+              "imeOptions": 33554437,
+              "package": "io.github.styayur.lgxt_input_fidelity",
+              "requestedCodeUnits": 0,
+              "inputViewRequested": true,
+              "inputViewAttached": true,
+              "inputViewVisible": true,
+              "broadcastCompletionParsed": true,
+              "intentWrapperIgnored": true
+            },
+            "backSentToVisibleIme": true
+          }
+        },
+        {
+          "field": "password",
+          "requestedLength": 16,
+          "route": "ime-compose",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 524417,
+            "imeOptions": 50331654,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "acknowledgement": {
+            "ok": true,
+            "mode": "compose",
+            "inputType": 524417,
+            "imeOptions": 50331654,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 16,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 452,
+          "masked": true,
+          "accessibilityTextLength": 16,
+          "keyboardDismissal": {
+            "probe": {
+              "ok": true,
+              "mode": "probe",
+              "inputType": 524417,
+              "imeOptions": 50331654,
+              "package": "io.github.styayur.lgxt_input_fidelity",
+              "requestedCodeUnits": 0,
+              "inputViewRequested": true,
+              "inputViewAttached": true,
+              "inputViewVisible": true,
+              "broadcastCompletionParsed": true,
+              "intentWrapperIgnored": true
+            },
+            "backSentToVisibleIme": true
+          }
+        }
+      ],
+      "observation": {
+        "fixtureOnly": true,
+        "usernameType": "str",
+        "passwordType": "str",
+        "usernameExact": true,
+        "passwordExact": true,
+        "usernameLength": 12,
+        "passwordLength": 16,
+        "expectedUsernameLength": 12,
+        "expectedPasswordLength": 16
+      }
+    },
+    {
+      "case": "ime-context-paste",
+      "route": "ime-context-paste",
+      "expectedAccepted": true,
+      "passed": true,
+      "stage": "complete",
+      "hostClipboardUsed": false,
+      "baselineIme": "com.android.inputmethod.latin/.LatinIME",
+      "selectedIme": "io.github.styayur.lgxt_input_ime/.FidelityIme",
+      "fields": [
+        {
+          "field": "username",
+          "requestedLength": 12,
+          "route": "ime-context-paste",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "acknowledgement": {
+            "ok": true,
+            "mode": "paste",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 12,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 365,
+          "masked": false,
+          "accessibilityTextLength": 12,
+          "keyboardDismissal": {
+            "probe": {
+              "ok": true,
+              "mode": "probe",
+              "inputType": 32769,
+              "imeOptions": 33554437,
+              "package": "io.github.styayur.lgxt_input_fidelity",
+              "requestedCodeUnits": 0,
+              "inputViewRequested": true,
+              "inputViewAttached": true,
+              "inputViewVisible": true,
+              "broadcastCompletionParsed": true,
+              "intentWrapperIgnored": true
+            },
+            "backSentToVisibleIme": true
+          }
+        },
+        {
+          "field": "password",
+          "requestedLength": 16,
+          "route": "ime-context-paste",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 524417,
+            "imeOptions": 50331654,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "acknowledgement": {
+            "ok": true,
+            "mode": "paste",
+            "inputType": 524417,
+            "imeOptions": 50331654,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 16,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 378,
+          "masked": true,
+          "accessibilityTextLength": 16,
+          "keyboardDismissal": {
+            "probe": {
+              "ok": true,
+              "mode": "probe",
+              "inputType": 524417,
+              "imeOptions": 50331654,
+              "package": "io.github.styayur.lgxt_input_fidelity",
+              "requestedCodeUnits": 0,
+              "inputViewRequested": true,
+              "inputViewAttached": true,
+              "inputViewVisible": true,
+              "broadcastCompletionParsed": true,
+              "intentWrapperIgnored": true
+            },
+            "backSentToVisibleIme": true
+          }
+        }
+      ],
+      "observation": {
+        "fixtureOnly": true,
+        "usernameType": "str",
+        "passwordType": "str",
+        "usernameExact": true,
+        "passwordExact": true,
+        "usernameLength": 12,
+        "passwordLength": 16,
+        "expectedUsernameLength": 12,
+        "expectedPasswordLength": 16
+      }
+    },
+    {
+      "case": "editor-menu-paste",
+      "route": "editor-menu-paste",
+      "expectedAccepted": true,
+      "passed": true,
+      "stage": "complete",
+      "hostClipboardUsed": false,
+      "baselineIme": "com.android.inputmethod.latin/.LatinIME",
+      "selectedIme": "io.github.styayur.lgxt_input_ime/.FidelityIme",
+      "fields": [
+        {
+          "field": "username",
+          "requestedLength": 12,
+          "route": "editor-menu-paste",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "pasteIme": "com.android.inputmethod.latin/.LatinIME",
+          "elapsedMs": 8103,
+          "masked": false,
+          "accessibilityTextLength": 12,
+          "keyboardDismissal": {
+            "probe": {
+              "ok": true,
+              "mode": "probe",
+              "inputType": 32769,
+              "imeOptions": 33554437,
+              "package": "io.github.styayur.lgxt_input_fidelity",
+              "requestedCodeUnits": 0,
+              "inputViewRequested": false,
+              "inputViewAttached": false,
+              "inputViewVisible": false,
+              "broadcastCompletionParsed": true,
+              "intentWrapperIgnored": true
+            },
+            "backSentToVisibleIme": false
+          }
+        },
+        {
+          "field": "password",
+          "requestedLength": 16,
+          "route": "editor-menu-paste",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 524417,
+            "imeOptions": 50331654,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "pasteIme": "com.android.inputmethod.latin/.LatinIME",
+          "elapsedMs": 7681,
+          "masked": true,
+          "accessibilityTextLength": 16,
+          "keyboardDismissal": {
+            "probe": {
+              "ok": true,
+              "mode": "probe",
+              "inputType": 524417,
+              "imeOptions": 50331654,
+              "package": "io.github.styayur.lgxt_input_fidelity",
+              "requestedCodeUnits": 0,
+              "inputViewRequested": false,
+              "inputViewAttached": false,
+              "inputViewVisible": false,
+              "broadcastCompletionParsed": true,
+              "intentWrapperIgnored": true
+            },
+            "backSentToVisibleIme": false
+          }
+        }
+      ],
+      "observation": {
+        "fixtureOnly": true,
+        "usernameType": "str",
+        "passwordType": "str",
+        "usernameExact": true,
+        "passwordExact": true,
+        "usernameLength": 12,
+        "passwordLength": 16,
+        "expectedUsernameLength": 12,
+        "expectedPasswordLength": 16
+      }
+    },
+    {
+      "case": "negative-same-length-wrong",
+      "route": "ime-commit-bulk",
+      "expectedAccepted": false,
+      "passed": true,
+      "stage": "complete",
+      "hostClipboardUsed": false,
+      "baselineIme": "com.android.inputmethod.latin/.LatinIME",
+      "selectedIme": "io.github.styayur.lgxt_input_ime/.FidelityIme",
+      "fields": [
+        {
+          "field": "username",
+          "requestedLength": 12,
+          "route": "ime-commit-bulk",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "acknowledgement": {
+            "ok": true,
+            "mode": "commit",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 12,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 398,
+          "masked": false,
+          "accessibilityTextLength": 12,
+          "keyboardDismissal": {
+            "probe": {
+              "ok": true,
+              "mode": "probe",
+              "inputType": 32769,
+              "imeOptions": 33554437,
+              "package": "io.github.styayur.lgxt_input_fidelity",
+              "requestedCodeUnits": 0,
+              "inputViewRequested": true,
+              "inputViewAttached": true,
+              "inputViewVisible": true,
+              "broadcastCompletionParsed": true,
+              "intentWrapperIgnored": true
+            },
+            "backSentToVisibleIme": true
+          }
+        },
+        {
+          "field": "password",
+          "requestedLength": 16,
+          "route": "ime-commit-bulk",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 524417,
+            "imeOptions": 50331654,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "acknowledgement": {
+            "ok": true,
+            "mode": "commit",
+            "inputType": 524417,
+            "imeOptions": 50331654,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 16,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 350,
+          "masked": true,
+          "accessibilityTextLength": 16,
+          "keyboardDismissal": {
+            "probe": {
+              "ok": true,
+              "mode": "probe",
+              "inputType": 524417,
+              "imeOptions": 50331654,
+              "package": "io.github.styayur.lgxt_input_fidelity",
+              "requestedCodeUnits": 0,
+              "inputViewRequested": true,
+              "inputViewAttached": true,
+              "inputViewVisible": true,
+              "broadcastCompletionParsed": true,
+              "intentWrapperIgnored": true
+            },
+            "backSentToVisibleIme": true
+          }
+        }
+      ],
+      "observation": {
+        "fixtureOnly": true,
+        "usernameType": "str",
+        "passwordType": "str",
+        "usernameExact": true,
+        "passwordExact": false,
+        "usernameLength": 12,
+        "passwordLength": 16,
+        "expectedUsernameLength": 12,
+        "expectedPasswordLength": 16
+      }
+    },
+    {
+      "case": "negative-duplicate",
+      "route": "ime-commit-bulk",
+      "expectedAccepted": false,
+      "passed": true,
+      "stage": "complete",
+      "hostClipboardUsed": false,
+      "baselineIme": "com.android.inputmethod.latin/.LatinIME",
+      "selectedIme": "io.github.styayur.lgxt_input_ime/.FidelityIme",
+      "fields": [
+        {
+          "field": "username",
+          "requestedLength": 12,
+          "route": "ime-commit-bulk",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "acknowledgement": {
+            "ok": true,
+            "mode": "commit",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 12,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 304,
+          "masked": false,
+          "accessibilityTextLength": 12,
+          "keyboardDismissal": {
+            "probe": {
+              "ok": true,
+              "mode": "probe",
+              "inputType": 32769,
+              "imeOptions": 33554437,
+              "package": "io.github.styayur.lgxt_input_fidelity",
+              "requestedCodeUnits": 0,
+              "inputViewRequested": true,
+              "inputViewAttached": true,
+              "inputViewVisible": true,
+              "broadcastCompletionParsed": true,
+              "intentWrapperIgnored": true
+            },
+            "backSentToVisibleIme": true
+          }
+        },
+        {
+          "field": "password",
+          "requestedLength": 32,
+          "route": "ime-commit-bulk",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 524417,
+            "imeOptions": 50331654,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "acknowledgement": {
+            "ok": true,
+            "mode": "commit",
+            "inputType": 524417,
+            "imeOptions": 50331654,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 32,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 242,
+          "masked": true,
+          "accessibilityTextLength": 32,
+          "keyboardDismissal": {
+            "probe": {
+              "ok": true,
+              "mode": "probe",
+              "inputType": 524417,
+              "imeOptions": 50331654,
+              "package": "io.github.styayur.lgxt_input_fidelity",
+              "requestedCodeUnits": 0,
+              "inputViewRequested": true,
+              "inputViewAttached": true,
+              "inputViewVisible": true,
+              "broadcastCompletionParsed": true,
+              "intentWrapperIgnored": true
+            },
+            "backSentToVisibleIme": true
+          }
+        }
+      ],
+      "observation": {
+        "fixtureOnly": true,
+        "usernameType": "str",
+        "passwordType": "str",
+        "usernameExact": true,
+        "passwordExact": false,
+        "usernameLength": 12,
+        "passwordLength": 32,
+        "expectedUsernameLength": 12,
+        "expectedPasswordLength": 16
+      }
+    },
+    {
+      "case": "negative-truncated",
+      "route": "ime-commit-bulk",
+      "expectedAccepted": false,
+      "passed": true,
+      "stage": "complete",
+      "hostClipboardUsed": false,
+      "baselineIme": "com.android.inputmethod.latin/.LatinIME",
+      "selectedIme": "io.github.styayur.lgxt_input_ime/.FidelityIme",
+      "fields": [
+        {
+          "field": "username",
+          "requestedLength": 12,
+          "route": "ime-commit-bulk",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "acknowledgement": {
+            "ok": true,
+            "mode": "commit",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 12,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 371,
+          "masked": false,
+          "accessibilityTextLength": 12,
+          "keyboardDismissal": {
+            "probe": {
+              "ok": true,
+              "mode": "probe",
+              "inputType": 32769,
+              "imeOptions": 33554437,
+              "package": "io.github.styayur.lgxt_input_fidelity",
+              "requestedCodeUnits": 0,
+              "inputViewRequested": true,
+              "inputViewAttached": true,
+              "inputViewVisible": true,
+              "broadcastCompletionParsed": true,
+              "intentWrapperIgnored": true
+            },
+            "backSentToVisibleIme": true
+          }
+        },
+        {
+          "field": "password",
+          "requestedLength": 15,
+          "route": "ime-commit-bulk",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 524417,
+            "imeOptions": 50331654,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "acknowledgement": {
+            "ok": true,
+            "mode": "commit",
+            "inputType": 524417,
+            "imeOptions": 50331654,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 15,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 312,
+          "masked": true,
+          "accessibilityTextLength": 15,
+          "keyboardDismissal": {
+            "probe": {
+              "ok": true,
+              "mode": "probe",
+              "inputType": 524417,
+              "imeOptions": 50331654,
+              "package": "io.github.styayur.lgxt_input_fidelity",
+              "requestedCodeUnits": 0,
+              "inputViewRequested": true,
+              "inputViewAttached": true,
+              "inputViewVisible": true,
+              "broadcastCompletionParsed": true,
+              "intentWrapperIgnored": true
+            },
+            "backSentToVisibleIme": true
+          }
+        }
+      ],
+      "observation": {
+        "fixtureOnly": true,
+        "usernameType": "str",
+        "passwordType": "str",
+        "usernameExact": true,
+        "passwordExact": false,
+        "usernameLength": 12,
+        "passwordLength": 15,
+        "expectedUsernameLength": 12,
+        "expectedPasswordLength": 16
+      }
+    }
+  ],
+  "passed": true,
+  "notCovered": [
+    "CUA host app.typeText implementation",
+    "real credentials/platform",
+    "physical ARM64/vendor IMEs",
+    "production APK/account acceptance"
+  ],
+  "evidence": {
+    "workflowRun": "https://github.com/styayur/LGXT-Assistant/actions/runs/44680061737",
+    "artifactId": 14604387232,
+    "artifactZipSha256": "d24028338e0e1025db8ac560396526ba09dbd261516fb5ad6d02cadf201616c3",
+    "identity": {
+      "fixtureOnly": true,
+      "package": "io.github.styayur.lgxt_input_fidelity",
+      "apkSha256": "6f373680fc8a9e260ebe70d26192437ae5615abee96de853fe512980a0fbf52e",
+      "sourceCommit": "720e4ec4e90d92ed72df2e28a51c721ec4823adb",
+      "flet": "1.1.2",
+      "flutter": "3.47.9",
+      "dartTextFieldGitBlob": "37ec9beee57921af011d66e5de1e948fae74cae1",
+      "flutterAutofillBackport": {
+        "flutterVersion": "3.47.9",
+        "flutterCommit": "c197ca5199e9ee5661e865596c9c07294dfab51c",
+        "path": "packages/flutter/lib/src/services/autofill.dart",
+        "upstreamGitBlob": "2857a7ff20e43f7595ff373ab02eacf36ec9d715",
+        "originalSha256": "943aded5e35ede66a0119ff21b821921cf060b6eb8efa014b6a54333932348fe",
+        "patchedSha256": "34b57e5153642fcf4f4dc47b57e44ceb60f5affb3f5ca349b061aad421fe265f",
+        "upstreamIssue": "https://github.com/flutter/flutter/issues/192340",
+        "relatedOpenPR": "https://github.com/flutter/flutter/pull/192480",
+        "reviewedPRHead": "4de1d59b2cb705ff0e8a22e40ff0b5f751240580",
+        "scope": "Only forward enableIMEPersonalizedLearning; not the complete open upstream PR",
+        "license": "BSD-3-Clause",
+        "alreadyApplied": false,
+        "applied": true,
+        "actualSha256": "34b57e5153642fcf4f4dc47b57e44ceb60f5affb3f5ca349b061aad421fe265f",
+        "pythonAppFlagsChanged": false,
+        "autofillGroupRetained": true,
+        "fletSelectedSdkMatchesRequested": true,
+        "selectedTools": {
+          "flutterWithinReviewedSdk": true,
+          "dartWithinReviewedSdk": true
+        },
+        "verifyOnly": false
+      },
+      "pubspecLockSha256": "1eef53a7f9a08e13e34d52d2893eb32a172cd3b81265658e94456db473da677b",
+      "materialUiVersion": "1.6.0",
+      "kotlinRepositoryPolicySha256": "72c3cb8e98c42d82bca334127d26d5fe60ab891eb9c0ac313050a7d737fd9fcb"
+    },
+    "scope": "Strict test-only native APK, not ordinary signed release or real-account proof"
+  }
+}

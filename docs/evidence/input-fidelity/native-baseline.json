@@ -1,0 +1,769 @@
+{
+  "fixtureOnly": true,
+  "sourceCommit": "9704322808a66e6a822ba4d10d7fb2fec01ef693",
+  "apkSha256": "8b04bcab70bf581150014a8809424ed44297868233c3b6ab6be9ddc4e3175db2",
+  "package": "io.github.styayur.lgxt_input_fidelity",
+  "passed": false,
+  "notCovered": [
+    "CUA host app.typeText implementation",
+    "real credentials/platform",
+    "physical ARM64/vendor IMEs",
+    "production APK/account acceptance"
+  ],
+  "evidenceKind": "Strict synthetic baseline; failures retained",
+  "workflowRun": "https://github.com/styayur/LGXT-Assistant/actions/runs/44670118241/attempts/2",
+  "artifactId": 14599778440,
+  "artifactZipSha256": "fcdbf74dd1cdaf46de27bf6281fa6d974d42fffc9c7d45f4e1edc904aa0a57c6",
+  "cases": [
+    {
+      "case": "adb-burst",
+      "route": "adb-burst",
+      "expectedAccepted": true,
+      "passed": true,
+      "stage": "complete",
+      "hostClipboardUsed": false,
+      "observation": {
+        "fixtureOnly": true,
+        "usernameExact": true,
+        "passwordExact": true,
+        "usernameLength": 12,
+        "passwordLength": 16,
+        "expectedUsernameLength": 12,
+        "expectedPasswordLength": 16
+      },
+      "fields": [
+        {
+          "field": "username",
+          "requestedLength": 12,
+          "route": "adb-burst",
+          "elapsedMs": 1176,
+          "masked": false,
+          "accessibilityTextLength": 12
+        },
+        {
+          "field": "password",
+          "requestedLength": 16,
+          "route": "adb-burst",
+          "elapsedMs": 784,
+          "masked": true,
+          "accessibilityTextLength": 16
+        }
+      ]
+    },
+    {
+      "case": "adb-per-key",
+      "route": "adb-per-key",
+      "expectedAccepted": true,
+      "passed": true,
+      "stage": "complete",
+      "hostClipboardUsed": false,
+      "observation": {
+        "fixtureOnly": true,
+        "usernameExact": true,
+        "passwordExact": true,
+        "usernameLength": 12,
+        "passwordLength": 16,
+        "expectedUsernameLength": 12,
+        "expectedPasswordLength": 16
+      },
+      "fields": [
+        {
+          "field": "username",
+          "requestedLength": 12,
+          "route": "adb-per-key",
+          "elapsedMs": 1467,
+          "masked": false,
+          "accessibilityTextLength": 12
+        },
+        {
+          "field": "password",
+          "requestedLength": 16,
+          "route": "adb-per-key",
+          "elapsedMs": 1363,
+          "masked": true,
+          "accessibilityTextLength": 16
+        }
+      ]
+    },
+    {
+      "case": "ime-commit-bulk",
+      "route": "ime-commit-bulk",
+      "expectedAccepted": true,
+      "passed": false,
+      "stage": "ime-ready",
+      "hostClipboardUsed": false,
+      "error": "Native no-personalized-learning flag absent",
+      "lastImeProbe": {
+        "ok": true,
+        "mode": "probe",
+        "inputType": 524417,
+        "imeOptions": 33554438,
+        "package": "io.github.styayur.lgxt_input_fidelity",
+        "requestedCodeUnits": 0,
+        "inputViewRequested": true,
+        "inputViewAttached": true,
+        "inputViewVisible": true,
+        "broadcastCompletionParsed": true,
+        "intentWrapperIgnored": true
+      },
+      "lastImeTransport": {
+        "componentEchoExact": true,
+        "completionLinePresent": true,
+        "completionDataPresent": true
+      },
+      "observationsOnFailure": [],
+      "fields": [
+        {
+          "field": "username",
+          "requestedLength": 12,
+          "route": "ime-commit-bulk",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "acknowledgement": {
+            "ok": true,
+            "mode": "commit",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 12,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 589,
+          "masked": false,
+          "accessibilityTextLength": 12
+        },
+        {
+          "field": "password",
+          "requestedLength": 16,
+          "route": "ime-commit-bulk",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 524417,
+            "imeOptions": 33554438,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          }
+        }
+      ]
+    },
+    {
+      "case": "ime-commit-fast",
+      "route": "ime-commit-fast",
+      "expectedAccepted": true,
+      "passed": false,
+      "stage": "ime-ready",
+      "hostClipboardUsed": false,
+      "error": "Native no-personalized-learning flag absent",
+      "lastImeProbe": {
+        "ok": true,
+        "mode": "probe",
+        "inputType": 524417,
+        "imeOptions": 33554438,
+        "package": "io.github.styayur.lgxt_input_fidelity",
+        "requestedCodeUnits": 0,
+        "inputViewRequested": true,
+        "inputViewAttached": true,
+        "inputViewVisible": true,
+        "broadcastCompletionParsed": true,
+        "intentWrapperIgnored": true
+      },
+      "lastImeTransport": {
+        "componentEchoExact": true,
+        "completionLinePresent": true,
+        "completionDataPresent": true
+      },
+      "observationsOnFailure": [],
+      "fields": [
+        {
+          "field": "username",
+          "requestedLength": 12,
+          "route": "ime-commit-fast",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "acknowledgement": {
+            "ok": true,
+            "mode": "fast",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 12,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 255,
+          "masked": false,
+          "accessibilityTextLength": 12
+        },
+        {
+          "field": "password",
+          "requestedLength": 16,
+          "route": "ime-commit-fast",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 524417,
+            "imeOptions": 33554438,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          }
+        }
+      ]
+    },
+    {
+      "case": "ime-per-key",
+      "route": "ime-per-key",
+      "expectedAccepted": true,
+      "passed": false,
+      "stage": "ime-ready",
+      "hostClipboardUsed": false,
+      "error": "Native no-personalized-learning flag absent",
+      "lastImeProbe": {
+        "ok": true,
+        "mode": "probe",
+        "inputType": 524417,
+        "imeOptions": 33554438,
+        "package": "io.github.styayur.lgxt_input_fidelity",
+        "requestedCodeUnits": 0,
+        "inputViewRequested": true,
+        "inputViewAttached": true,
+        "inputViewVisible": true,
+        "broadcastCompletionParsed": true,
+        "intentWrapperIgnored": true
+      },
+      "lastImeTransport": {
+        "componentEchoExact": true,
+        "completionLinePresent": true,
+        "completionDataPresent": true
+      },
+      "observationsOnFailure": [],
+      "fields": [
+        {
+          "field": "username",
+          "requestedLength": 12,
+          "route": "ime-per-key",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 868,
+          "masked": false,
+          "accessibilityTextLength": 12
+        },
+        {
+          "field": "password",
+          "requestedLength": 16,
+          "route": "ime-per-key",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 524417,
+            "imeOptions": 33554438,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          }
+        }
+      ]
+    },
+    {
+      "case": "ime-compose",
+      "route": "ime-compose",
+      "expectedAccepted": true,
+      "passed": false,
+      "stage": "ime-ready",
+      "hostClipboardUsed": false,
+      "error": "Native no-personalized-learning flag absent",
+      "lastImeProbe": {
+        "ok": true,
+        "mode": "probe",
+        "inputType": 524417,
+        "imeOptions": 33554438,
+        "package": "io.github.styayur.lgxt_input_fidelity",
+        "requestedCodeUnits": 0,
+        "inputViewRequested": true,
+        "inputViewAttached": true,
+        "inputViewVisible": true,
+        "broadcastCompletionParsed": true,
+        "intentWrapperIgnored": true
+      },
+      "lastImeTransport": {
+        "componentEchoExact": true,
+        "completionLinePresent": true,
+        "completionDataPresent": true
+      },
+      "observationsOnFailure": [],
+      "fields": [
+        {
+          "field": "username",
+          "requestedLength": 12,
+          "route": "ime-compose",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "acknowledgement": {
+            "ok": true,
+            "mode": "compose",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 12,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 234,
+          "masked": false,
+          "accessibilityTextLength": 12
+        },
+        {
+          "field": "password",
+          "requestedLength": 16,
+          "route": "ime-compose",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 524417,
+            "imeOptions": 33554438,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          }
+        }
+      ]
+    },
+    {
+      "case": "ime-context-paste",
+      "route": "ime-context-paste",
+      "expectedAccepted": true,
+      "passed": false,
+      "stage": "ime-ready",
+      "hostClipboardUsed": false,
+      "error": "Native no-personalized-learning flag absent",
+      "lastImeProbe": {
+        "ok": true,
+        "mode": "probe",
+        "inputType": 524417,
+        "imeOptions": 33554438,
+        "package": "io.github.styayur.lgxt_input_fidelity",
+        "requestedCodeUnits": 0,
+        "inputViewRequested": true,
+        "inputViewAttached": true,
+        "inputViewVisible": true,
+        "broadcastCompletionParsed": true,
+        "intentWrapperIgnored": true
+      },
+      "lastImeTransport": {
+        "componentEchoExact": true,
+        "completionLinePresent": true,
+        "completionDataPresent": true
+      },
+      "observationsOnFailure": [],
+      "fields": [
+        {
+          "field": "username",
+          "requestedLength": 12,
+          "route": "ime-context-paste",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "acknowledgement": {
+            "ok": true,
+            "mode": "paste",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 12,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 257,
+          "masked": false,
+          "accessibilityTextLength": 12
+        },
+        {
+          "field": "password",
+          "requestedLength": 16,
+          "route": "ime-context-paste",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 524417,
+            "imeOptions": 33554438,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          }
+        }
+      ]
+    },
+    {
+      "case": "editor-menu-paste",
+      "route": "editor-menu-paste",
+      "expectedAccepted": true,
+      "passed": false,
+      "stage": "focus",
+      "hostClipboardUsed": false,
+      "error": "Expected precisely two fixture login fields",
+      "lastImeProbe": null,
+      "lastImeTransport": null,
+      "observationsOnFailure": [],
+      "fields": [
+        {
+          "field": "username",
+          "requestedLength": 12,
+          "route": "editor-menu-paste",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "pasteIme": "com.android.inputmethod.latin/.LatinIME",
+          "elapsedMs": 7565,
+          "masked": false,
+          "accessibilityTextLength": 12
+        }
+      ]
+    },
+    {
+      "case": "negative-same-length-wrong",
+      "route": "ime-commit-bulk",
+      "expectedAccepted": false,
+      "passed": false,
+      "stage": "ime-ready",
+      "hostClipboardUsed": false,
+      "error": "Native no-personalized-learning flag absent",
+      "lastImeProbe": {
+        "ok": true,
+        "mode": "probe",
+        "inputType": 524417,
+        "imeOptions": 33554438,
+        "package": "io.github.styayur.lgxt_input_fidelity",
+        "requestedCodeUnits": 0,
+        "inputViewRequested": true,
+        "inputViewAttached": true,
+        "inputViewVisible": true,
+        "broadcastCompletionParsed": true,
+        "intentWrapperIgnored": true
+      },
+      "lastImeTransport": {
+        "componentEchoExact": true,
+        "completionLinePresent": true,
+        "completionDataPresent": true
+      },
+      "observationsOnFailure": [],
+      "fields": [
+        {
+          "field": "username",
+          "requestedLength": 12,
+          "route": "ime-commit-bulk",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "acknowledgement": {
+            "ok": true,
+            "mode": "commit",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 12,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 430,
+          "masked": false,
+          "accessibilityTextLength": 12
+        },
+        {
+          "field": "password",
+          "requestedLength": 16,
+          "route": "ime-commit-bulk",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 524417,
+            "imeOptions": 33554438,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          }
+        }
+      ]
+    },
+    {
+      "case": "negative-duplicate",
+      "route": "ime-commit-bulk",
+      "expectedAccepted": false,
+      "passed": false,
+      "stage": "ime-ready",
+      "hostClipboardUsed": false,
+      "error": "Native no-personalized-learning flag absent",
+      "lastImeProbe": {
+        "ok": true,
+        "mode": "probe",
+        "inputType": 524417,
+        "imeOptions": 33554438,
+        "package": "io.github.styayur.lgxt_input_fidelity",
+        "requestedCodeUnits": 0,
+        "inputViewRequested": true,
+        "inputViewAttached": true,
+        "inputViewVisible": true,
+        "broadcastCompletionParsed": true,
+        "intentWrapperIgnored": true
+      },
+      "lastImeTransport": {
+        "componentEchoExact": true,
+        "completionLinePresent": true,
+        "completionDataPresent": true
+      },
+      "observationsOnFailure": [],
+      "fields": [
+        {
+          "field": "username",
+          "requestedLength": 12,
+          "route": "ime-commit-bulk",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "acknowledgement": {
+            "ok": true,
+            "mode": "commit",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 12,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 210,
+          "masked": false,
+          "accessibilityTextLength": 12
+        },
+        {
+          "field": "password",
+          "requestedLength": 32,
+          "route": "ime-commit-bulk",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 524417,
+            "imeOptions": 33554438,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          }
+        }
+      ]
+    },
+    {
+      "case": "negative-truncated",
+      "route": "ime-commit-bulk",
+      "expectedAccepted": false,
+      "passed": false,
+      "stage": "ime-ready",
+      "hostClipboardUsed": false,
+      "error": "Native no-personalized-learning flag absent",
+      "lastImeProbe": {
+        "ok": true,
+        "mode": "probe",
+        "inputType": 524417,
+        "imeOptions": 33554438,
+        "package": "io.github.styayur.lgxt_input_fidelity",
+        "requestedCodeUnits": 0,
+        "inputViewRequested": true,
+        "inputViewAttached": true,
+        "inputViewVisible": true,
+        "broadcastCompletionParsed": true,
+        "intentWrapperIgnored": true
+      },
+      "lastImeTransport": {
+        "componentEchoExact": true,
+        "completionLinePresent": true,
+        "completionDataPresent": true
+      },
+      "observationsOnFailure": [],
+      "fields": [
+        {
+          "field": "username",
+          "requestedLength": 12,
+          "route": "ime-commit-bulk",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "acknowledgement": {
+            "ok": true,
+            "mode": "commit",
+            "inputType": 32769,
+            "imeOptions": 33554437,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 12,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          },
+          "elapsedMs": 176,
+          "masked": false,
+          "accessibilityTextLength": 12
+        },
+        {
+          "field": "password",
+          "requestedLength": 15,
+          "route": "ime-commit-bulk",
+          "editor": {
+            "ok": true,
+            "mode": "probe",
+            "inputType": 524417,
+            "imeOptions": 33554438,
+            "package": "io.github.styayur.lgxt_input_fidelity",
+            "requestedCodeUnits": 0,
+            "inputViewRequested": true,
+            "inputViewAttached": true,
+            "inputViewVisible": true,
+            "broadcastCompletionParsed": true,
+            "intentWrapperIgnored": true
+          }
+        }
+      ]
+    }
+  ],
+  "interpretation": "Two ADB routes completed. Eight IME/negative cases stopped at missing requested privacy bit before password writes or login; negatives are not passes. Editor menu stopped at field focus. No attribution of host CUA bulk-input anomaly."
+}

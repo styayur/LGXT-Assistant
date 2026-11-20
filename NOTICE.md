@@ -5,6 +5,13 @@ The text below preserves historical notices and upstream MIT attribution; older 
 
 New MIT editor/ProseMirror notices are in docs/third-party-editor-notices.txt and are distributed with the app. See docs/editor-decision.md for the dependency review.
 
+Android builds apply a one-field Flutter 3.47.9 AutofillScope privacy backport so
+the requested no-personalized-learning setting reaches Android. Flutter's
+BSD-3-Clause copyright and terms remain in its source/APK notices and
+packaging/flutter/LICENSE.flutter. Exact baseline/output hashes and the related
+open upstream issue/PR are recorded in packaging/flutter/autofill-backport.json.
+Existing released APKs are not modified by this build-time patch.
+
 ---
 LGXT Assistant（理工学堂助手）
 ============================

@@ -10,6 +10,10 @@ on:
         description: 'Sign with the durable Beta identity (main only; tag is created after acceptance)'
         type: boolean
         default: false
+      input_fidelity:
+        description: 'Build/run only the isolated synthetic input-fidelity APK and test IME; never sign or publish a release'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -23,15 +27,20 @@ jobs:
         env:
           RELEASE_SIGNING: ${{ inputs.release_signing }}
           CANDIDATE_RUN: ${{ inputs.candidate_run_id }}
+          INPUT_FIDELITY: ${{ inputs.input_fidelity }}
         run: |
           if [ "$RELEASE_SIGNING" = true ]; then
             test "$GITHUB_REF" = refs/heads/main
             test -z "$CANDIDATE_RUN"
           fi
+          if [ "$INPUT_FIDELITY" = true ]; then
+            test "$RELEASE_SIGNING" = false
+            test -z "$CANDIDATE_RUN"
+          fi
 
   build-apk:
     needs: validate-request
-    if: inputs.candidate_run_id == ''
+    if: inputs.candidate_run_id == '' && !inputs.input_fidelity
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -81,14 +90,28 @@ jobs:
           # Match mobile/pyproject.toml and flet.version.flutter_version.
           python -c "import flet.version; assert flet.version.flutter_version == '3.47.9'"
 
+      - name: Apply and test reviewed Flutter autofill privacy backport
+        run: bash scripts/verify_flutter_autofill_backport.sh
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: flutter-autofill-backport-evidence
+          path: |
+            build/android/flutter-autofill-backport.json
+            build/android/flutter-autofill-tests.log
+
       - name: Build APK (Flet)
         working-directory: mobile
         env:
           PIP_FIND_LINKS: ${{ github.workspace }}/build/android/wheels
-        run: flet build apk --verbose --yes --arch arm64-v8a x86_64
+        run: |
+          python ../scripts/apply_flutter_autofill_backport.py --flutter-root "$FLUTTER_ROOT" --verify-only --output ../build/android/ordinary-sdk-selection.json
+          flet build apk --verbose --yes --arch arm64-v8a x86_64
 
       - name: Collect APK
         run: |
+          python scripts/apply_flutter_autofill_backport.py --flutter-root "$FLUTTER_ROOT" --verify-only --built-project mobile/build/flutter --apk mobile/build/apk/lgxt-assistant-mobile.apk --output build/android/ordinary-sdk-build.json
           mkdir -p out
           version=$(python -c "import tomllib; print(tomllib.load(open('mobile/pyproject.toml','rb'))['project']['version'])")
           cp mobile/build/apk/lgxt-assistant-mobile.apk "out/LGXT-Assistant-Android-v${version}.apk"
@@ -112,9 +135,14 @@ jobs:
         run: |
           cp mobile/src/main.py mobile/src/app_under_test.py
           cp scripts/android_image_checks.py mobile/src/android_image_checks.py
+          cp scripts/synthetic_credentials.py mobile/src/synthetic_credentials.py
           cp scripts/android_fixture_entry.py mobile/src/main.py
+          python scripts/apply_flutter_autofill_backport.py --flutter-root "$FLUTTER_ROOT" --verify-only --output build/android/fixture-sdk-selection.json
           cd mobile
           flet build apk --verbose --yes --arch x86_64
+          cd ..
+          python scripts/apply_flutter_autofill_backport.py --flutter-root "$FLUTTER_ROOT" --verify-only --built-project mobile/build/flutter --apk mobile/build/apk/lgxt-assistant-mobile.apk --output build/android/fixture-sdk-build.json
+          cd mobile
           mkdir -p ../fixture-out
           cp build/apk/*.apk ../fixture-out/LGXT-fixture-only.apk
       - uses: actions/upload-artifact@v7
@@ -122,12 +150,23 @@ jobs:
           name: lgxt-fixture-only-apk
           path: fixture-out/*.apk
 
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: android-sdk-build-binding
+          path: |
+            build/android/ordinary-sdk-selection.json
+            build/android/ordinary-sdk-build.json
+            build/android/fixture-sdk-selection.json
+            build/android/fixture-sdk-build.json
+            mobile/build/flutter/pubspec.lock
+
       # Candidate build artifacts are retained for review only. Production release
       # requires signing identity and device/emulator checks, not just flet build.
 
   sign-apk:
     needs: build-apk
-    if: inputs.release_signing
+    if: inputs.release_signing && !inputs.input_fidelity
     runs-on: ubuntu-latest
     environment: android-beta-signing
     steps:
@@ -164,7 +203,7 @@ jobs:
   emulator:
     needs: [validate-request, build-apk, sign-apk]
     if: >-
-      always() && needs.validate-request.result == 'success' &&
+      always() && !inputs.input_fidelity && needs.validate-request.result == 'success' &&
       ((inputs.release_signing && needs.sign-apk.result == 'success') ||
       (!inputs.release_signing && (needs.build-apk.result == 'success' || inputs.candidate_run_id != '')))
     runs-on: ubuntu-latest
@@ -181,7 +220,7 @@ jobs:
         run: |
           source=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN" --jq .head_sha)
           git fetch origin "$source"
-          git diff --exit-code "$source" HEAD -- mobile/src mobile/pyproject.toml mobile/requirements.txt packaging/android scripts/build_android_wheels.sh scripts/android_fixture_entry.py scripts/android_image_checks.py
+          git diff --exit-code "$source" HEAD -- mobile/src mobile/pyproject.toml mobile/requirements.txt packaging/android packaging/flutter scripts/apply_flutter_autofill_backport.py scripts/verify_flutter_autofill_backport.sh scripts/build_android_wheels.sh scripts/android_fixture_entry.py scripts/android_image_checks.py scripts/synthetic_credentials.py .github/workflows/android-apk.yml
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
@@ -246,3 +285,135 @@ jobs:
             build/android/device
             build/android/device-fixture
             build/android/ACCEPTANCE-IDENTITY*.json
+
+  input-fidelity:
+    needs: validate-request
+    if: inputs.input_fidelity
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: '0.13.5'
+      - name: Ensure native SDK tools
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'build-tools;36.0.0' 'platforms;android-35'
+      - name: Build and verify the unchanged security-patched Pillow recipe
+        run: |
+          bash scripts/build_android_wheels.sh
+          python scripts/check_android_wheels.py --directory build/android/wheels
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.9'
+          channel: stable
+          cache: true
+      - name: Verify exact Python Flet and Flutter toolchain
+        run: |
+          python -m pip download --no-deps --index-url https://pypi.org/simple flet==1.1.2 -d build/android/input-source
+          echo '56a29f7d4103cff9da7925e967bac367318dfb69f91db2258befa9ddab0552ff  build/android/input-source/flet-1.1.2-py3-none-any.whl' | sha256sum --check
+          python -m pip install 'flet[cli]==1.1.2' 'oauthlib>=4.0.1,<5' pip-audit
+          python -m pip_audit -r mobile/requirements.txt
+          python -c "import flet.version,importlib.metadata; assert importlib.metadata.version('flet')=='1.1.2'; assert flet.version.flutter_version=='3.47.9'"
+          flutter --version --machine > build/android/input-source/flutter-version.json
+          python - <<'PY'
+          import json
+          info=json.load(open('build/android/input-source/flutter-version.json'))
+          assert info['frameworkVersion']=='3.47.9'
+          assert info['frameworkRevision']=='c197ca5199e9ee5661e865596c9c07294dfab51c'
+          PY
+      - name: Apply and test reviewed Flutter autofill privacy backport
+        run: bash scripts/verify_flutter_autofill_backport.sh
+
+      - name: Assemble only the separately named test application
+        run: |
+          python - <<'PY'
+          import hashlib,json,pathlib,shutil
+          root=pathlib.Path('build/android/input-project')
+          shutil.copytree('mobile',root,ignore=shutil.ignore_patterns('build','.dart_tool','__pycache__'),dirs_exist_ok=True)
+          product=pathlib.Path('mobile/src/main.py').read_bytes()
+          (root/'src/app_under_test.py').write_bytes(product)
+          for name in ['android_fixture_entry.py','android_image_checks.py','synthetic_credentials.py']:
+              shutil.copyfile(pathlib.Path('scripts')/name,root/'src'/name)
+          shutil.copyfile('scripts/android_input_fixture_entry.py',root/'src/main.py')
+          config=root/'pyproject.toml'
+          text=config.read_text()
+          old='bundle_id = "io.github.styayur.lgxt_assistant_mobile"'
+          assert text.count(old)==1
+          text=text.replace(old,'bundle_id = "io.github.styayur.lgxt_input_fidelity"')
+          text=text.replace('product = "LGXT Assistant"','product = "LGXT SYNTHETIC INPUT TEST ONLY"')
+          assert text.rstrip().endswith('fullBackupContent = "false"')
+          config.write_text(text+'\ntestOnly = "true"\n')
+          pathlib.Path('build/android/input-source/product-source.json').write_text(json.dumps({'productSourceSha256':hashlib.sha256(product).hexdigest(),'productModified':False,'fixtureOnly':True},indent=2))
+          PY
+      - name: Build synthetic input APK without release signing
+        working-directory: build/android/input-project
+        env:
+          PIP_FIND_LINKS: ${{ github.workspace }}/build/android/wheels
+        run: |
+          python "$GITHUB_WORKSPACE/scripts/apply_flutter_autofill_backport.py" --flutter-root "$FLUTTER_ROOT" --verify-only --output "$GITHUB_WORKSPACE/build/android/input-source/sdk-selection.json"
+          flet build apk --verbose --yes --arch x86_64
+      - name: Bind fixture metadata and exact Dart implementation
+        run: |
+          mkdir -p build/android/input-artifacts
+          cp build/android/input-project/build/apk/*.apk build/android/input-artifacts/LGXT-input-fidelity-test-only.apk
+          python - <<'PY'
+          import hashlib,json,os,pathlib,re,subprocess,shutil,yaml
+          apk=pathlib.Path('build/android/input-artifacts/LGXT-input-fidelity-test-only.apk')
+          tools=pathlib.Path(os.environ['ANDROID_HOME'])/'build-tools/36.0.0'
+          badging=subprocess.check_output([str(tools/'aapt'),'dump','badging',str(apk)],text=True)
+          assert "package: name='io.github.styayur.lgxt_input_fidelity'" in badging
+          assert 'application-debuggable' not in badging,'Keep the production release compile mode'
+          manifest=subprocess.check_output([str(tools/'aapt'),'dump','xmltree',str(apk),'AndroidManifest.xml'],text=True)
+          flag=re.search(r'android:testOnly\([^)]*\)=\(type 0x12\)(0x[0-9a-fA-F]+)',manifest)
+          assert flag and int(flag[1],16)!=0,'Missing compiled testOnly quarantine flag'
+          cache=pathlib.Path(os.environ.get('PUB_CACHE',str(pathlib.Path.home()/'.pub-cache')))
+          files=list(cache.glob('hosted/pub.dev/flet-1.1.2/lib/src/controls/textfield.dart'))
+          assert len(files)==1,'Missing exact resolved Dart TextField source'
+          source=files[0].read_bytes()
+          blob=hashlib.sha1(b'blob '+str(len(source)).encode()+b'\0'+source).hexdigest()
+          assert blob=='37ec9beee57921af011d66e5de1e948fae74cae1'
+          backport=json.loads(pathlib.Path('build/android/flutter-autofill-backport.json').read_text())
+          assert backport['applied'] is True and backport['actualSha256']==backport['patchedSha256']
+          assert hashlib.sha256((pathlib.Path(os.environ['FLUTTER_ROOT'])/backport['path']).read_bytes()).hexdigest()==backport['patchedSha256']
+          lock=pathlib.Path('build/android/input-project/build/flutter/pubspec.lock')
+          shutil.copyfile(lock,'build/android/input-source/pubspec.lock')
+          packages=yaml.safe_load(lock.read_text())['packages']
+          properties=pathlib.Path('build/android/input-project/build/flutter/android/local.properties').read_text().splitlines()
+          sdk_properties=[line.split('=',1)[1] for line in properties if line.startswith('flutter.sdk=')]
+          assert len(sdk_properties)==1 and pathlib.Path(sdk_properties[0]).resolve()==pathlib.Path(os.environ['FLUTTER_ROOT']).resolve()
+          identity={'fixtureOnly':True,'package':'io.github.styayur.lgxt_input_fidelity','apkSha256':hashlib.sha256(apk.read_bytes()).hexdigest(),'sourceCommit':os.environ['GITHUB_SHA'],'flet':'1.1.2','flutter':'3.47.9','dartTextFieldGitBlob':blob,'flutterAutofillBackport':backport,'pubspecLockSha256':hashlib.sha256(lock.read_bytes()).hexdigest(),'materialUiVersion':packages['material_ui']['version'],'kotlinRepositoryPolicySha256':hashlib.sha256(pathlib.Path('packaging/android/kotlin-official-repository.init.gradle').read_bytes()).hexdigest()}
+          pathlib.Path('build/android/input-artifacts/identity.json').write_text(json.dumps(identity,indent=2))
+          PY
+          python scripts/build_input_test_ime.py
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: bash scripts/run_android_input_fidelity.sh
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: synthetic-input-fidelity-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            build/android/input-results/
+            build/android/input-source/
+            build/android/input-artifacts/
+            build/android/input-ime/LGXT-test-ime.apk
+            build/android/flutter-autofill-backport.json
+            build/android/flutter-autofill-tests.log
+          if-no-files-found: warn

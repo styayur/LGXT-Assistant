@@ -1,0 +1,534 @@
+{
+  "fixtureOnly": true,
+  "sourceCommit": "2d1c7e04201dd665245cb063ac85991bd9d023f9",
+  "browser": "159.0.8154.6",
+  "passed": true,
+  "cases": [
+    {
+      "case": "empty-append25",
+      "passed": true,
+      "stage": "complete",
+      "fixtureOnly": true,
+      "typingDelayMs": 25,
+      "prefill": false,
+      "replace": false,
+      "hostClipboardUsed": false,
+      "expectedAccepted": true,
+      "fields": [
+        {
+          "field": "username",
+          "initial": {
+            "type": "string",
+            "length": 0,
+            "exact": true,
+            "masked": false,
+            "selectionStart": 0,
+            "selectionEnd": 0,
+            "engineConfigured": true
+          },
+          "beforeInput": {
+            "type": "string",
+            "length": 0,
+            "exact": true,
+            "masked": false,
+            "selectionStart": 0,
+            "selectionEnd": 0,
+            "engineConfigured": true
+          },
+          "afterInput": {
+            "type": "string",
+            "length": 12,
+            "exact": true,
+            "masked": false,
+            "selectionStart": 12,
+            "selectionEnd": 12,
+            "engineConfigured": true
+          }
+        },
+        {
+          "field": "password",
+          "initial": {
+            "type": "string",
+            "length": 0,
+            "exact": true,
+            "masked": true,
+            "selectionStart": 0,
+            "selectionEnd": 0,
+            "engineConfigured": true
+          },
+          "beforeInput": {
+            "type": "string",
+            "length": 0,
+            "exact": true,
+            "masked": true,
+            "selectionStart": 0,
+            "selectionEnd": 0,
+            "engineConfigured": true
+          },
+          "afterInput": {
+            "type": "string",
+            "length": 16,
+            "exact": true,
+            "masked": true,
+            "selectionStart": 16,
+            "selectionEnd": 16,
+            "engineConfigured": true
+          }
+        }
+      ],
+      "observation": {
+        "fixtureOnly": true,
+        "usernameType": "str",
+        "passwordType": "str",
+        "usernameExact": true,
+        "passwordExact": true,
+        "usernameLength": 12,
+        "passwordLength": 16,
+        "expectedUsernameLength": 12,
+        "expectedPasswordLength": 16
+      }
+    },
+    {
+      "case": "empty-replace25",
+      "passed": true,
+      "stage": "complete",
+      "fixtureOnly": true,
+      "typingDelayMs": 25,
+      "prefill": false,
+      "replace": true,
+      "hostClipboardUsed": false,
+      "expectedAccepted": true,
+      "fields": [
+        {
+          "field": "username",
+          "initial": {
+            "type": "string",
+            "length": 0,
+            "exact": true,
+            "masked": false,
+            "selectionStart": 0,
+            "selectionEnd": 0,
+            "engineConfigured": true
+          },
+          "beforeInput": {
+            "type": "string",
+            "length": 0,
+            "exact": true,
+            "masked": false,
+            "selectionStart": 0,
+            "selectionEnd": 0,
+            "engineConfigured": true
+          },
+          "afterInput": {
+            "type": "string",
+            "length": 12,
+            "exact": true,
+            "masked": false,
+            "selectionStart": 12,
+            "selectionEnd": 12,
+            "engineConfigured": true
+          }
+        },
+        {
+          "field": "password",
+          "initial": {
+            "type": "string",
+            "length": 0,
+            "exact": true,
+            "masked": true,
+            "selectionStart": 0,
+            "selectionEnd": 0,
+            "engineConfigured": true
+          },
+          "beforeInput": {
+            "type": "string",
+            "length": 0,
+            "exact": true,
+            "masked": true,
+            "selectionStart": 0,
+            "selectionEnd": 0,
+            "engineConfigured": true
+          },
+          "afterInput": {
+            "type": "string",
+            "length": 16,
+            "exact": true,
+            "masked": true,
+            "selectionStart": 16,
+            "selectionEnd": 16,
+            "engineConfigured": true
+          }
+        }
+      ],
+      "observation": {
+        "fixtureOnly": true,
+        "usernameType": "str",
+        "passwordType": "str",
+        "usernameExact": true,
+        "passwordExact": true,
+        "usernameLength": 12,
+        "passwordLength": 16,
+        "expectedUsernameLength": 12,
+        "expectedPasswordLength": 16
+      }
+    },
+    {
+      "case": "prefill-append25-rejected",
+      "passed": true,
+      "stage": "complete",
+      "fixtureOnly": true,
+      "typingDelayMs": 25,
+      "prefill": true,
+      "replace": false,
+      "hostClipboardUsed": false,
+      "expectedAccepted": false,
+      "fields": [
+        {
+          "field": "username",
+          "initial": {
+            "type": "string",
+            "length": 22,
+            "exact": true,
+            "masked": false,
+            "selectionStart": 20,
+            "selectionEnd": 20,
+            "engineConfigured": true
+          },
+          "beforeInput": {
+            "type": "string",
+            "length": 22,
+            "exact": true,
+            "masked": false,
+            "selectionStart": 22,
+            "selectionEnd": 22,
+            "engineConfigured": true
+          },
+          "afterInput": {
+            "type": "string",
+            "length": 34,
+            "exact": true,
+            "masked": false,
+            "selectionStart": 34,
+            "selectionEnd": 34,
+            "engineConfigured": true
+          }
+        },
+        {
+          "field": "password",
+          "initial": {
+            "type": "string",
+            "length": 0,
+            "exact": true,
+            "masked": true,
+            "selectionStart": 0,
+            "selectionEnd": 0,
+            "engineConfigured": true
+          },
+          "beforeInput": {
+            "type": "string",
+            "length": 0,
+            "exact": true,
+            "masked": true,
+            "selectionStart": 0,
+            "selectionEnd": 0,
+            "engineConfigured": true
+          },
+          "afterInput": {
+            "type": "string",
+            "length": 16,
+            "exact": true,
+            "masked": true,
+            "selectionStart": 16,
+            "selectionEnd": 16,
+            "engineConfigured": true
+          }
+        }
+      ],
+      "observation": {
+        "fixtureOnly": true,
+        "usernameType": "str",
+        "passwordType": "str",
+        "usernameExact": false,
+        "passwordExact": true,
+        "usernameLength": 34,
+        "passwordLength": 16,
+        "expectedUsernameLength": 12,
+        "expectedPasswordLength": 16
+      }
+    },
+    {
+      "case": "prefill-click-type25-rejected",
+      "passed": true,
+      "stage": "complete",
+      "fixtureOnly": true,
+      "typingDelayMs": 25,
+      "prefill": true,
+      "replace": false,
+      "hostClipboardUsed": false,
+      "expectedAccepted": false,
+      "fields": [
+        {
+          "field": "username",
+          "initial": {
+            "type": "string",
+            "length": 22,
+            "exact": true,
+            "masked": false,
+            "selectionStart": 20,
+            "selectionEnd": 20,
+            "engineConfigured": true
+          },
+          "beforeInput": {
+            "type": "string",
+            "length": 22,
+            "exact": true,
+            "masked": false,
+            "selectionStart": 20,
+            "selectionEnd": 20,
+            "engineConfigured": true
+          },
+          "afterInput": {
+            "type": "string",
+            "length": 34,
+            "exact": false,
+            "masked": false,
+            "selectionStart": 32,
+            "selectionEnd": 32,
+            "engineConfigured": true
+          }
+        },
+        {
+          "field": "password",
+          "initial": {
+            "type": "string",
+            "length": 0,
+            "exact": true,
+            "masked": true,
+            "selectionStart": 0,
+            "selectionEnd": 0,
+            "engineConfigured": true
+          },
+          "beforeInput": {
+            "type": "string",
+            "length": 0,
+            "exact": true,
+            "masked": true,
+            "selectionStart": 0,
+            "selectionEnd": 0,
+            "engineConfigured": true
+          },
+          "afterInput": {
+            "type": "string",
+            "length": 16,
+            "exact": true,
+            "masked": true,
+            "selectionStart": 16,
+            "selectionEnd": 16,
+            "engineConfigured": true
+          }
+        }
+      ],
+      "observation": {
+        "fixtureOnly": true,
+        "usernameType": "str",
+        "passwordType": "str",
+        "usernameExact": false,
+        "passwordExact": true,
+        "usernameLength": 34,
+        "passwordLength": 16,
+        "expectedUsernameLength": 12,
+        "expectedPasswordLength": 16
+      }
+    },
+    {
+      "case": "prefill-replace25",
+      "passed": true,
+      "stage": "complete",
+      "fixtureOnly": true,
+      "typingDelayMs": 25,
+      "prefill": true,
+      "replace": true,
+      "hostClipboardUsed": false,
+      "expectedAccepted": true,
+      "fields": [
+        {
+          "field": "username",
+          "initial": {
+            "type": "string",
+            "length": 22,
+            "exact": true,
+            "masked": false,
+            "selectionStart": 20,
+            "selectionEnd": 20,
+            "engineConfigured": true
+          },
+          "beforeInput": {
+            "type": "string",
+            "length": 22,
+            "exact": true,
+            "masked": false,
+            "selectionStart": 20,
+            "selectionEnd": 20,
+            "engineConfigured": true
+          },
+          "afterInput": {
+            "type": "string",
+            "length": 12,
+            "exact": true,
+            "masked": false,
+            "selectionStart": 12,
+            "selectionEnd": 12,
+            "engineConfigured": true
+          }
+        },
+        {
+          "field": "password",
+          "initial": {
+            "type": "string",
+            "length": 0,
+            "exact": true,
+            "masked": true,
+            "selectionStart": 0,
+            "selectionEnd": 0,
+            "engineConfigured": true
+          },
+          "beforeReplace": {
+            "type": "string",
+            "length": 22,
+            "exact": true,
+            "masked": true,
+            "selectionStart": 22,
+            "selectionEnd": 22,
+            "engineConfigured": true
+          },
+          "beforeInput": {
+            "type": "string",
+            "length": 22,
+            "exact": false,
+            "masked": true,
+            "selectionStart": 22,
+            "selectionEnd": 22,
+            "engineConfigured": true
+          },
+          "afterInput": {
+            "type": "string",
+            "length": 16,
+            "exact": true,
+            "masked": true,
+            "selectionStart": 16,
+            "selectionEnd": 16,
+            "engineConfigured": true
+          }
+        }
+      ],
+      "observation": {
+        "fixtureOnly": true,
+        "usernameType": "str",
+        "passwordType": "str",
+        "usernameExact": true,
+        "passwordExact": true,
+        "usernameLength": 12,
+        "passwordLength": 16,
+        "expectedUsernameLength": 12,
+        "expectedPasswordLength": 16
+      }
+    },
+    {
+      "case": "same-length-wrong25-rejected",
+      "passed": true,
+      "stage": "complete",
+      "fixtureOnly": true,
+      "typingDelayMs": 25,
+      "prefill": false,
+      "replace": false,
+      "hostClipboardUsed": false,
+      "expectedAccepted": false,
+      "fields": [
+        {
+          "field": "username",
+          "initial": {
+            "type": "string",
+            "length": 0,
+            "exact": true,
+            "masked": false,
+            "selectionStart": 0,
+            "selectionEnd": 0,
+            "engineConfigured": true
+          },
+          "beforeInput": {
+            "type": "string",
+            "length": 0,
+            "exact": true,
+            "masked": false,
+            "selectionStart": 0,
+            "selectionEnd": 0,
+            "engineConfigured": true
+          },
+          "afterInput": {
+            "type": "string",
+            "length": 12,
+            "exact": true,
+            "masked": false,
+            "selectionStart": 12,
+            "selectionEnd": 12,
+            "engineConfigured": true
+          }
+        },
+        {
+          "field": "password",
+          "initial": {
+            "type": "string",
+            "length": 0,
+            "exact": true,
+            "masked": true,
+            "selectionStart": 0,
+            "selectionEnd": 0,
+            "engineConfigured": true
+          },
+          "beforeInput": {
+            "type": "string",
+            "length": 0,
+            "exact": true,
+            "masked": true,
+            "selectionStart": 0,
+            "selectionEnd": 0,
+            "engineConfigured": true
+          },
+          "afterInput": {
+            "type": "string",
+            "length": 16,
+            "exact": true,
+            "masked": true,
+            "selectionStart": 16,
+            "selectionEnd": 16,
+            "engineConfigured": true
+          }
+        }
+      ],
+      "observation": {
+        "fixtureOnly": true,
+        "usernameType": "str",
+        "passwordType": "str",
+        "usernameExact": true,
+        "passwordExact": false,
+        "usernameLength": 12,
+        "passwordLength": 16,
+        "expectedUsernameLength": 12,
+        "expectedPasswordLength": 16
+      }
+    }
+  ],
+  "productionFlagsChanged": false,
+  "notCovered": [
+    "Android APK/IME",
+    "real accounts",
+    "CUA host input transport"
+  ],
+  "evidence": {
+    "workflowRun": "https://github.com/styayur/LGXT-Assistant/actions/runs/44680063995",
+    "prHead": "720e4ec4e90d92ed72df2e28a51c721ec4823adb",
+    "artifactId": 14604205626,
+    "artifactZipSha256": "8bd0dc8b1d08e694f6ed0341435614cca1d1f1823128a3b132331140b4fe3da9",
+    "scope": "Current strict browser renderer, not Android/CUA/real-account proof"
+  }
+}

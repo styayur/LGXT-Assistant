@@ -1,6 +1,8 @@
 """Flet control-tree interaction tests, using synthetic course data only."""
 import io
 import dataclasses
+import json
+import logging
 import time
 from types import SimpleNamespace
 
@@ -9,6 +11,7 @@ import pytest
 from PIL import Image
 
 from mobile.src.main import main, ICONS
+from scripts.synthetic_credentials import FIXTURE_USERNAME, FIXTURE_PASSWORD, credential_observation, exact_synthetic_login
 
 class Storage:
     def __init__(self): self.data={'lgxt.pass':'legacy-plaintext'}
@@ -29,7 +32,16 @@ class FixtureClient:
     allow_insecure=False
     calls=[]
     def __init__(self):self.headers={}
-    def login(self,*args):self.headers['Authorization']='fixture';return True,'fixture login'
+    def login(self,username,password):
+        self.headers.clear()
+        observed=credential_observation(username,password)
+        observed.update(usernameType='str' if type(username) is str else 'other',
+                        passwordType='str' if type(password) is str else 'other')
+        logging.getLogger('lgxt.input-fidelity').warning('LGXT_SYNTHETIC_LOGIN=%s',json.dumps(observed))
+        if not exact_synthetic_login(username,password):
+            return False,'Synthetic input did not match exactly'
+        self.headers['Authorization']='fixture'
+        return True,'fixture login'
     def logout(self):self.headers.clear()
     def get_my_courses(self):return True,[{'courseId':1,'courseName':'Synthetic physics course'}]
     def get_course_works(self,*args):return True,[{'workId':2,'workName':'Synthetic assignment','tryTimes':3,'times':1,'grade':None,'expireTime':'2026-12-31'}]
@@ -73,8 +85,8 @@ def test_mobile_login_assignment_document_confirmation(size):
     FixtureClient.calls=[]
     page=Page(*size);main(page,FixtureClient,page.client_storage)
     assert 'lgxt.pass' not in page.client_storage.data
-    find(page,ft.TextField,label='账号').value='fixture'
-    find(page,ft.TextField,label='密码').value='not-a-real-password'
+    find(page,ft.TextField,label='账号').value=FIXTURE_USERNAME
+    find(page,ft.TextField,label='密码').value=FIXTURE_PASSWORD
     find(page,ft.Button,text='登录理工学堂').on_click(None)
     wait_for(lambda: page.views[-1].route=='/dashboard')
     nav=find(page,ft.NavigationBar);nav.selected_index=1;nav.on_change(SimpleNamespace(control=nav))

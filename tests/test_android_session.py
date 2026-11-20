@@ -12,6 +12,7 @@ from mobile.src.main import main
 from mobile.src.session_state import SESSION_KEY, MAX_AGE, SessionVault, encode_session, restore_session
 from mobile.src.study_overview import overview
 from test_mobile import Page, Storage, FixtureClient, find, wait_for
+from scripts.synthetic_credentials import FIXTURE_USERNAME, FIXTURE_PASSWORD
 
 
 def authenticated():
@@ -122,8 +123,8 @@ def test_http_consent_waits_for_its_dismissal_even_with_another_notice(choice):
             return super().login(*args)
     page, notes = Page(), Storage()
     main(page, Client, notes)
-    find(page, ft.TextField, label='账号').value = 'synthetic'
-    find(page, ft.TextField, label='密码').value = 'synthetic'
+    find(page, ft.TextField, label='账号').value = FIXTURE_USERNAME
+    find(page, ft.TextField, label='密码').value = FIXTURE_PASSWORD
     find(page, ft.Button, text='登录理工学堂').on_click(None)
     consent = page.dialog
     original_view = page.views[-1]
