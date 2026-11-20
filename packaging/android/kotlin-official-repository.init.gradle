@@ -8,4 +8,7 @@ gradle.beforeSettings { settings ->
             includeGroupByRegex('org[.]jetbrains[.]kotlin[.].*')
         }
     }
+    // Declaring any repository disables Gradle's implicit Plugin Portal.
+    // Preserve that original default explicitly for non-Kotlin plugin markers.
+    settings.pluginManagement.repositories.gradlePluginPortal()
 }

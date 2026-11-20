@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
 META = ROOT/'packaging/flutter/autofill-backport.json'
@@ -29,9 +30,18 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--flutter-root', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--verify-only', action='store_true')
     args = parser.parse_args()
     meta = json.loads(META.read_text())
     sdk = args.flutter_root.resolve()
+    from importlib.metadata import version
+    from flet_cli.commands.flutter_base import FlutterCommand
+    if version('flet-cli') != '1.1.2':
+        raise ValueError('Refusing a different Flet SDK selector')
+    selected = FlutterCommand.find_flutter_batch(
+        SimpleNamespace(required_flutter_version=meta['flutterVersion']), 'flutter')
+    if not selected or Path(selected).resolve().parent.parent != sdk:
+        raise ValueError('Flet would use a different SDK than the reviewed patched root')
     head = subprocess.check_output(['git','-C',str(sdk),'rev-parse','HEAD'],text=True).strip()
     if head != meta['flutterCommit']:
         raise ValueError('Refusing a different Flutter SDK revision')
@@ -43,11 +53,15 @@ def main():
         raise ValueError('Flutter license differs from the reviewed SDK license')
     target = sdk/meta['path']
     source = target.read_bytes()
+    if args.verify_only and hashlib.sha256(source).hexdigest() != meta['patchedSha256']:
+        raise ValueError('Flet build SDK does not contain the reviewed privacy backport')
     result, already = patched_bytes(source, meta)
-    target.write_bytes(result)
+    if not args.verify_only:
+        target.write_bytes(result)
     record = dict(meta, alreadyApplied=already, applied=True,
                   actualSha256=hashlib.sha256(target.read_bytes()).hexdigest(),
-                  pythonAppFlagsChanged=False, autofillGroupRetained=True)
+                  pythonAppFlagsChanged=False, autofillGroupRetained=True,
+                  fletSelectedSdkMatchesRequested=True, verifyOnly=args.verify_only)
     args.output.parent.mkdir(parents=True,exist_ok=True)
     args.output.write_text(json.dumps(record,indent=2)+'\n',encoding='utf-8')
     sys.stdout.write(json.dumps({'applied':True,'alreadyApplied':already,
