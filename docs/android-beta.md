@@ -31,3 +31,7 @@ See [research and decisions](research/ANDROID_LIMITATIONS.md), [security policy]
 The original 3.2.0/3.2.1 source predates question-document storage and the JSON backup feature; it does not contain an export button. Do not assume this guide adds one to an old installation. If a modified/intermediate build contains valuable notes but has no export facility, preserve them through that build's existing export/device backup facilities or manual copies before uninstalling. Do not uninstall while the data is unverified. Historical saved login preferences are not migrated or exported.
 
 See [signing custody and release gates](android-signing.md) for the public identity and maintainer procedure.
+
+## Dated input/privacy follow-up
+
+The20November [strict synthetic diagnosis](input-fidelity.md) passed native8positive+3negative and six browser25ms cases. It also confirmed and backported a separate SDK privacy-configuration forwarding defect while retaining autofill and password protection options. These tests do not attribute the original computer-input anomaly. The existing3.3.1 download and real-account receipt remain scoped to the unchanged public APK. A later Beta needs its own signed/native/release evidence; these test-only APKs are not installers.

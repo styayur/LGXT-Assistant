@@ -41,8 +41,10 @@
     "bulkComputerInputMaskedLengthAnomaly": true,
     "abnormalInputClearedBeforeSubmission": true,
     "individualNativeKeyEntryAuthenticated": true,
-    "strictSyntheticFollowup": "IN_PROGRESS",
-    "productVersusInputTransportAttribution": "NOT_VERIFIED"
+    "strictSyntheticFollowup": "DONE",
+    "productVersusInputTransportAttribution": "NOT_VERIFIED",
+    "strictSyntheticEvidence": "../input-fidelity/native-final.json",
+    "independentSdkPrivacyCompatibility": "Confirmed on separate strict synthetic native before/after fixtures; does not alter or requalify this original public APK"
   },
   "privacyAndSideEffects": {
     "accountAndStudentIdentifiersIncluded": false,
