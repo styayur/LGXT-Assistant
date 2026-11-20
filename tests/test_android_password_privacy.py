@@ -1,6 +1,6 @@
 """AOSP-format privacy readback rejects the observed unpatched bit loss."""
 import pytest
-from scripts.check_android_device import password_editor_snapshot
+from scripts.check_android_device import editor_protection_snapshot
 
 PACKAGE = 'io.github.styayur.lgxt_assistant_mobile'
 DUMP = """Input method service state for synthetic.test.Keyboard:
@@ -17,10 +17,10 @@ DUMP = """Input method service state for synthetic.test.Keyboard:
 
 
 def test_current_native_privacy_snapshot_has_no_input_or_raw_dump():
-    record = password_editor_snapshot(DUMP, PACKAGE)
+    record = editor_protection_snapshot(DUMP, PACKAGE)
     assert record['imeOptions'] == 50331654 and record['inputType'] == 524417
     assert record['verified'] and record['nativeInputViewReady']
-    assert record['passwordEnteredBeforeProbe'] is False
+    assert record['beforeProtectedFieldInjection'] is True
     assert not any(key in record for key in ('hintText','text','raw','dump','fieldName'))
 
 
@@ -32,4 +32,16 @@ def test_current_native_privacy_snapshot_has_no_input_or_raw_dump():
     DUMP+DUMP,
 ])
 def test_unpatched_or_unrelated_editor_cannot_qualify(bad):
-    with pytest.raises(ValueError):password_editor_snapshot(bad, PACKAGE)
+    with pytest.raises(ValueError):editor_protection_snapshot(bad, PACKAGE)
+
+
+def test_attestation_uses_fixed_typed_metadata_not_the_probe_dictionary():
+    from scripts.check_android_device import editor_protection_attestation
+    snapshot = editor_protection_snapshot(DUMP, PACKAGE)
+    snapshot.update(rawDump='synthetic data must not be serialized', hintText='fixture-only')
+    record = editor_protection_attestation(snapshot, 'a'*64, True)
+    assert set(record) == {'package','inputType','imeOptions','verified','nativeInputViewReady',
+                           'masked','beforeProtectedFieldInjection','apkSha256'}
+    assert 'rawDump' not in record and 'hintText' not in record
+    for bad in (dict(snapshot, imeOptions='50331654'), dict(snapshot, inputType=True)):
+        with pytest.raises(ValueError):editor_protection_attestation(bad, 'a'*64, True)

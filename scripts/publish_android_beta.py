@@ -44,7 +44,7 @@ def verify_native_reports(directory, identity, build_run, validated_head):
             'Synthetic native session evidence is for different bytes')
     for report in (ordinary, fixture):
         if tuple(map(int, identity.get('version', '0.0.0').split('.'))) >= (3,3,2):
-            privacy = report.get('passwordPrivacy') or {}
+            privacy = report.get('editorProtection') or {}
             require(privacy.get('verified') is True and privacy.get('masked') is True
                     and privacy.get('nativeInputViewReady') is True
                     and privacy.get('apkSha256') == report['apkSha256']

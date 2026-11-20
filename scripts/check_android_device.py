@@ -14,7 +14,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 
-def password_editor_snapshot(dump, package):
+def editor_protection_snapshot(dump, package):
     """Read only AOSP API35 IME state; never retain raw dump/hints/text."""
     dump = dump.replace('\r\n', '\n')
     services = re.split(r'^Input method service state for [^\n]+:[ \t]*$', dump, flags=re.MULTILINE)
@@ -36,7 +36,22 @@ def password_editor_snapshot(dump, package):
     if not ime_options & 0x1000000:
         raise ValueError('Password native no-personalized-learning bit absent')
     return {'package':package, 'inputType':input_type, 'imeOptions':ime_options,
-            'verified':True, 'nativeInputViewReady':True, 'passwordEnteredBeforeProbe':False}
+            'verified':True, 'nativeInputViewReady':True, 'beforeProtectedFieldInjection':True}
+
+
+def editor_protection_attestation(snapshot, apk_sha256, masked):
+    """Serialize only fixed, typed protection metadata; never the raw probe."""
+    package = 'io.github.styayur.lgxt_assistant_mobile'
+    input_type, ime_options = snapshot.get('inputType'), snapshot.get('imeOptions')
+    if (snapshot.get('package') != package or snapshot.get('verified') is not True
+            or snapshot.get('nativeInputViewReady') is not True or masked is not True
+            or type(input_type) is not int or type(ime_options) is not int
+            or not input_type & 0x80 or not input_type & 0x80000 or input_type & 0x8000
+            or not ime_options & 0x1000000 or not re.fullmatch('[a-f0-9]{64}', apk_sha256)):
+        raise ValueError('Invalid native editor protection attestation')
+    return {'package':package, 'inputType':input_type, 'imeOptions':ime_options,
+            'verified':True, 'nativeInputViewReady':True, 'masked':True,
+            'beforeProtectedFieldInjection':True, 'apkSha256':apk_sha256}
 
 
 def main():
@@ -164,7 +179,7 @@ def main():
     launch();root=wait_text('登录理工学堂');screen('login-native')
     edits=[node for node in root.iter('node') if node.get('class')=='android.widget.EditText']
     if len(edits)!=2:raise AssertionError('Expected two native editable login fields')
-    password_privacy=None
+    editor_protection=None
     for index,value in enumerate(['fixture-user','fixture-password']):
         # The Android keyboard changes the scroll viewport. Re-query bounds
         # for each field instead of reusing positions from before it opened.
@@ -174,15 +189,15 @@ def main():
             deadline=time.monotonic()+40
             while True:
                 try:
-                    password_privacy=password_editor_snapshot(shell('dumpsys','input_method'),package)
+                    snapshot=editor_protection_snapshot(shell('dumpsys','input_method'),package)
                     break
                 except ValueError:
                     if time.monotonic()>=deadline:raise
                     time.sleep(.3)
             if current[index].get('password')!='true':
                 raise AssertionError('Password UI masking is absent')
-            password_privacy['masked']=True
-            password_privacy['apkSha256']=hashlib.sha256(Path(args.apk).read_bytes()).hexdigest()
+            editor_protection=editor_protection_attestation(snapshot,
+                hashlib.sha256(Path(args.apk).read_bytes()).hexdigest(), True)
         shell('input','text',value)
         time.sleep(.5)
         shell('input','keyevent','4')
@@ -292,7 +307,7 @@ def main():
             'fixture':args.fixture,'syntheticDocuments':args.fixture or args.backup_roundtrip,'passed':passed+['background resume','force-stop restart'],
             'historicalUpgradeIncompatible':upgrade_incompatible,
             'previousBetaInPlaceUpgrade':bool(args.previous_beta_apk),
-            'credentialFreeNetworkProbe':network_probe,'passwordPrivacy':password_privacy,
+            'credentialFreeNetworkProbe':network_probe,'editorProtection':editor_protection,
             'not_covered':['real platform','paid provider','physical ARM64 device','historical in-place signing continuity']}
     (out/'acceptance.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     sys.stdout.write(json.dumps(report,ensure_ascii=False)+'\n')

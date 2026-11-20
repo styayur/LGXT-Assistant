@@ -20,7 +20,7 @@ def evidence(tmp_path):
                'passed': shared + ['device encrypted synthetic token session restores after process termination and validates',
                                    'logout clears device session across process termination']}
     for report in (ordinary, fixture):
-        report['passwordPrivacy']={'verified':True,'masked':True,'nativeInputViewReady':True,
+        report['editorProtection']={'verified':True,'masked':True,'nativeInputViewReady':True,
             'apkSha256':report['apkSha256'],'package':'io.github.styayur.lgxt_assistant_mobile',
             'imeOptions':50331654,'inputType':524417}
     for name, value in [('APK-IDENTITY.json', identity), ('ACCEPTANCE-IDENTITY.json', identity),
@@ -60,9 +60,9 @@ def test_new_beta_requires_exact_byte_native_privacy(evidence, change):
     directory, identity = evidence
     path = directory/'device/acceptance.json'
     report = json.loads(path.read_text())
-    if change == 'missing':report.pop('passwordPrivacy')
-    elif change == 'foreign-bytes':report['passwordPrivacy']['apkSha256']='f'*64
-    else:report['passwordPrivacy']['imeOptions']=33554438
+    if change == 'missing':report.pop('editorProtection')
+    elif change == 'foreign-bytes':report['editorProtection']['apkSha256']='f'*64
+    else:report['editorProtection']['imeOptions']=33554438
     path.write_text(json.dumps(report))
     with pytest.raises(ValueError, match='native password privacy'):
         verify_native_reports(directory, identity, '123', 'c'*40)
