@@ -34,7 +34,10 @@ class FixtureClient:
     def __init__(self):self.headers={}
     def login(self,username,password):
         self.headers.clear()
-        logging.getLogger('lgxt.input-fidelity').warning('LGXT_SYNTHETIC_LOGIN=%s',json.dumps(credential_observation(username,password)))
+        observed=credential_observation(username,password)
+        observed.update(usernameType='str' if type(username) is str else 'other',
+                        passwordType='str' if type(password) is str else 'other')
+        logging.getLogger('lgxt.input-fidelity').warning('LGXT_SYNTHETIC_LOGIN=%s',json.dumps(observed))
         if not exact_synthetic_login(username,password):
             return False,'Synthetic input did not match exactly'
         self.headers['Authorization']='fixture'

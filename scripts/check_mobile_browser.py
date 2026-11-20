@@ -6,6 +6,7 @@ These are browser renderer checks, not Android APK/device acceptance.
 """
 from pathlib import Path
 from playwright.sync_api import sync_playwright, expect
+from browser_input_checks import focus_editor
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/'docs/screenshots'
 OUT.mkdir(parents=True,exist_ok=True)
@@ -21,8 +22,10 @@ with sync_playwright() as p:
     page.wait_for_timeout(500)  # Flutter route animation is outside DOM/CSS animations.
     page.screenshot(path=str(OUT/'android-3.3.1-login-fixture.png'))
     # Flutter editing expects keyboard events; DOM fill alone does not commit text.
-    page.get_by_role('textbox').nth(0).click();page.keyboard.type('fixture-user',delay=25)
-    page.get_by_role('textbox').nth(1).click();page.keyboard.type('fixture-password',delay=25)
+    expect(focus_editor(page,0)).to_have_value('')
+    page.keyboard.type('fixture-user',delay=25)
+    expect(focus_editor(page,1)).to_have_value('')
+    page.keyboard.type('fixture-password',delay=25)
     page.get_by_role('button',name='登录理工学堂',exact=True).click()
     expect(page.get_by_role('button',name='刷新作业状态',exact=True)).to_be_visible()
     page.wait_for_timeout(500)

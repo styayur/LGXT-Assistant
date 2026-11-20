@@ -28,11 +28,19 @@ jobs:
       - name: Render actual Flet phone layouts with synthetic data
         run: |
           python scripts/preview_mobile.py --fixture --headless --port 8554 > mobile-render.log 2>&1 &
+          python scripts/preview_mobile.py --fixture --fixture-prefill --headless --port 8555 > mobile-prefill-render.log 2>&1 &
           for attempt in $(seq 1 60); do
             if curl --silent --fail http://127.0.0.1:8554/ > /dev/null; then break; fi
             sleep 1
           done
-          python scripts/check_mobile_browser.py
+          for attempt in $(seq 1 60); do
+            if curl --silent --fail http://127.0.0.1:8555/ > /dev/null; then break; fi
+            sleep 1
+          done
+          result=0
+          python scripts/check_browser_input_fidelity.py || result=1
+          python scripts/check_mobile_browser.py || result=1
+          exit "$result"
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -40,6 +48,8 @@ jobs:
           path: |
             docs/screenshots/android-3.3.1-*.png
             mobile-render.log
+              mobile-prefill-render.log
+              work/input-fidelity-browser/
 
   python:
     runs-on: windows-latest
