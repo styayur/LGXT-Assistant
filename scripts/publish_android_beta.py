@@ -43,6 +43,15 @@ def verify_native_reports(directory, identity, build_run, validated_head):
     require(fixture['fixture'] is True and fixture['apkSha256'] == record['fixtureApkSha256'],
             'Synthetic native session evidence is for different bytes')
     for report in (ordinary, fixture):
+        if tuple(map(int, identity.get('version', '0.0.0').split('.'))) >= (3,3,2):
+            privacy = report.get('passwordPrivacy') or {}
+            require(privacy.get('verified') is True and privacy.get('masked') is True
+                    and privacy.get('nativeInputViewReady') is True
+                    and privacy.get('apkSha256') == report['apkSha256']
+                    and privacy.get('package') == 'io.github.styayur.lgxt_assistant_mobile'
+                    and privacy.get('imeOptions',0) & 0x1000000
+                    and privacy.get('inputType',0) & 0x80000,
+                    'Exact APK native password privacy evidence is incomplete')
         require('native file-picker backup export/import' in report['passed']
                 and 'note survives process termination' in report['passed'], 'Native backup evidence is incomplete')
     require('device encrypted synthetic token session restores after process termination and validates' in fixture['passed']

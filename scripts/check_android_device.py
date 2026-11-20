@@ -5,12 +5,38 @@ No real credentials, grades or model requests. Screenshots contain dummy inputs.
 import argparse
 import hashlib
 import json
+import os
 import re
 import subprocess
 import time
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
+
+
+def password_editor_snapshot(dump, package):
+    """Read only AOSP API35 IME state; never retain raw dump/hints/text."""
+    dump = dump.replace('\r\n', '\n')
+    services = re.split(r'^Input method service state for [^\n]+:[ \t]*$', dump, flags=re.MULTILINE)
+    if len(services) != 2:
+        raise ValueError('Expected one current input method service state')
+    body = services[1]
+    editors = re.findall(r'^  mInputEditorInfo:\n((?:    [^\n]*\n)+)', body, re.MULTILINE)
+    if len(editors) != 1:
+        raise ValueError('Missing unique current IME EditorInfo')
+    options = re.findall(r'inputType=0x([0-9a-fA-F]+) imeOptions=0x([0-9a-fA-F]+)', editors[0])
+    packages = re.findall(r'packageName=([^\s]+)', editors[0])
+    if len(options) != 1 or packages != [package]:
+        raise ValueError('Password EditorInfo does not belong to this application')
+    input_type, ime_options = (int(v, 16) for v in options[0])
+    ready = all(re.search(r'(?:^|\s)'+key+r'=true(?=\s|$)', body) for key in
+                ('mInputStarted','mInputViewStarted','mShowInputRequested','mIsInputViewShown'))
+    if not ready or not input_type & 0x80 or not input_type & 0x80000 or input_type & 0x8000:
+        raise ValueError('Password native input/suggestion protection not ready')
+    if not ime_options & 0x1000000:
+        raise ValueError('Password native no-personalized-learning bit absent')
+    return {'package':package, 'inputType':input_type, 'imeOptions':ime_options,
+            'verified':True, 'nativeInputViewReady':True, 'passwordEnteredBeforeProbe':False}
 
 
 def main():
@@ -21,12 +47,24 @@ def main():
     parser.add_argument('--historical-apk')
     parser.add_argument('--previous-beta-apk')
     parser.add_argument('--backup-roundtrip',action='store_true',help='Import synthetic notes through the ordinary release APK picker')
+    parser.add_argument('--password-privacy',action='store_true')
     args=parser.parse_args()
+    selector=[]
+    if args.password_privacy:
+        if os.environ.get('GITHUB_ACTIONS')!='true':
+            raise ValueError('Privacy probe requires the remote disposable CI emulator')
+        devices=subprocess.check_output(['adb','devices'],text=True).splitlines()
+        serials=[line.split()[0] for line in devices if len(line.split())==2 and line.split()[1]=='device']
+        if len(serials)!=1 or not re.fullmatch(r'emulator-\d+',serials[0]):
+            raise ValueError('Privacy probe requires exactly one disposable emulator')
+        selector=['-s',serials[0]]
     expected_note='native-fixture-note' if args.fixture else 'native-fixture-note-saved'
     out=Path(args.output);out.mkdir(parents=True,exist_ok=True)
     def adb(*args):
-        return subprocess.check_output(['adb',*args],timeout=90)
+        return subprocess.check_output(['adb',*selector,*args],timeout=90)
     def shell(*args):return adb('shell',*args).decode('utf-8',errors='replace')
+    if args.password_privacy and (shell('getprop','ro.kernel.qemu').strip()!='1' or shell('getprop','ro.build.version.sdk').strip()!='35'):
+        raise ValueError('Password privacy probe requires disposable API35')
     def screen(name): (out/(name+'.png')).write_bytes(adb('exec-out','screencap','-p'))
     def tree():
         shell('uiautomator','dump','/sdcard/lgxt-acceptance.xml')
@@ -100,7 +138,7 @@ def main():
     upgrade_incompatible=None
     if args.historical_apk:
         if 'Success' not in adb('install',args.historical_apk).decode():raise ValueError('Historical install failed')
-        upgrade=subprocess.run(['adb','install','-r',args.apk],capture_output=True,timeout=90)
+        upgrade=subprocess.run(['adb',*selector,'install','-r',args.apk],capture_output=True,timeout=90)
         if upgrade.returncode==0 or b'INSTALL_FAILED_UPDATE_INCOMPATIBLE' not in upgrade.stdout+upgrade.stderr:
             raise AssertionError('Historical signing incompatibility not established')
         upgrade_incompatible=True
@@ -126,11 +164,26 @@ def main():
     launch();root=wait_text('登录理工学堂');screen('login-native')
     edits=[node for node in root.iter('node') if node.get('class')=='android.widget.EditText']
     if len(edits)!=2:raise AssertionError('Expected two native editable login fields')
+    password_privacy=None
     for index,value in enumerate(['fixture-user','fixture-password']):
         # The Android keyboard changes the scroll viewport. Re-query bounds
         # for each field instead of reusing positions from before it opened.
         current=[node for node in tree().iter('node') if node.get('class')=='android.widget.EditText']
-        tap_node(current[index]);shell('input','text',value)
+        tap_node(current[index])
+        if args.password_privacy and index==1:
+            deadline=time.monotonic()+40
+            while True:
+                try:
+                    password_privacy=password_editor_snapshot(shell('dumpsys','input_method'),package)
+                    break
+                except ValueError:
+                    if time.monotonic()>=deadline:raise
+                    time.sleep(.3)
+            if current[index].get('password')!='true':
+                raise AssertionError('Password UI masking is absent')
+            password_privacy['masked']=True
+            password_privacy['apkSha256']=hashlib.sha256(Path(args.apk).read_bytes()).hexdigest()
+        shell('input','text',value)
         time.sleep(.5)
         shell('input','keyevent','4')
         time.sleep(.3)
@@ -239,7 +292,7 @@ def main():
             'fixture':args.fixture,'syntheticDocuments':args.fixture or args.backup_roundtrip,'passed':passed+['background resume','force-stop restart'],
             'historicalUpgradeIncompatible':upgrade_incompatible,
             'previousBetaInPlaceUpgrade':bool(args.previous_beta_apk),
-            'credentialFreeNetworkProbe':network_probe,
+            'credentialFreeNetworkProbe':network_probe,'passwordPrivacy':password_privacy,
             'not_covered':['real platform','paid provider','physical ARM64 device','historical in-place signing continuity']}
     (out/'acceptance.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     sys.stdout.write(json.dumps(report,ensure_ascii=False)+'\n')

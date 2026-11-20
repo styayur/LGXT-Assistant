@@ -30,7 +30,7 @@ except ImportError:
     from study_overview import overview
 
 LOGIN_TIMEOUT = 20
-APP_VERSION = '3.3.1'
+APP_VERSION = '3.3.2'
 
 COLORS = getattr(ft, 'Colors', None) or getattr(ft, 'colors')
 ICONS = getattr(ft, 'Icons', None) or getattr(ft, 'icons')

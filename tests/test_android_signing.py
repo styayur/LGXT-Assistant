@@ -21,9 +21,9 @@ def test_signing_credentials_fail_closed():
 
 
 def test_manifest_and_fixture_boundary():
-    info="package: name='io.github.styayur.lgxt_assistant_mobile' versionCode='5' versionName='3.3.1'\nsdkVersion:'24'\ntargetSdkVersion:'36'"
+    info="package: name='io.github.styayur.lgxt_assistant_mobile' versionCode='6' versionName='3.3.2'\nsdkVersion:'24'\ntargetSdkVersion:'36'"
     validate_badging(info)
-    for bad in [info.replace("sdkVersion:'24'","sdkVersion:'23'"),info.replace("versionCode='5'","versionCode='3'"),info+'\napplication-debuggable']:
+    for bad in [info.replace("sdkVersion:'24'","sdkVersion:'23'"),info.replace("versionCode='6'","versionCode='3'"),info+'\napplication-debuggable']:
         with pytest.raises(ValueError):validate_badging(bad)
     for fixture in [False,True]:
         payload=io.BytesIO()

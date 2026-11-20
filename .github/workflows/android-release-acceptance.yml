@@ -67,7 +67,7 @@ jobs:
           test -x "$ANDROID_HOME/build-tools/36.0.0/apksigner" || "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'build-tools;36.0.0'
           (cd build/android/apk && sha256sum --check SHA256SUMS.txt)
           certificate=$(python -c "import json; print(json.load(open('packaging/android/signing-identity.json'))['certificateSha256'])")
-          python scripts/check_android_metadata.py --apk build/android/apk/LGXT-Assistant-Android-v3.3.1.apk --expected-certificate "$certificate" --source-commit "$BUILD_SOURCE" --output build/android/ACCEPTANCE-IDENTITY.json
+          python scripts/check_android_metadata.py --apk build/android/apk/LGXT-Assistant-Android-v3.3.2.apk --expected-certificate "$certificate" --source-commit "$BUILD_SOURCE" --output build/android/ACCEPTANCE-IDENTITY.json
           python - <<'PY'
           import json
           assert json.load(open('build/android/apk/APK-IDENTITY.json'))==json.load(open('build/android/ACCEPTANCE-IDENTITY.json'))
@@ -79,8 +79,8 @@ jobs:
           mkdir -p build/android/history
           gh release download v3.2.1 -p LGXT-Assistant-3.2.1-android.apk -D build/android/history
           echo '6a9ec5a4113a1a24a4bfad29068158544aa526f892ffa972b590d53a7e29487d  build/android/history/LGXT-Assistant-3.2.1-android.apk' | sha256sum --check
-          gh release download v3.3.0-android -p LGXT-Assistant-Android-v3.3.0.apk -D build/android/history
-          echo 'c0e2d4bfc307893baba457d8f1bf0e77ffc3884d87b88c750af4b9252b7811ad  build/android/history/LGXT-Assistant-Android-v3.3.0.apk' | sha256sum --check
+          gh release download v3.3.1-android -p LGXT-Assistant-Android-v3.3.1.apk -D build/android/history
+          echo '8b1da350c1cd9d089c52f8fbb65dbf289443c0a8f4f7dc462cda4fe4b201a4d1  build/android/history/LGXT-Assistant-Android-v3.3.1.apk' | sha256sum --check
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -93,11 +93,11 @@ jobs:
           profile: pixel_2
           disable-animations: true
           script: |
-            python scripts/check_android_device.py --apk build/android/apk/LGXT-Assistant-Android-v3.3.1.apk --historical-apk build/android/history/LGXT-Assistant-3.2.1-android.apk --previous-beta-apk build/android/history/LGXT-Assistant-Android-v3.3.0.apk --backup-roundtrip
+            python scripts/check_android_device.py --apk build/android/apk/LGXT-Assistant-Android-v3.3.2.apk --historical-apk build/android/history/LGXT-Assistant-3.2.1-android.apk --previous-beta-apk build/android/history/LGXT-Assistant-Android-v3.3.1.apk --backup-roundtrip --password-privacy
             # Remove only the synthetic shared backup before the separate fixture.
             adb shell rm -f /sdcard/Download/LGXT-study-notes.json
             adb uninstall io.github.styayur.lgxt_assistant_mobile
-            python scripts/check_android_device.py --apk build/android/fixture/LGXT-fixture-only.apk --fixture --output build/android/device-fixture
+            python scripts/check_android_device.py --apk build/android/fixture/LGXT-fixture-only.apk --fixture --output build/android/device-fixture --password-privacy
       - name: Bind successful native reports to exact signed and fixture bytes
         env:
           BUILD_RUN: ${{ inputs.build_run_id }}
