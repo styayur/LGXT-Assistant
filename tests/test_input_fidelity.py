@@ -189,3 +189,23 @@ def test_native_driver_refuses_release_and_unbound_payload(tmp_path):
                   {'apkSha256':'0'*64}):
         with pytest.raises(ValueError):
             verify_fixture_apk(apk, identity|delta)
+
+
+def test_built_project_sdk_binding_rejects_other_sdk_and_binds_bytes(tmp_path):
+    import hashlib
+    from scripts.apply_flutter_autofill_backport import built_project_evidence
+    sdk = (tmp_path/'reviewed-sdk').resolve()
+    project = tmp_path/'project'
+    (project/'android').mkdir(parents=True)
+    properties = project/'android/local.properties'
+    properties.write_text('flutter.sdk='+str(sdk)+'\n')
+    (project/'pubspec.lock').write_bytes(b'synthetic resolved lock')
+    apk = tmp_path/'synthetic.apk'
+    apk.write_bytes(b'synthetic candidate bytes')
+    record = built_project_evidence(project, apk, sdk)
+    assert record['generatedProjectSdkMatchesRequested'] is True
+    assert record['apkSha256'] == hashlib.sha256(apk.read_bytes()).hexdigest()
+    assert record['pubspecLockSha256'] == hashlib.sha256((project/'pubspec.lock').read_bytes()).hexdigest()
+    properties.write_text('flutter.sdk='+str(tmp_path/'different-sdk')+'\n')
+    with pytest.raises(ValueError, match='different Flutter SDK'):
+        built_project_evidence(project, apk, sdk)

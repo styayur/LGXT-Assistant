@@ -39,12 +39,31 @@ def verify_selected_sdk(sdk, meta):
             raise ValueError('Flet would use a different SDK than the reviewed patched root')
 
 
+def built_project_evidence(project, apk, sdk):
+    properties = (project/'android/local.properties').read_text().splitlines()
+    roots = [line.split('=', 1)[1] for line in properties if line.startswith('flutter.sdk=')]
+    if len(roots) != 1 or Path(roots[0]).resolve() != sdk:
+        raise ValueError('Generated Android project uses a different Flutter SDK')
+    lock = (project/'pubspec.lock').read_bytes()
+    policy = ROOT/'packaging/android/kotlin-official-repository.init.gradle'
+    return {'generatedProjectSdkMatchesRequested': True,
+            'apkSha256': hashlib.sha256(apk.read_bytes()).hexdigest(),
+            'pubspecLockSha256': hashlib.sha256(lock).hexdigest(),
+            'kotlinRepositoryPolicySha256': hashlib.sha256(policy.read_bytes()).hexdigest(),
+            'buildWorkflowSha256': hashlib.sha256((ROOT/'.github/workflows/android-apk.yml').read_bytes()).hexdigest(),
+            'sourceCommit': subprocess.check_output(['git','-C',str(ROOT),'rev-parse','HEAD'],text=True).strip()}
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--flutter-root', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--verify-only', action='store_true')
+    parser.add_argument('--built-project', type=Path)
+    parser.add_argument('--apk', type=Path)
     args = parser.parse_args()
+    if bool(args.built_project) != bool(args.apk) or (args.built_project and not args.verify_only):
+        parser.error('--built-project and --apk require each other and --verify-only')
     meta = json.loads(META.read_text())
     sdk = args.flutter_root.resolve()
     verify_selected_sdk(sdk, meta)
@@ -68,6 +87,8 @@ def main():
                   actualSha256=hashlib.sha256(target.read_bytes()).hexdigest(),
                   pythonAppFlagsChanged=False, autofillGroupRetained=True,
                   fletSelectedSdkMatchesRequested=True, verifyOnly=args.verify_only)
+    if args.built_project:
+        record['buildEvidence'] = built_project_evidence(args.built_project, args.apk, sdk)
     args.output.parent.mkdir(parents=True,exist_ok=True)
     args.output.write_text(json.dumps(record,indent=2)+'\n',encoding='utf-8')
     sys.stdout.write(json.dumps({'applied':True,'alreadyApplied':already,

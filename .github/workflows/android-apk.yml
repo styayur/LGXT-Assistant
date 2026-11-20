@@ -111,6 +111,7 @@ jobs:
 
       - name: Collect APK
         run: |
+          python scripts/apply_flutter_autofill_backport.py --flutter-root "$FLUTTER_ROOT" --verify-only --built-project mobile/build/flutter --apk mobile/build/apk/lgxt-assistant-mobile.apk --output build/android/ordinary-sdk-build.json
           mkdir -p out
           version=$(python -c "import tomllib; print(tomllib.load(open('mobile/pyproject.toml','rb'))['project']['version'])")
           cp mobile/build/apk/lgxt-assistant-mobile.apk "out/LGXT-Assistant-Android-v${version}.apk"
@@ -139,12 +140,26 @@ jobs:
           python scripts/apply_flutter_autofill_backport.py --flutter-root "$FLUTTER_ROOT" --verify-only --output build/android/fixture-sdk-selection.json
           cd mobile
           flet build apk --verbose --yes --arch x86_64
+          cd ..
+          python scripts/apply_flutter_autofill_backport.py --flutter-root "$FLUTTER_ROOT" --verify-only --built-project mobile/build/flutter --apk mobile/build/apk/lgxt-assistant-mobile.apk --output build/android/fixture-sdk-build.json
+          cd mobile
           mkdir -p ../fixture-out
           cp build/apk/*.apk ../fixture-out/LGXT-fixture-only.apk
       - uses: actions/upload-artifact@v7
         with:
           name: lgxt-fixture-only-apk
           path: fixture-out/*.apk
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: android-sdk-build-binding
+          path: |
+            build/android/ordinary-sdk-selection.json
+            build/android/ordinary-sdk-build.json
+            build/android/fixture-sdk-selection.json
+            build/android/fixture-sdk-build.json
+            mobile/build/flutter/pubspec.lock
 
       # Candidate build artifacts are retained for review only. Production release
       # requires signing identity and device/emulator checks, not just flet build.
