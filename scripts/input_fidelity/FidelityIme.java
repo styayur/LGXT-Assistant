@@ -19,6 +19,7 @@ import org.json.JSONObject;
 /** Disposable CI keyboard; no network permission and no credential logging. */
 public final class FidelityIme extends InputMethodService {
     private static FidelityIme active;
+    private View inputView;
     private static final String TARGET = "io.github.styayur.lgxt_input_fidelity";
 
     @Override public void onCreate() { super.onCreate(); active = this; }
@@ -28,6 +29,7 @@ public final class FidelityIme extends InputMethodService {
         label.setText("LGXT TEST IME — synthetic inputs only");
         label.setTextSize(18);
         label.setPadding(8, 12, 8, 12);
+        inputView = label;
         return label;
     }
 
@@ -89,6 +91,10 @@ public final class FidelityIme extends InputMethodService {
                 result.put("imeOptions", info.imeOptions);
                 result.put("package", info.packageName);
                 result.put("requestedCodeUnits", text.length());
+                result.put("inputViewRequested", ime.isInputViewShown());
+                result.put("inputViewAttached", ime.inputView != null && ime.inputView.isAttachedToWindow());
+                result.put("inputViewVisible", ime.inputView != null && ime.inputView.isShown()
+                    && ime.inputView.getWindowVisibility() == View.VISIBLE);
                 setResultCode(Activity.RESULT_OK);
             } catch (Exception error) {
                 try {

@@ -105,6 +105,22 @@ def test_native_driver_refuses_host_and_non_emulator_targets_before_adb():
     require_disposable_runner('emulator-5554', {'GITHUB_ACTIONS':'true'})
 
 
+def test_native_ime_readiness_requires_attached_visible_view_before_writing(monkeypatch):
+    from scripts import check_android_input_fidelity as driver
+    runner = object.__new__(driver.RemoteEmulator)
+    calls = []
+    pending = {'ok':True, 'inputViewRequested':True, 'inputViewAttached':False,
+               'inputViewVisible':False}
+    ready = dict(pending, inputViewAttached=True, inputViewVisible=True)
+    def probe(mode):
+        calls.append(mode)
+        return pending if len(calls) == 1 else ready
+    runner.ime = probe
+    monkeypatch.setattr(driver.time, 'sleep', lambda _: None)
+    assert runner.wait_ime() == ready
+    assert calls == ['probe', 'probe'], 'Readiness polling must never repeat text writes'
+
+
 def test_native_driver_refuses_release_and_unbound_payload(tmp_path):
     import hashlib
     import io

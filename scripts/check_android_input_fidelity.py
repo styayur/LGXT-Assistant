@@ -142,9 +142,25 @@ class RemoteEmulator:
         if first < 0 or last < first:
             raise AssertionError('No controlled IME acknowledgement')
         result = json.loads(response[first:last+1])
+        self.last_ime_probe = result
         if result.get('ok') is not True or result.get('package') != PACKAGE:
             raise AssertionError('Controlled IME route unavailable; input was not qualified')
         return result
+
+    def wait_ime(self, timeout=40):
+        # An app's UIAutomator tree is not an InputConnection readiness oracle.
+        # Poll only read-only native state; never retry or pace an input write.
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            try:
+                result = self.ime('probe')
+                if all(result.get(key) is True for key in
+                       ('inputViewRequested', 'inputViewAttached', 'inputViewVisible')):
+                    return result
+            except AssertionError:
+                pass
+            time.sleep(.3)
+        raise AssertionError('Controlled IME editor/view readiness failed before input')
 
     def case(self, name, route, username, password, expected):
         folder = self.output/name
@@ -165,20 +181,23 @@ class RemoteEmulator:
             record['stage'] = 'input'
             field_records = record['fields'] = []
             for number, value in enumerate((username, password)):
+                record['stage'] = 'focus'
                 self.tap(self.edits()[number])
                 started = time.monotonic()
                 field_record = {'field':'username' if number==0 else 'password',
                                 'requestedLength':len(value), 'route':route}
                 field_records.append(field_record)
                 if route == 'adb-burst':
+                    record['stage'] = 'input'
                     # Exact existing native route, not CUA app.typeText/IME paste.
                     self.shell('input', 'text', value)
                 elif route == 'adb-per-key':
+                    record['stage'] = 'input'
                     for char in value:
                         self.shell('input', 'text', char)
                 else:
-                    self.wait('LGXT TEST IME')
-                    field_record['editor'] = self.ime('probe')
+                    record['stage'] = 'ime-ready'
+                    field_record['editor'] = self.wait_ime()
                     if number == 1:
                         editor = field_record['editor']
                         if not editor['inputType'] & 0x80 or not editor['inputType'] & 0x80000:
@@ -186,9 +205,11 @@ class RemoteEmulator:
                         if not editor['imeOptions'] & 0x1000000:
                             raise AssertionError('Native no-personalized-learning flag absent')
                     if route == 'ime-per-key':
+                        record['stage'] = 'input'
                         for index in range(len(value)):
                             self.ime('single', value, index)
                     elif route == 'editor-menu-paste':
+                        record['stage'] = 'input'
                         field_record['pasteIme'] = self.original_ime
                         self.ime('clipboard', value)  # Remote emulator clipboard only.
                         self.shell('ime', 'set', self.original_ime)
@@ -198,6 +219,7 @@ class RemoteEmulator:
                         self.paste_from_editor_menu()
                         self.shell('ime', 'set', IME)
                     else:
+                        record['stage'] = 'input'
                         mode = {'ime-commit-bulk':'commit', 'ime-commit-fast':'fast',
                                 'ime-compose':'compose', 'ime-context-paste':'paste'}[route]
                         field_record['acknowledgement'] = self.ime(mode, value)
@@ -233,6 +255,8 @@ class RemoteEmulator:
             # No arbitrary logcat, input payload or device data is serialized.
             record['errorType'] = type(error).__name__
             record['error'] = str(error) if isinstance(error, AssertionError) else 'Fixture route failed'
+            if not route.startswith('adb-'):
+                record['lastImeProbe'] = getattr(self, 'last_ime_probe', None)
             if record['stage'] != 'prepare':
                 try:
                     record['observationsOnFailure'] = self.observations()
