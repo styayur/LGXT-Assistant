@@ -244,7 +244,7 @@ def main():
         if args.previous_beta_apk:
             tap_text('打开本地笔记');scroll_to('migration-fixture-note');screen('previous-beta-note-preserved')
             shell('input','keyevent','4');wait_text('本地资料')
-            passed.append('3.3.0 signed beta upgrades in place and preserves its schema-1 note')
+            passed.append('previous signed beta upgrades in place and preserves its schema-1 note')
         if args.backup_roundtrip:
             # Export through Android first so the picker indexes a real document.
             # Replace only that disposable emulator test file with synthetic notes.
@@ -314,6 +314,8 @@ def main():
             'fixture':args.fixture,'syntheticDocuments':args.fixture or args.backup_roundtrip,'passed':passed+['background resume','force-stop restart'],
             'historicalUpgradeIncompatible':upgrade_incompatible,
             'previousBetaInPlaceUpgrade':bool(args.previous_beta_apk),
+            'previousBetaApk':Path(args.previous_beta_apk).name if args.previous_beta_apk else None,
+            'previousBetaApkSha256':hashlib.sha256(Path(args.previous_beta_apk).read_bytes()).hexdigest() if args.previous_beta_apk else None,
             'credentialFreeNetworkProbe':network_probe,'editorProtection':editor_protection,
             'not_covered':['real platform','paid provider','physical ARM64 device','historical in-place signing continuity']}
     (out/'acceptance.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')

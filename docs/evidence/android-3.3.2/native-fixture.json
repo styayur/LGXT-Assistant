@@ -1,0 +1,71 @@
+{
+  "package": "io.github.styayur.lgxt_assistant_mobile",
+  "apkSha256": "5fe4f9b929a8f506c05c2dce5086ad08e3959251d0e30b5f67db5ad4806c895f",
+  "abi": "x86_64",
+  "android": "15",
+  "fixture": true,
+  "syntheticDocuments": true,
+  "passed": [
+    "install",
+    "first launch",
+    "fixture-only explicit HTTP approval completes without a server login request",
+    "fixture course/assignment/question",
+    "submission cancel and confirm (no server)",
+    "note edit and save",
+    "unconfirmed vision rejected before provider request",
+    "device encrypted synthetic token session restores after process termination and validates",
+    "logout clears device session across process termination",
+    "note survives process termination",
+    "system back navigation",
+    "native file-picker backup export/import",
+    "background resume",
+    "force-stop restart"
+  ],
+  "historicalUpgradeIncompatible": null,
+  "previousBetaInPlaceUpgrade": false,
+  "credentialFreeNetworkProbe": {
+    "baseUrl": "http://lgxt.wutp.com.cn/api",
+    "results": [
+      {
+        "endpoint": "login",
+        "credentialsSent": false,
+        "status": 200,
+        "setCookiePresent": false,
+        "code": 500,
+        "responseKeys": [
+          "code",
+          "msg"
+        ]
+      },
+      {
+        "endpoint": "userInfo",
+        "credentialsSent": false,
+        "status": 200,
+        "setCookiePresent": false,
+        "code": -1,
+        "responseKeys": [
+          "code",
+          "msg"
+        ]
+      }
+    ],
+    "realLoginVerified": false
+  },
+  "editorProtection": {
+    "package": "io.github.styayur.lgxt_assistant_mobile",
+    "inputType": 524417,
+    "imeOptions": 50331654,
+    "verified": true,
+    "nativeInputViewReady": true,
+    "masked": true,
+    "beforeProtectedFieldInjection": true,
+    "emptyFieldsAtProbe": true,
+    "apkSha256": "5fe4f9b929a8f506c05c2dce5086ad08e3959251d0e30b5f67db5ad4806c895f"
+  },
+  "not_covered": [
+    "real platform",
+    "paid provider",
+    "physical ARM64 device",
+    "historical in-place signing continuity"
+  ]
+}

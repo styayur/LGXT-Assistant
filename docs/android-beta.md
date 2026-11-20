@@ -1,6 +1,6 @@
 # Android 3.3.2 Beta
 
-**3.3.1 Beta upgrades in place; historical 3.2.0/3.2.1 requires backup and reinstall.** The existing durable signing identity is unchanged. Download only from the actually public [v3.3.2-android Pre-release / Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.3.2-android). A source candidate is not a published installer; if that release is not public, the prior3.3.1 remains the available Beta. Actions artifacts labeled test-only or fixture are not release builds.
+**3.3.1 Beta upgrades in place; historical 3.2.0/3.2.1 requires backup and reinstall.** The existing durable signing identity is unchanged. Download only from the actually public [v3.3.2-android Pre-release / Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.3.2-android). The3.3.2 release is public with seven verified publisher assets; see the [dated native/publication evidence](VERIFICATION.md). Actions artifacts labeled test-only or fixture are not release builds.
 
 The Beta requires Android 7.0/API 24 or later and ARM64. x86_64 is included for emulator testing; this does not establish phone compatibility. Package: `io.github.styayur.lgxt_assistant_mobile`; versionName: `3.3.2`; versionCode: `6`. Local document schema and exported backups remain version 1.
 
@@ -34,4 +34,4 @@ See [signing custody and release gates](android-signing.md) for the public ident
 
 ## Dated input/privacy follow-up
 
-The20November [strict synthetic diagnosis](input-fidelity.md) passed native8positive+3negative and six browser25ms cases. It also confirmed and backported a separate SDK privacy-configuration forwarding defect while retaining autofill and password protection options. These tests do not attribute the original computer-input anomaly. The historical3.3.1 real-account receipt remains scoped to its unchanged public APK. The3.3.2 candidate needs its own signed/native/release evidence; these test-only APKs are not installers.
+The20November [strict synthetic diagnosis](input-fidelity.md) passed native8positive+3negative and six browser25ms cases. It also confirmed and backported a separate SDK privacy-configuration forwarding defect while retaining autofill and password protection options. These tests do not attribute the original computer-input anomaly. The historical3.3.1 real-account receipt remains scoped to its unchanged public APK. The3.3.2 signed/native/publication gates passed with their own exact-byte evidence; these test-only APKs are not installers.
