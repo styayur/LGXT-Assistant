@@ -1,0 +1,20 @@
+{
+  "sourceCommit": "850dab5e96f8914da513a0084863c90a35e6e2dd",
+  "buildRun": 44688476350,
+  "strictRun": 44687919079,
+  "publisherRun": 44694444666,
+  "strictZipSha256": "d332be6c02a37a43f353383efb200a4ae42fad014bbb52b5db0b207d2da44a6e",
+  "nativeZipSha256": "524323a349e5f6789ca5dc8b3e7db8df8855d3cec0ecc7844799d5ef98bfb530",
+  "signedApkSha256": "15767eaaabe03c7efb4f9340b52fad2414ef9a72a2227ddbffd8d5a2a60bed6f",
+  "fixtureApkSha256": "5fe4f9b929a8f506c05c2dce5086ad08e3959251d0e30b5f67db5ad4806c895f",
+  "strictPositive": 8,
+  "strictNegative": 3,
+  "privacyProbes": 9,
+  "signedEmptyFormNativePrivacyVerified": true,
+  "previousBeta": "3.3.1",
+  "rawLegacyMarkerAnnotatedNotRewritten": true,
+  "immutableTagRuleset": 27708545,
+  "realAccount": "NOT_VERIFIED",
+  "physicalArm64": "NOT_VERIFIED",
+  "originalBulkInputCause": "NOT_VERIFIED"
+}

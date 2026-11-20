@@ -1,0 +1,29 @@
+{
+  "verified": true,
+  "tag": "v3.3.2-android",
+  "url": "https://github.com/styayur/LGXT-Assistant/releases/tag/v3.3.2-android",
+  "source": "850dab5e96f8914da513a0084863c90a35e6e2dd",
+  "assets": [
+    "ANDROID-GUIDE.md",
+    "APK-IDENTITY.json",
+    "LGXT-Assistant-Android-v3.3.2.apk",
+    "LICENSE",
+    "NOTICE.md",
+    "SHA256SUMS.txt",
+    "THIRD-PARTY.txt"
+  ],
+  "draft": false,
+  "buildRun": "44688476350",
+  "acceptanceRun": "44688476350",
+  "validatedHead": "850dab5e96f8914da513a0084863c90a35e6e2dd",
+  "certificateSha256": "0ec0084b65aff166d379206ca244ea54904511e95573b15fd2159bd4bd604114",
+  "hashes": {
+    "ANDROID-GUIDE.md": "c965eee9653d0a51e0294c6d0beef6074488c896f9e40a9e7248d2c8b802e170",
+    "APK-IDENTITY.json": "6f75a8690f2c3ed91968b25d7c42e962c6ac006aa4d971ae52cbc1c9c2229243",
+    "LGXT-Assistant-Android-v3.3.2.apk": "15767eaaabe03c7efb4f9340b52fad2414ef9a72a2227ddbffd8d5a2a60bed6f",
+    "LICENSE": "79735a75d0274d2a5dcc240d11a0f81e34cfc3533939b7fce8e84e35a150a238",
+    "NOTICE.md": "14514368c28fba9f9c8719ac7ab571f04184a7aaf9f6f0540668c18d83b094f2",
+    "SHA256SUMS.txt": "95548769c056f6c884bfa55236a311bf24600b167b6a6bbfee12fd54dae47a6c",
+    "THIRD-PARTY.txt": "cbd582dec05084ae8e124dda2e5e51dca37331e554b6fce8826bbc898582d88b"
+  }
+}

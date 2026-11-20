@@ -4,14 +4,14 @@
 
 以作业为中心的理工学堂助手：从提交管理、图片转 LaTeX，到 AI 辅助解题与学习资料导出。
 
-**Android 3.3.1 Beta。** Android 为当前产品；Windows 历史渠道与共享业务模块保留。
+**Android 3.3.2 Beta。** Android 为当前产品；Windows 历史渠道与共享业务模块保留。
 
 [English](README.md) · [发布](https://github.com/styayur/LGXT-Assistant/releases) · [使用说明](docs/user-guide.md) · [安全](SECURITY.md) · [验证记录](docs/VERIFICATION.md)
 
 [![Verify](https://github.com/styayur/LGXT-Assistant/actions/workflows/tests.yml/badge.svg)](https://github.com/styayur/LGXT-Assistant/actions/workflows/tests.yml)
 [![AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-blue)](LICENSE)
 
-<img src="docs/screenshots/android-3.3.1-native-dashboard-fixture.png" width="360" alt="Android 3.3.1 synthetic native task home">
+<img src="docs/screenshots/android-3.3.2-native-dashboard-fixture.png" width="360" alt="Android 3.3.2 synthetic native task home">
 
 Android 15 模拟器实际截图：加密合成会话恢复后的首页。夹具数据，不是真实课程或账号登录证明。
 
@@ -45,13 +45,13 @@ AI 仅在用户发起时发送，内容会离开本机。请在 AI 设置核实�
 
 ## 按渠道下载
 
-以发布页实际附件为准，源码压缩包不是可运行安装包。此次 Windows Beta tag 为桌面 **4.1.0**、网页 **4.2.0-web**。只有对应渠道完成验证并公开发布后才可下载，草稿附件不等于公开发布。Android **3.3.1 Beta** 已公开发布并通过签名、完整模拟器验收及公开下载校验；3.3.0 可原位升级，历史 3.2.0/3.2.1 须核实外部备份后重装。见 [渠道规则](docs/release-channels.md) 和 [交付证据](docs/VERIFICATION.md)。
+以发布页实际附件为准，源码压缩包不是可运行安装包。此次 Windows Beta tag 为桌面 **4.1.0**、网页 **4.2.0-web**。只有对应渠道完成验证并公开发布后才可下载，草稿附件不等于公开发布。Android **3.3.2 Beta** 已公开发布，修复 SDK 隐私配置转发，完成同证书签名与原生验收；3.3.1 可原位升级，历史 3.2.0/3.2.1 须核实外部备份后重装。见 [渠道规则](docs/release-channels.md) 和 [交付证据](docs/VERIFICATION.md)。
 
 | 渠道 | 升级版本 / 状态 | 安装方式 |
 | --- | --- | --- |
 | Windows 桌面 | [v4.1.0 Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.1.0) | Windows 10/11 x64，需 WebView2；运行 EXE，或完整解压便携 ZIP，保留 `_internal` |
 | Windows 网页 | [v4.2.0-web Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v4.2.0-web) | Windows 10/11 x64；启动 Web EXE，保留控制台，用 Edge/Chrome 打开私有本机链接；无需 WebView2 |
-| Android | [v3.3.1 Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.3.1-android) | Android 7.0/API 24+、ARM64；x86_64 用于模拟器。持久证书不变，直接覆盖 3.3.0；3.2.0/3.2.1 须先核实备份再重装。见[迁移指南](docs/android-beta.md) |
+| Android | [v3.3.2 Beta](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.3.2-android) | Android 7.0/API 24+、ARM64；x86_64 用于模拟器。持久证书不变，直接覆盖 3.3.1；3.2.0/3.2.1 须先核实备份再重装。见[迁移指南](docs/android-beta.md) |
 
 新 Windows 附件名包含平台、渠道与版本；请对照该发布的 `SHA256SUMS.txt` 校验。未声明提供 MSI 或可信签名。历史 tag 与附件保持原样；曾有 Android 附件附在网页发布中，历史 Android 请参阅 [v3.2.1](https://github.com/styayur/LGXT-Assistant/releases/tag/v3.2.1)。
 

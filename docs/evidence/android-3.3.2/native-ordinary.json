@@ -1,0 +1,42 @@
+{
+  "package": "io.github.styayur.lgxt_assistant_mobile",
+  "apkSha256": "15767eaaabe03c7efb4f9340b52fad2414ef9a72a2227ddbffd8d5a2a60bed6f",
+  "abi": "x86_64",
+  "android": "15",
+  "fixture": false,
+  "syntheticDocuments": true,
+  "passed": [
+    "install",
+    "first launch",
+    "HTTP blocked with dummy credentials",
+    "offline library",
+    "3.3.0 signed beta upgrades in place and preserves its schema-1 note",
+    "ordinary release APK imports a synthetic document through native picker",
+    "same-certificate reinstall (notes checked after restart)",
+    "note survives process termination",
+    "system back navigation",
+    "native file-picker backup export/import",
+    "background resume",
+    "force-stop restart"
+  ],
+  "historicalUpgradeIncompatible": true,
+  "previousBetaInPlaceUpgrade": true,
+  "credentialFreeNetworkProbe": null,
+  "editorProtection": {
+    "package": "io.github.styayur.lgxt_assistant_mobile",
+    "inputType": 524417,
+    "imeOptions": 50331654,
+    "verified": true,
+    "nativeInputViewReady": true,
+    "masked": true,
+    "beforeProtectedFieldInjection": true,
+    "emptyFieldsAtProbe": true,
+    "apkSha256": "15767eaaabe03c7efb4f9340b52fad2414ef9a72a2227ddbffd8d5a2a60bed6f"
+  },
+  "not_covered": [
+    "real platform",
+    "paid provider",
+    "physical ARM64 device",
+    "historical in-place signing continuity"
+  ]
+}

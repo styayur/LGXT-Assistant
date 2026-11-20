@@ -1,0 +1,13 @@
+{
+  "sourceCommit": "850dab5e96f8914da513a0084863c90a35e6e2dd",
+  "normalRun": 44688476350,
+  "previousBetaVersion": "3.3.1",
+  "previousBetaApk": "LGXT-Assistant-Android-v3.3.1.apk",
+  "previousBetaApkSha256": "8b1da350c1cd9d089c52f8fbb65dbf289443c0a8f4f7dc462cda4fe4b201a4d1",
+  "newApkSha256": "15767eaaabe03c7efb4f9340b52fad2414ef9a72a2227ddbffd8d5a2a60bed6f",
+  "actualCommandAndHashLogVerified": true,
+  "rawReceiptLegacyLabel": "3.3.0 signed beta upgrades in place and preserves its schema-1 note",
+  "labelDoesNotDescribeActualArgument": true,
+  "rawReceiptNotRewritten": true,
+  "realAccount": "NOT_VERIFIED"
+}

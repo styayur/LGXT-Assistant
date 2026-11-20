@@ -1,0 +1,26 @@
+{
+  "pillow": "13.0.0",
+  "jpeg": "6.2",
+  "webp": "1.6.0",
+  "passed": [
+    "PNG decode",
+    "JPEG decode",
+    "WEBP decode",
+    "SVG rejected",
+    "empty rejected",
+    "invalid rejected",
+    "oversize bytes rejected",
+    "truncated JPEG rejected",
+    "corrupt PNG rejected",
+    "decompression bomb rejected",
+    "20 MP limit rejected",
+    "PNG animation rejected",
+    "WEBP animation rejected",
+    "30 repeated decode cycles complete",
+    "HTTP authentication blocked",
+    "notes survive restart",
+    "password persistence rejected",
+    "corrupt notes fail closed"
+  ],
+  "count": 18
+}
