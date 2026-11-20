@@ -46,7 +46,8 @@ def verify_native_reports(directory, identity, build_run, validated_head):
         if tuple(map(int, identity.get('version', '0.0.0').split('.'))) >= (3,3,2):
             privacy = report.get('editorProtection') or {}
             require(privacy.get('verified') is True and privacy.get('masked') is True
-                    and privacy.get('nativeInputViewReady') is True
+                    and privacy.get('nativeInputViewReady') is True and privacy.get('emptyFieldsAtProbe') is True
+                    and privacy.get('beforeProtectedFieldInjection') is True
                     and privacy.get('apkSha256') == report['apkSha256']
                     and privacy.get('package') == 'io.github.styayur.lgxt_assistant_mobile'
                     and privacy.get('imeOptions',0) & 0x1000000

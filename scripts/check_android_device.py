@@ -39,19 +39,19 @@ def editor_protection_snapshot(dump, package):
             'verified':True, 'nativeInputViewReady':True, 'beforeProtectedFieldInjection':True}
 
 
-def editor_protection_attestation(snapshot, apk_sha256, masked):
+def editor_protection_attestation(snapshot, apk_sha256, masked, empty_fields):
     """Serialize only fixed, typed protection metadata; never the raw probe."""
     package = 'io.github.styayur.lgxt_assistant_mobile'
     input_type, ime_options = snapshot.get('inputType'), snapshot.get('imeOptions')
     if (snapshot.get('package') != package or snapshot.get('verified') is not True
-            or snapshot.get('nativeInputViewReady') is not True or masked is not True
+            or snapshot.get('nativeInputViewReady') is not True or masked is not True or empty_fields is not True
             or type(input_type) is not int or type(ime_options) is not int
             or not input_type & 0x80 or not input_type & 0x80000 or input_type & 0x8000
             or not ime_options & 0x1000000 or not re.fullmatch('[a-f0-9]{64}', apk_sha256)):
         raise ValueError('Invalid native editor protection attestation')
     return {'package':package, 'inputType':input_type, 'imeOptions':ime_options,
             'verified':True, 'nativeInputViewReady':True, 'masked':True,
-            'beforeProtectedFieldInjection':True, 'apkSha256':apk_sha256}
+            'beforeProtectedFieldInjection':True, 'emptyFieldsAtProbe':True, 'apkSha256':apk_sha256}
 
 
 def main():
@@ -180,24 +180,31 @@ def main():
     edits=[node for node in root.iter('node') if node.get('class')=='android.widget.EditText']
     if len(edits)!=2:raise AssertionError('Expected two native editable login fields')
     editor_protection=None
+    if args.password_privacy:
+        empty_fields=all(not node.get('text','') for node in edits)
+        if not empty_fields:
+            raise AssertionError('Editor privacy readback requires an empty login form')
+        tap_node(edits[1])
+        deadline=time.monotonic()+40
+        while True:
+            try:
+                snapshot=editor_protection_snapshot(shell('dumpsys','input_method'),package)
+                break
+            except ValueError:
+                if time.monotonic()>=deadline:raise
+                time.sleep(.3)
+        editor_protection=editor_protection_attestation(snapshot,
+            hashlib.sha256(Path(args.apk).read_bytes()).hexdigest(),
+            edits[1].get('password')=='true', empty_fields)
+        # The readback requires a visible current IME before dismissing it.
+        # No account/password text has been injected for this measurement.
+        shell('input','keyevent','4')
+        time.sleep(.3)
     for index,value in enumerate(['fixture-user','fixture-password']):
         # The Android keyboard changes the scroll viewport. Re-query bounds
         # for each field instead of reusing positions from before it opened.
         current=[node for node in tree().iter('node') if node.get('class')=='android.widget.EditText']
         tap_node(current[index])
-        if args.password_privacy and index==1:
-            deadline=time.monotonic()+40
-            while True:
-                try:
-                    snapshot=editor_protection_snapshot(shell('dumpsys','input_method'),package)
-                    break
-                except ValueError:
-                    if time.monotonic()>=deadline:raise
-                    time.sleep(.3)
-            if current[index].get('password')!='true':
-                raise AssertionError('Password UI masking is absent')
-            editor_protection=editor_protection_attestation(snapshot,
-                hashlib.sha256(Path(args.apk).read_bytes()).hexdigest(), True)
         shell('input','text',value)
         time.sleep(.5)
         shell('input','keyevent','4')

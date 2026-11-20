@@ -39,9 +39,17 @@ def test_attestation_uses_fixed_typed_metadata_not_the_probe_dictionary():
     from scripts.check_android_device import editor_protection_attestation
     snapshot = editor_protection_snapshot(DUMP, PACKAGE)
     snapshot.update(rawDump='synthetic data must not be serialized', hintText='fixture-only')
-    record = editor_protection_attestation(snapshot, 'a'*64, True)
+    record = editor_protection_attestation(snapshot, 'a'*64, True, True)
     assert set(record) == {'package','inputType','imeOptions','verified','nativeInputViewReady',
-                           'masked','beforeProtectedFieldInjection','apkSha256'}
+                           'masked','beforeProtectedFieldInjection','emptyFieldsAtProbe','apkSha256'}
     assert 'rawDump' not in record and 'hintText' not in record
     for bad in (dict(snapshot, imeOptions='50331654'), dict(snapshot, inputType=True)):
-        with pytest.raises(ValueError):editor_protection_attestation(bad, 'a'*64, True)
+        with pytest.raises(ValueError):editor_protection_attestation(bad, 'a'*64, True, True)
+
+
+def test_editor_measurement_requires_empty_fields_and_masking():
+    from scripts.check_android_device import editor_protection_attestation
+    snapshot = editor_protection_snapshot(DUMP, PACKAGE)
+    for masked, empty in [(False, True), (True, False)]:
+        with pytest.raises(ValueError):
+            editor_protection_attestation(snapshot, 'a'*64, masked, empty)
