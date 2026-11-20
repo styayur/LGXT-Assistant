@@ -3,7 +3,7 @@
     package="io.github.styayur.lgxt_input_ime" android:versionCode="1" android:versionName="test-only">
     <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="35" />
     <application android:label="LGXT TEST IME" android:testOnly="true"
-        android:debuggable="true" android:allowBackup="false">
+        android:debuggable="false" android:allowBackup="false">
         <service android:name=".FidelityIme" android:label="LGXT TEST IME"
             android:permission="android.permission.BIND_INPUT_METHOD" android:exported="true">
             <intent-filter><action android:name="android.view.InputMethod" /></intent-filter>
