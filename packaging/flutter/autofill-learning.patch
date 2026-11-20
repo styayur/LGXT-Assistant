@@ -1,0 +1,13 @@
+# Copyright 2014 The Flutter Authors. All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause
+# Local one-field backport for flutter/flutter#192340; see LICENSE.flutter.
+--- a/packages/flutter/lib/src/services/autofill.dart
++++ b/packages/flutter/lib/src/services/autofill.dart
+@@ -852,6 +852,7 @@
+          inputAction: currentClientConfiguration.inputAction,
+          textCapitalization: currentClientConfiguration.textCapitalization,
+          keyboardAppearance: currentClientConfiguration.keyboardAppearance,
+          actionLabel: currentClientConfiguration.actionLabel,
+          autofillConfiguration: currentClientConfiguration.autofillConfiguration,
++         enableIMEPersonalizedLearning: currentClientConfiguration.enableIMEPersonalizedLearning,
+        );

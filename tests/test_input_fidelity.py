@@ -94,6 +94,7 @@ def test_product_password_protection_flags_are_retained():
     assert field.enable_ime_personalized_learning is False
     assert field.autocorrect is False and field.enable_suggestions is False
     assert field.on_change is None, 'Test observation must not add a field change handler'
+    assert find(page, ft.AutofillGroup) is not None, 'Keep autofill grouping while repairing privacy forwarding'
 
 
 def test_native_driver_refuses_host_and_non_emulator_targets_before_adb():
@@ -146,6 +147,26 @@ def test_adb_remote_shell_preserves_literal_nested_receiver_name():
     assert len(commands[0]) == 2 and commands[0][0] == 'shell'
     assert shlex.split(commands[0][1]) == list(arguments)
     assert "'"+BRIDGE+"'" in commands[0][1], 'The remote shell must not expand $Bridge'
+
+
+def test_native_field_readiness_requires_both_target_fields(monkeypatch):
+    import xml.etree.ElementTree as ET
+    from scripts import check_android_input_fidelity as driver
+    runner = object.__new__(driver.RemoteEmulator)
+    partial = ET.fromstring('<hierarchy><node class="android.widget.EditText" package="'+driver.PACKAGE+'"/><node class="android.widget.EditText" package="unrelated.keyboard"/></hierarchy>')
+    complete = ET.fromstring('<hierarchy><node class="android.widget.EditText" package="'+driver.PACKAGE+'"/><node class="android.widget.EditText" package="'+driver.PACKAGE+'"/></hierarchy>')
+    snapshots = iter((partial, complete))
+    runner.tree = lambda: next(snapshots)
+    monkeypatch.setattr(driver.time, 'sleep', lambda _: None)
+    assert len(runner.edits()) == 2
+    assert runner.last_fixture_field_count == 2
+
+
+def test_flutter_backport_refuses_unreviewed_source():
+    from scripts.apply_flutter_autofill_backport import META, patched_bytes
+    meta = json.loads(META.read_text())
+    with pytest.raises(ValueError, match='unreviewed Flutter'):
+        patched_bytes(b'unreviewed SDK baseline', meta)
 
 
 def test_native_driver_refuses_release_and_unbound_payload(tmp_path):

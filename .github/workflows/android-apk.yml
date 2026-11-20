@@ -90,6 +90,17 @@ jobs:
           # Match mobile/pyproject.toml and flet.version.flutter_version.
           python -c "import flet.version; assert flet.version.flutter_version == '3.47.9'"
 
+      - name: Apply and test reviewed Flutter autofill privacy backport
+        run: bash scripts/verify_flutter_autofill_backport.sh
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: flutter-autofill-backport-evidence
+          path: |
+            build/android/flutter-autofill-backport.json
+            build/android/flutter-autofill-tests.log
+
       - name: Build APK (Flet)
         working-directory: mobile
         env:
@@ -191,7 +202,7 @@ jobs:
         run: |
           source=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN" --jq .head_sha)
           git fetch origin "$source"
-          git diff --exit-code "$source" HEAD -- mobile/src mobile/pyproject.toml mobile/requirements.txt packaging/android scripts/build_android_wheels.sh scripts/android_fixture_entry.py scripts/android_image_checks.py scripts/synthetic_credentials.py
+          git diff --exit-code "$source" HEAD -- mobile/src mobile/pyproject.toml mobile/requirements.txt packaging/android packaging/flutter scripts/apply_flutter_autofill_backport.py scripts/verify_flutter_autofill_backport.sh scripts/build_android_wheels.sh scripts/android_fixture_entry.py scripts/android_image_checks.py scripts/synthetic_credentials.py
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
@@ -300,6 +311,9 @@ jobs:
           assert info['frameworkVersion']=='3.47.9'
           assert info['frameworkRevision']=='c197ca5199e9ee5661e865596c9c07294dfab51c'
           PY
+      - name: Apply and test reviewed Flutter autofill privacy backport
+        run: bash scripts/verify_flutter_autofill_backport.sh
+
       - name: Assemble only the separately named test application
         run: |
           python - <<'PY'
@@ -346,7 +360,9 @@ jobs:
           source=files[0].read_bytes()
           blob=hashlib.sha1(b'blob '+str(len(source)).encode()+b'\0'+source).hexdigest()
           assert blob=='37ec9beee57921af011d66e5de1e948fae74cae1'
-          identity={'fixtureOnly':True,'package':'io.github.styayur.lgxt_input_fidelity','apkSha256':hashlib.sha256(apk.read_bytes()).hexdigest(),'sourceCommit':os.environ['GITHUB_SHA'],'flet':'1.1.2','flutter':'3.47.9','dartTextFieldGitBlob':blob}
+          backport=json.loads(pathlib.Path('build/android/flutter-autofill-backport.json').read_text())
+          assert backport['applied'] is True and backport['actualSha256']==backport['patchedSha256']
+          identity={'fixtureOnly':True,'package':'io.github.styayur.lgxt_input_fidelity','apkSha256':hashlib.sha256(apk.read_bytes()).hexdigest(),'sourceCommit':os.environ['GITHUB_SHA'],'flet':'1.1.2','flutter':'3.47.9','dartTextFieldGitBlob':blob,'flutterAutofillBackport':backport}
           pathlib.Path('build/android/input-artifacts/identity.json').write_text(json.dumps(identity,indent=2))
           PY
           python scripts/build_input_test_ime.py
@@ -371,4 +387,6 @@ jobs:
             build/android/input-source/
             build/android/input-artifacts/
             build/android/input-ime/LGXT-test-ime.apk
+            build/android/flutter-autofill-backport.json
+            build/android/flutter-autofill-tests.log
           if-no-files-found: warn

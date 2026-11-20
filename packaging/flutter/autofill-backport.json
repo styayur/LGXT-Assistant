@@ -1,0 +1,13 @@
+{
+  "flutterVersion": "3.47.9",
+  "flutterCommit": "c197ca5199e9ee5661e865596c9c07294dfab51c",
+  "path": "packages/flutter/lib/src/services/autofill.dart",
+  "upstreamGitBlob": "2857a7ff20e43f7595ff373ab02eacf36ec9d715",
+  "originalSha256": "943aded5e35ede66a0119ff21b821921cf060b6eb8efa014b6a54333932348fe",
+  "patchedSha256": "34b57e5153642fcf4f4dc47b57e44ceb60f5affb3f5ca349b061aad421fe265f",
+  "upstreamIssue": "https://github.com/flutter/flutter/issues/192340",
+  "relatedOpenPR": "https://github.com/flutter/flutter/pull/192480",
+  "reviewedPRHead": "4de1d59b2cb705ff0e8a22e40ff0b5f751240580",
+  "scope": "Only forward enableIMEPersonalizedLearning; not the complete open upstream PR",
+  "license": "BSD-3-Clause"
+}

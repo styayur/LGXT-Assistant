@@ -139,11 +139,18 @@ class RemoteEmulator:
             time.sleep(.3)
         raise AssertionError('Fixture editor-menu Paste unavailable; no keyboard suggestion substituted')
 
-    def edits(self):
-        fields = [n for n in self.tree().iter('node') if n.get('class') == 'android.widget.EditText']
-        if len(fields) != 2:
-            raise AssertionError('Expected precisely two fixture login fields')
-        return fields
+    def edits(self, timeout=40):
+        # Switching between the stock keyboard and the test IME changes the
+        # viewport asynchronously. Require both target-app fields before input.
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            fields = [n for n in self.tree().iter('node')
+                      if n.get('class') == 'android.widget.EditText' and n.get('package') == PACKAGE]
+            self.last_fixture_field_count = len(fields)
+            if len(fields) == 2:
+                return fields
+            time.sleep(.3)
+        raise AssertionError('Expected precisely two fixture login fields')
 
     def observations(self):
         result = []
@@ -281,6 +288,7 @@ class RemoteEmulator:
             # No arbitrary logcat, input payload or device data is serialized.
             record['errorType'] = type(error).__name__
             record['error'] = str(error) if isinstance(error, AssertionError) else 'Fixture route failed'
+            record['lastFixtureFieldCount'] = getattr(self, 'last_fixture_field_count', None)
             if not route.startswith('adb-'):
                 record['lastImeProbe'] = getattr(self, 'last_ime_probe', None)
                 record['lastImeTransport'] = getattr(self, 'last_ime_transport', None)
