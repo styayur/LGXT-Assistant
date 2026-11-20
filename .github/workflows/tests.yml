@@ -46,7 +46,7 @@ jobs:
         with:
           name: android-browser-renderer-synthetic
           path: |
-            docs/screenshots/android-3.3.1-*.png
+            docs/screenshots/android-3.3.2-*.png
             mobile-render.log
               mobile-prefill-render.log
               work/input-fidelity-browser/
