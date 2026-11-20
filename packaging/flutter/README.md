@@ -26,3 +26,9 @@ CI runs the existing Flutter autofill tests plus a platform-channel regression
 for both requested values before building. The native matrix independently
 requires the emitted privacy bit; a passing Python property assertion is not a
 substitute. Existing signed release assets are immutable and are not patched.
+
+The CI wrapper gives only Kotlin plugin artifacts an additional official Maven
+Central repository, using a scoped init script in an isolated runner Gradle
+home. It does not remove Plugin Portal or other existing repositories, change
+versions, or change dependency/security checks. This addresses the observed
+Plugin Portal POM/BOM resolution failures, independently of the privacy fix.

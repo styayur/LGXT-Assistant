@@ -345,7 +345,7 @@ jobs:
           mkdir -p build/android/input-artifacts
           cp build/android/input-project/build/apk/*.apk build/android/input-artifacts/LGXT-input-fidelity-test-only.apk
           python - <<'PY'
-          import hashlib,json,os,pathlib,re,subprocess
+          import hashlib,json,os,pathlib,re,subprocess,shutil,yaml
           apk=pathlib.Path('build/android/input-artifacts/LGXT-input-fidelity-test-only.apk')
           tools=pathlib.Path(os.environ['ANDROID_HOME'])/'build-tools/36.0.0'
           badging=subprocess.check_output([str(tools/'aapt'),'dump','badging',str(apk)],text=True)
@@ -362,7 +362,11 @@ jobs:
           assert blob=='37ec9beee57921af011d66e5de1e948fae74cae1'
           backport=json.loads(pathlib.Path('build/android/flutter-autofill-backport.json').read_text())
           assert backport['applied'] is True and backport['actualSha256']==backport['patchedSha256']
-          identity={'fixtureOnly':True,'package':'io.github.styayur.lgxt_input_fidelity','apkSha256':hashlib.sha256(apk.read_bytes()).hexdigest(),'sourceCommit':os.environ['GITHUB_SHA'],'flet':'1.1.2','flutter':'3.47.9','dartTextFieldGitBlob':blob,'flutterAutofillBackport':backport}
+          assert hashlib.sha256((pathlib.Path(os.environ['FLUTTER_ROOT'])/backport['path']).read_bytes()).hexdigest()==backport['patchedSha256']
+          lock=pathlib.Path('build/android/input-project/build/flutter/pubspec.lock')
+          shutil.copyfile(lock,'build/android/input-source/pubspec.lock')
+          packages=yaml.safe_load(lock.read_text())['packages']
+          identity={'fixtureOnly':True,'package':'io.github.styayur.lgxt_input_fidelity','apkSha256':hashlib.sha256(apk.read_bytes()).hexdigest(),'sourceCommit':os.environ['GITHUB_SHA'],'flet':'1.1.2','flutter':'3.47.9','dartTextFieldGitBlob':blob,'flutterAutofillBackport':backport,'pubspecLockSha256':hashlib.sha256(lock.read_bytes()).hexdigest(),'materialUiVersion':packages['material_ui']['version'],'kotlinRepositoryPolicySha256':hashlib.sha256(pathlib.Path('packaging/android/kotlin-official-repository.init.gradle').read_bytes()).hexdigest()}
           pathlib.Path('build/android/input-artifacts/identity.json').write_text(json.dumps(identity,indent=2))
           PY
           python scripts/build_input_test_ime.py
